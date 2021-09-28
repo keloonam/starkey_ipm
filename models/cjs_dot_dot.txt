@@ -1,0 +1,39 @@
+model{
+  # cjs, phi-dot, p-dot
+  
+  # priors
+  b0.phi ~ dnorm(0, 0.001)T(-10,10)
+  b0.p   ~ dnorm(0, 0.001)T(-10,10)
+  
+  logit(mean.phi) <- b0.phi
+  logit(mean.p)   <- b0.p
+  
+  for(i in 1:n_ind){
+    for(t in f[i]:(n_occ-1)){
+    
+      logit(phi[i,t]) <- b0.phi
+      logit(p[i,t])   <- b0.p
+      
+    } #t
+  } #i
+  
+  
+  
+  # likelihood
+  for(i in 1:n_ind){
+    
+    z[i,f[i]] <- 1
+    
+    for(t in (f[i]+1):n_occ){
+      
+      # state
+      z[i,t] ~ dbern(mu1[i,t])
+      mu1[i,t] <- phi[i,t-1] * z[i,t-1]
+      
+      # observation
+      y[i,t] ~ dbern(mu2[i,t])
+      mu2[i,t] <- p[i,t-1] * z[i,t]
+      
+    } #t
+  } #i
+}

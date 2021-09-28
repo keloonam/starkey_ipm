@@ -1,0 +1,182 @@
+model{
+  # IPM -- Built for starkey elk population
+  # Adapted from Caribou IPM in Moeller et al 2021
+  # Kenneth Loonam
+  # March 2021
+  
+  # Parameters to esimate:
+      # R: recruitment
+      # S: survival
+      # N: abundance
+
+  # indexing follows [age, sex, year]
+      # e.g: N[a,s,yr] -- abundance of age class a, sex s, in year yr
+      # ages:
+          # [1,,]: 0.5 yr -- calf
+          # [2,,]: 1.5 yr -- subadult
+          # [3,,]: 2.5 yr -- adult
+      # sex:
+          # [,1,]: female
+          # [,2,]: male
+  
+  ########## Priors and GLMs ###################################################
+  
+  ##### Recruitment
+      # subadults do not breed
+      # random effect on year
+      # indexing on r_prior -- [age, sex, mean\tau]
+  
+  R_B0 ~ dnorm(r_prior[3,1,1], r_prior[3,1,2])
+  
+  sd_R ~ dunif(0, 50)
+  tau_R <- 1/(sd_R ^ 2)
+  for(yr in 1:n_year){ # yr
+    R_yr[yr] ~ dnorm(0, tau_R)T(-10, 10)
+    logit(R[2, yr]) <- 0 # subadults do not breed
+    logit(R[3, yr]) <- R_B0 + R_yr[yr]
+    logit(R[1, yr]) <- 0 # calves do not breed
+    recruitment[yr] <- R[3, yr]
+  } # yr
+  
+  
+  ##### Survival
+      # Independent calf and non-calf survival
+      # Separate random effects by year on both
+      # Sex effect on non-calves, sex survival equal in calves
+      # No sex/year interaction
+      # indexing on s_prior[age, sex, mean\tau]
+      # _C_ = calf, survival from 0.5 to 1.5
+      # _A_ = adult, all other age steps
+      # _F_ = female, _M_ = male
+  
+  S_C_B0   ~ dnorm(s_prior[2,1,1], s_prior[2,1,2])T(-10, 10)
+  S_A_F_B0 ~ dnorm(s_prior[3,1,1], s_prior[3,1,2])T(-10, 10)
+  S_A_M_B0 ~ dnorm(s_prior[3,2,1], s_prior[3,2,2])T(-10, 10)
+  
+  sd_S_C ~ dunif(0,50)
+  sd_S_A ~ dunif(0,50)
+  tau_S_C <- 1/(sd_S_C ^ 2)
+  tau_S_A_M <- 1/(sd_S_A ^ 2)
+  tau_S_A_F <- 1/(sd_S_A ^ 2)
+  
+  for(yr in 1:n_year){ # yr
+    # Survival for age class 1 is not used in the process model
+    S[1,1,yr] <- 0
+    S[1,2,yr] <- 0
+    
+    # Survival from 0.5 to 1.5 years
+        # Random effect on year, male\female equal
+    S_C_yr[yr] ~ dnorm(0, tau_S_C)T(-10, 10)
+    logit(S[2,1,yr]) <- S_C_B0 + S_C_yr[yr]
+    S[2,2,yr] <- S[2,1,yr]
+    
+    # Survival from any age to >= 2.5 years
+    S_A_F_yr[yr] ~ dnorm(0, tau_S_A_F)T(-10, 10)
+    S_A_M_yr[yr] ~ dnorm(0, tau_S_A_M)T(-10, 10)
+    logit(S[3,1,yr]) <- S_A_F_B0 + S_A_F_yr[yr]
+    logit(S[3,2,yr]) <- S_A_M_B0 + S_A_M_yr[yr]
+    
+    # Derived survivals for easy tracking
+    survival_af[yr] <- S[3,1,yr]
+    survival_am[yr] <- S[3,2,yr]
+    survival_ca[yr] <- S[2,1,yr]
+    
+  } # yr
+  
+  ##### Abundance -- starting
+      # n1_prior is data containing guess at first year population size
+      # n1_prior indexing -- [age, sex, mean\tau]
+  
+  hack[1,1,1] ~ dgamma(1,1)
+  N[1,1,1] ~ dpois(n1_prior[1,1,1] * hack[1,1,1])
+  N[1,2,1] <- N[1,1,1]
+  
+  for(x in 1:2){ # x
+    
+    hack_n[2,x,1] ~ dgamma(1,1)
+    N[2,x,1] ~ dpois(n1_prior[2,x,1] * hack[1,1,1])
+    
+    hack_n[3,x,1] ~ dgamma(1,1)
+    N[3,x,1] ~ dpois(n1_prior[3,x,1] * hack[1,1,1])
+  } # x
+  
+  N_ca[1]  = N[1,1,1] + N[1,2,1]
+  N_af[1]  = N[2,1,1] + N[3,1,1]
+  N_am[1]  = N[2,2,1] + N[3,2,1]
+  N_tot[1] = N_af[1]   + N_am[1]
+
+  ########## Process Model #####################################################
+  
+  for(yr in 2:n_year){ # yr
+    ##### Recruitment
+        # subadults and adults have different breeding probabilities in yr-1
+        # R indexing follows [age,yr]  . . .  males rarely get pregnant
+        # Assumes equal sex ratio from birth to age 0.5 years
+        # Assumes twinning is negligible
+    
+    N[1,1,yr] ~ dpois(R[3,yr] * N[3,1,yr-1])
+    N[1,2,yr] <- N[1,1,yr]
+    
+    for(x in 1:2){ # x (sex)
+      ##### Survival 
+          # Calf to subadult has independent survival
+          # Adult survival and subadult to adult survival are equal
+          # Separate survivals by sex for both age groups
+      N[2,x,yr] ~ dbin(S[2,x,yr], N[1,x,yr-1]) + n_rem[2,x,yr]
+      N[3,x,yr] ~ dbin(S[3,x,yr], N[2,x,yr-1] + N[3,x,yr-1]) + n_rem[3,x,yr]
+    } # x (sex)
+    
+    ##### Abundance
+        # Derived values from process each year
+        # Add whatever totals are interesting
+    N_ca[yr]   <- N[1,1,yr] + N[1,2,yr]
+    N_af[yr]   <- N[2,1,yr] + N[3,1,yr]
+    N_am[yr]   <- N[2,2,yr] + N[3,2,yr]
+    N_tot[yr]  <- N_af[yr]  + N_am[yr]  + N_ca[yr]
+  } # yr
+  
+  
+  ########## Observation Models ################################################
+  
+  # Data are indexed by row (i), with one observation per row
+  # The columns for the data follow [year, age, sex, mean, tau]
+  # For example n_sight[3,4] is the mean sightability for the third observation
+  
+  ##### Abundance
+  # Sightability + C/R
+  for(i in 1:nn_ca){
+    n_sight_ca[i,4] ~ dnorm(N_ca[n_sight_ca[i,1]], n_sight_ca[i,5])T(0,)
+  }
+  for(i in 1:nn_af){
+    n_sight_af[i,4] ~ dnorm(N_af[n_sight_af[i,1]], n_sight_af[i,5])T(0,)
+  }
+  for(i in 1:nn_am){
+    n_sight_am[i,4] ~ dnorm(N_am[n_sight_am[i,1]], n_sight_am[i,5])T(0,)
+  }
+  
+  ##### Minimum known alive
+  # Capture histories - All capture methods
+  for(x in 1:2){ # x (sex)
+    r[x] ~ dunif(0, 5000)
+  } # x (sex)
+
+  for(i in 1:n_mindat){
+    mu[i] <- r[mindat[i,3]] /
+             (r[mindat[i,3]] + N[mindat[i,2], mindat[i,3], mindat[i,1]])
+    mindat[i,4] ~ dnegbin(mu[i], r[mindat[i,3]]) 
+  }
+  
+  
+  
+  ##### Survival
+  # CJS - Feedgrounds
+  for(i in 1:ns){
+    s_cjs[i,4] ~ dnorm(S[s_cjs[i,2], s_cjs[i,3], s_cjs[i,1]], s_cjs[i,5])T(0,1)
+  }
+  
+  ##### Recruitment
+  # Ratio - Feedgrounds
+  for(i in 1:nr){
+    r_ratio[i,4] ~ dnorm(R[3, r_ratio[i,1]], r_ratio[i,5])
+  }
+}

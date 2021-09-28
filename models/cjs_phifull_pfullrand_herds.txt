@@ -1,0 +1,87 @@
+model{
+  # cjs
+  # phi -- year, sex-year (adults), age-year
+  # p   -- year, sex-year, trap-happy-year
+  
+  # priors
+  for(t in 1:n_occ){
+    b0.phi[t]         ~ dnorm(0, pr_p)T(-10,10)
+    b_ne_e.phi[t]     ~ dnorm(0, pr_p)T(-10,10)
+    b_ne_w.phi[t]     ~ dnorm(0, pr_p)T(-10,10)
+    b_ne_o.phi[t]     ~ dnorm(0, pr_p)T(-10,10)
+    b_camp.phi[t]     ~ dnorm(0, pr_p)T(-10,10)
+    b_otsd.phi[t]     ~ dnorm(0, pr_p)T(-10,10)
+    b_hand.phi[t]     ~ dnorm(0, pr_p)T(-10,10)
+    b_sex.phi[t]      ~ dnorm(0, pr_p)T(-10,10)
+    b_ne_e_sex.phi[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_ne_w_sex.phi[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_ne_o_sex.phi[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_camp_sex.phi[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_otsd_sex.phi[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_hand_sex.phi[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_age.phi[t]      ~ dnorm(0, pr_p)T(-10,10)
+    b_ne_e_age.phi[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_ne_w_age.phi[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_ne_o_age.phi[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_camp_age.phi[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_otsd_age.phi[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_hand_age.phi[t] ~ dnorm(0, pr_p)T(-10,10)
+    
+    logit(af_p[t]) <- b0.p[t]
+    logit(am_p[t]) <- b0.p[t] + b_sex.p[t]
+    logit(af_phi[t]) <- b0.phi[t]
+    logit(am_phi[t]) <- b0.phi[t] + b_sex.phi[t]
+    logit(calf_phi[t]) <- b0.phi[t] + b_age.phi[t]
+    
+    b0.p[t]         ~ dnorm(0, pr_p)T(-10,10)
+    b_ne_e.p[t]     ~ dnorm(0, pr_p)T(-10,10)
+    b_ne_w.p[t]     ~ dnorm(0, pr_p)T(-10,10)
+    b_ne_o.p[t]     ~ dnorm(0, pr_p)T(-10,10)
+    b_camp.p[t]     ~ dnorm(0, pr_p)T(-10,10)
+    b_otsd.p[t]     ~ dnorm(0, pr_p)T(-10,10)
+    b_hand.p[t]     ~ dnorm(0, pr_p)T(-10,10)
+    b_sex.p[t]      ~ dnorm(0, pr_p)T(-10,10)
+    b_ne_e_sex.p[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_ne_w_sex.p[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_ne_o_sex.p[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_camp_sex.p[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_otsd_sex.p[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_hand_sex.p[t] ~ dnorm(0, pr_p)T(-10,10)
+  } #t
+  
+  tau_ind ~ dnorm(0, 0.0001)T(0,)
+  
+  for(i in 1:n_ind){
+    b_ind[i] ~ dnorm(0, tau_ind)T(-10,10)
+  
+  } #i
+  
+  for(i in 1:n_ind){
+    for(t in f[i]:(n_occ-1)){
+    
+      logit(phi[i,t]) <- b0.phi[t] + b_sex.phi[t]*male[i]*(1-calf[i,t]) + b_age.phi[t]*calf[i,t] + b_ne_e.phi[t]*ne_e[i,t] + b_ne_e_sex.phi[t]*male[i]*(1-calf[i,t])*ne_e[i,t] + b_ne_e_age.phi[t]*calf[i,t]*ne_e[i,t] + b_ne_w.phi[t]*ne_w[i,t] + b_ne_w_sex.phi[t]*male[i]*(1-calf[i,t])*ne_w[i,t] + b_ne_w_age.phi[t]*calf[i,t]*ne_w[i,t] + b_ne_o.phi[t]*ne_o[i,t] + b_ne_o_sex.phi[t]*male[i]*(1-calf[i,t])*ne_o[i,t] + b_ne_o_age.phi[t]*calf[i,t]*ne_o[i,t] + b_camp.phi[t]*camp[i,t] + b_camp_sex.phi[t]*male[i]*(1-calf[i,t])*camp[i,t] + b_camp_age.phi[t]*calf[i,t]*camp[i,t] + b_otsd.phi[t]*otsd[i,t] + b_otsd_sex.phi[t]*male[i]*(1-calf[i,t])*otsd[i,t] + b_otsd_age.phi[t]*calf[i,t]*otsd[i,t] + b_hand.phi[t]*hand[i,t] + b_hand_sex.phi[t]*male[i]*(1-calf[i,t])*hand[i,t] + b_hand_age.phi[t]*calf[i,t]*hand[i,t]
+      logit(p[i,t]) <- b0.p[t] + b_sex.p[t]*male[i]*(1-calf[i,t]) + b_ind[i] + b_ne_e.p[t]*ne_e[i,t] + b_ne_e_sex.p[t]*male[i]*(1-calf[i,t])*ne_e[i,t] + b_ne_w.p[t]*ne_w[i,t] + b_ne_w_sex.p[t]*male[i]*(1-calf[i,t])*ne_w[i,t] + b_ne_o.p[t]*ne_o[i,t] + b_ne_o_sex.p[t]*male[i]*(1-calf[i,t])*ne_o[i,t] + b_camp.p[t]*camp[i,t] + b_camp_sex.p[t]*male[i]*(1-calf[i,t])*camp[i,t] + b_otsd.p[t]*otsd[i,t] + b_otsd_sex.p[t]*male[i]*(1-calf[i,t])*otsd[i,t] + b_hand.p[t]*hand[i,t] + b_hand_sex.p[t]*male[i]*(1-calf[i,t])*hand[i,t]
+      
+    } #t
+  } #i
+  
+  
+  
+  # likelihood
+  for(i in 1:n_ind){
+    
+    z[i,f[i]] <- 1
+    
+    for(t in (f[i]+1):(l[i])){
+      
+      # state
+      z[i,t] ~ dbern(mu1[i,t])
+      mu1[i,t] <- phi[i,t-1] * z[i,t-1]
+      
+      # observation
+      y[i,t] ~ dbern(mu2[i,t])
+      mu2[i,t] <- p[i,t-1] * z[i,t]
+      
+    } #t
+  } #i
+}

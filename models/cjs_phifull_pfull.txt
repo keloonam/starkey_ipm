@@ -1,0 +1,52 @@
+model{
+  # cjs
+  # phi -- year, sex-year (adults), age-year
+  # p   -- year, sex-year, trap-happy-year
+  
+  # priors
+  for(t in 1:n_occ){
+    b0.phi[t]    ~ dnorm(0, pr_p)T(-10,10)
+    b_sex.phi[t] ~ dnorm(0, pr_p)T(-10,10)
+    b_age.phi[t] ~ dnorm(0, pr_p)T(-10,10)
+    
+    logit(af_p[t]) <- b0.p[t]
+    logit(am_p[t]) <- b0.p[t] + b_sex.p[t]
+    logit(af_phi[t]) <- b0.phi[t]
+    logit(am_phi[t]) <- b0.phi[t] + b_sex.phi[t]
+    logit(calf_phi[t]) <- b0.phi[t] + b_age.phi[t]
+    
+    b0.p[t]      ~ dnorm(0, pr_p)T(-10,10)
+    b_sex.p[t]   ~ dnorm(0, pr_p)T(-10,10)
+    
+    
+  } #t
+  
+  for(i in 1:n_ind){
+    for(t in f[i]:(n_occ-1)){
+    
+      logit(phi[i,t]) <- b0.phi[t] + b_sex.phi[t]*male[i]*(1-calf[i,t]) + b_age.phi[t]*calf[i,t]
+      logit(p[i,t])   <- b0.p[t]   + b_sex.p[t]*male[i]*(1-calf[i,t])
+      
+    } #t
+  } #i
+  
+  
+  
+  # likelihood
+  for(i in 1:n_ind){
+    
+    z[i,f[i]] <- 1
+    
+    for(t in (f[i]+1):n_occ){
+      
+      # state
+      z[i,t] ~ dbern(mu1[i,t])
+      mu1[i,t] <- phi[i,t-1] * z[i,t-1]
+      
+      # observation
+      y[i,t] ~ dbern(mu2[i,t])
+      mu2[i,t] <- p[i,t-1] * z[i,t]
+      
+    } #t
+  } #i
+}

@@ -1,0 +1,13 @@
+model{
+  
+  # Priors
+  for(t in 1:n_years){
+    b.0[t] ~ dnorm(0, pr_p)T(-10,10)
+    logit(R[t]) <- b.0[t]
+  } # t
+  
+  # Model
+  for(t in 1:n_years){
+    n_calf[t] ~ dbinom(R[t], n_cow[t])
+  } # t
+}
