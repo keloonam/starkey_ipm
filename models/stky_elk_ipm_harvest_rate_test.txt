@@ -117,6 +117,8 @@ model{
     N[1,1,yr] ~ dpois(R[3,yr] * (N[3,1,yr] + N[2,1,yr]))
     N[1,2,yr] <- N[1,1,yr]
     
+    harvest[yr] ~ dunif(0,1)
+    
     for(x in 1:2){ # x (sex)
       ##### Survival 
           # Calf to subadult has independent survival
@@ -124,8 +126,9 @@ model{
           # Separate survivals by sex for both age groups
           # n_rem is the net number of animals removed from the population
           # indexing follows [age, sex, year]
-      N[2,x,yr] ~ dbin(S[2,x,yr], N[1,x,yr-1] + n_rem[1,x,yr])
-      N[3,x,yr] ~ dbin(S[3,x,yr], N[2,x,yr-1] + N[3,x,yr-1] + n_rem[2,x,yr] + n_rem[3,x,yr])
+      
+      N[2,x,yr] ~ dbin(S[2,x,yr] * harvest[yr], N[1,x,yr-1])
+      N[3,x,yr] ~ dbin(S[3,x,yr] * harvest[yr], N[2,x,yr-1] + N[3,x,yr-1])
     } # x (sex)
     
     ##### Abundance
@@ -163,10 +166,10 @@ model{
   #  mu[i] <- r/(r + N[mindat[i,2], mindat[i,3], mindat[i,1]] + 1)
   #  mindat[i,4] ~ dnegbin(mu[i], r) 
   #}
-  for(i in 1:n_mindat){
-    p_min[i] ~ dunif(0,1)
-    mindat[i,4] ~ dbin(p_min[i], N[mindat[i,2], mindat[i,3], mindat[i,1]])
-  }
+  #for(i in 1:n_mindat){
+  #  p_min[i] ~ dunif(0,1)
+  #  mindat[i,4] ~ dbin(p_min[i], N[mindat[i,2], mindat[i,3], mindat[i,1]])
+  #}
   
   
   

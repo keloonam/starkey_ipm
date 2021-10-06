@@ -5,7 +5,7 @@
 #Variables======================================================================
 
 # Specify the model
-model_file <- "models//stky_elk_ipm_v1.txt"
+model_file <- "models//taal_fisheries_idea.txt"
 
 # Loop dimension parameters
 n_year <- 34
@@ -83,6 +83,12 @@ jags_data <- list(
   n_mindat = nrow(ipm_data$min_n_live)
 )
 
+inits <- function(){
+  list(
+    N = array(data = rpois(3*2*n_year, 500), dim = c(3,2,n_year))
+  )
+}
+
 params = c(
   # "lambda",
   "N_tot",
@@ -100,6 +106,7 @@ params = c(
 jgs_mdl <- jags.model(
   file = model_file,
   data = jags_data,
+  # inits = inits,
   n.chains = n_c
 )
 

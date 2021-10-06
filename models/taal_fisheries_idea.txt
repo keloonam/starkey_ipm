@@ -124,8 +124,14 @@ model{
           # Separate survivals by sex for both age groups
           # n_rem is the net number of animals removed from the population
           # indexing follows [age, sex, year]
-      N[2,x,yr] ~ dbin(S[2,x,yr], N[1,x,yr-1] + n_rem[1,x,yr])
-      N[3,x,yr] ~ dbin(S[3,x,yr], N[2,x,yr-1] + N[3,x,yr-1] + n_rem[2,x,yr] + n_rem[3,x,yr])
+          
+          
+      N_temp[2,x,yr] ~ dbin(S[2,x,yr], N[1,x,yr-1])
+      N[2,x,yr] <- N_temp[2,x,yr] * exp(-n_rem[1,x,yr]/N_temp[2,x,yr])
+      
+      
+      N[3,x,yr] ~ dbin(S[3,x,yr], N[2,x,yr-1] + N[3,x,yr-1])
+      # + n_rem[2,x,yr] + n_rem[3,x,yr]
     } # x (sex)
     
     ##### Abundance

@@ -1,0 +1,71 @@
+model{
+  # cjs
+  # phi -- year, sex-year (adults), age-year
+  # p   -- year, sex-year, trap-happy-year
+  
+  ##### Priors
+    # Indexing follows [age, sex, herd, time]
+    # [a,x,h,t]
+    # age: 1 = calf; 2 = adult
+    # sex: 1 = male; 2 = female
+    # herd:
+      # 1 = main
+      # 2 = ne_e
+      # 3 = ne_w
+      # 4 = ne_o
+      # 5 = camp
+      # 6 = otsd
+      # 7 = hand
+  
+  # Group effects
+  for(a in 1:2){
+    for(x in 1:2){
+      for(h in 1:7){
+        for(t in 1:n_occ){
+          b.phi[a,x,h,t] ~ dnorm(0, pr_p)T(-10,10)
+          b.hnt[a,x,h,t] ~ dnorm(0, pr_p)T(-10,10)
+          b.p[x,h,t]     ~ dnorm(0, pr_p)T(-10,10) #no p for calves; first cap
+        } #t
+      } #h
+    } #x
+  } #a
+  
+  # Individual effects
+  tau_ind ~ dnorm(0, 0.0001)T(0,)
+  for(i in 1:n_ind){
+    b_ind[i] ~ dnorm(0, tau_ind)T(-10,10)
+  } #i
+  
+  # Probabilities
+  for(i in 1:n_ind){
+    for(t in f[i]:(n_occ-1)){
+      logit(phi[i,t]) <- b.phi[1-calf[i,t], male[i], herd[i,t], t]
+      logit(p[i,t])   <- b.p[male[i], herd[i,t], t] + b_ind[i]
+      logit(hnt[i,t]) <- b.hnt[1-calf[i,t], male[i], herd[i,t], t]
+    } #t
+  } #i
+  
+  
+  
+  ##### Likelihood
+  for(i in 1:n_ind){
+    
+    z[i,f[i]] <- 1
+    
+    for(t in (f[i]+1):(l[i])){
+      
+      # State_1 -- Survive to hunting season?
+      z[i,t] ~ dbern(mu1[i,t])
+      mu1[i,t] <- phi[i,t-1] * z[i,t-1]
+      
+      # Observation -- Seen? 1 if harvested
+      y[i,t] ~ dbern(mu2[i,t])
+      mu2[i,t] <- p[i,t-1] * z[i,t]
+      
+      # State_2 -- Harvested?
+      w[i,t] ~ dbern(mu3[i,t])
+      mu3[i,t] <- z[i,t] * hnt[i,t]
+      
+    } #t
+  } #i
+}
