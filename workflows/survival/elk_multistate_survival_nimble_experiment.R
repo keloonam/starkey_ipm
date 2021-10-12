@@ -1,5 +1,6 @@
 # Starkey elk CJS model fit workflow
 # Kenneth Loonam
+# March 2020
 
 #Variables======================================================================
 
@@ -18,19 +19,19 @@ params <- c(
 pr_p <- 0.5
 
 # File names/paths
-model_file <- "models//survival//cjs_harvest_rate_model.txt"
-result_file <- "results//survival//survival_harvest_rate_result.Rdata"
+model_file <- "models//survival//survival_multi_state_model.txt"
+result_file <- "results//survival//survival_multistate_result.Rdata"
 
 
 # Sampler variables
-n_i <- 20
+n_i <- 20000
 n_t <- 1
-n_b <- 10
+n_b <- 10000
 n_c <- 3
 
 #Environment====================================================================
 
-require(tidyverse); require(rjags); require(mcmcplots)
+require(tidyverse); require(nimble); require(mcmcplots)
 load("data//elk_data.Rdata")
 
 ch_init_fn <- function(ch, f){
@@ -115,18 +116,11 @@ male <- male[-bad_elk]
 calf <- calf[-bad_elk,]
 herd <- herd[-bad_elk,]
 
-n_h <- array(data = 0, dim = c(2,2,7,ncol(y)))
-for(i in 1:nrow(y)){
-  for(t in 1:ncol(y)){
-    n_h[calf[i,t],male[i],herd[i,t],t]<-n_h[calf[i,t],male[i],herd[i,t], t]+(w[i,t]==0)
-  }
-}
-
 jags_data <- list(
   y = y,
   f = f,
   l = l,
-  n_h = n_h,
+  w = w,
   male = male,
   calf = calf,
   herd = herd,
@@ -137,48 +131,28 @@ jags_data <- list(
 
 z <- ch_init_fn(jags_data$y, jags_data$f)
 
-inits <- list(
-    z = z,
-    n_l = array(data = 0, dim = c(2,2,7,ncol(y),nrow(y)))
+inits <- function(){
+  list(
+    z = z
   )
-
+}
 
 #Fit_model======================================================================
 
-mdl <- nimble::readBUGSmodel(
+# run the MCMC chain in nimble
+model_object <- readBUGSmodel(
   model = model_file,
   data = jags_data,
-  inits = inits
+  inits = list(z = z)
 )
 
-rslt <- nimble::nimbleMCMC(
-  model = mdl,
+rslt <- nimbleMCMC(
+  model = model_object,
+  monitors = params,
   thin = n_t,
   niter = n_i,
   nburnin = n_b,
   nchains = n_c
 )
 
-# # run the MCMC chain in JAGS
-# jgs_mdl <- jags.model(
-#   file = model_file,
-#   data = jags_data,
-#   inits = inits,
-#   n.chains = n_c
-# )
-# 
-# # save(jgs_mdl, file = "temp_model_file.Rdata")
-# 
-# update(jgs_mdl, n.iter = n_b)
-# 
-# # save(jgs_mdl, file = "temp_model_file.Rdata")
-# # load("temp_model_file.Rdata")
-# 
-# rslt <- coda.samples(
-#   jgs_mdl,
-#   variable.names = params,
-#   n.iter = n_i,
-#   thin = n_t
-# )
-# 
-# save(rslt, file = result_file)
+summary(rslt)
