@@ -1,8 +1,4 @@
 model{
-  # This model crashes every time it is run.
-  # n = 2 for jags
-  # n = 4 for nimble
-  
   # cjs
   # phi -- year, sex-year (adults), age-year
   # p   -- year, sex-year, trap-happy-year
@@ -27,7 +23,6 @@ model{
       for(t in 1:n_occ){
         for(a in 1:2){
           b.phi[a,x,h,t] ~ dnorm(0, pr_p)T(-10,10)
-          b.hnt[a,x,h,t] ~ dnorm(0, pr_p)T(-10,10)
         } #a
         b.p[x,h,t] ~ dnorm(0, pr_p)T(-10,10) #no p for calves; first cap
       } #t
@@ -44,9 +39,7 @@ model{
   for(i in 1:n_ind){
     for(t in f[i]:(n_occ-1)){
       logit(phi[i,t]) <- b.phi[calf[i,t], male[i], herd[i,t], t]
-      logit(p_i[i,t]) <- b.p[male[i], herd[i,t], t] + b_ind[i]
-      logit(hnt[i,t]) <- b.hnt[calf[i,t], male[i], herd[i,t], t]
-      p[i,t] <- p_i[i,t] * w[i,t] # if harvested (w = 0), p = 0
+      logit(p[i,t]) <- b.p[male[i], herd[i,t], t] + b_ind[i]
     } #t
   } #i
   
@@ -54,23 +47,33 @@ model{
   
   ##### Likelihood
   for(i in 1:n_ind){
-    
     z[i,f[i]] <- 1
-    
     for(t in (f[i]+1):(l[i])){
       
       # State_1 -- Survive to hunting season?
       z[i,t] ~ dbern(mu1[i,t])
       mu1[i,t] <- phi[i,t-1] * z[i,t-1]
       
-      # Observation -- Seen? 0 if harvested
+      # Observation -- Seen?
       y[i,t] ~ dbern(mu2[i,t])
       mu2[i,t] <- p[i,t-1] * z[i,t]
-      
-      # State_2 -- Harvested?
-      w[i,t] ~ dbern(mu3[i,t])
-      mu3[i,t] <- z[i,t] * hnt[i,t-1]
-      
     } #t
   } #i
+  
+  ##### Derived quantities
+  for(i in 1:n_ind){
+    for(t in f[i]:(n_occ)){
+      n_l[calf[i,t], male[i], herd[i,t], t,i] <- z[i,t]
+    }
+  }
+  for(h in 1:7){
+    for(x in 1:2){
+      for(t in 1:(n_occ)){
+        for(a in 1:2){
+          n_alive[a,x,h,t] <- sum(n_l[a,x,h,t,1:n_ind])
+          h_r[a,x,h,t] <- n_h[a,x,h,t] / (n_h[a,x,h,t] + n_alive[a,x,h,t])
+        }
+      }
+    }
+  }
 }
