@@ -5,7 +5,7 @@
 #Variables======================================================================
 
 # Specify the model
-model_file <- "models//taal_fisheries_idea.txt"
+model_file <- "models//ipm//stky_elk_ipm_norm_approx.txt"
 
 # Loop dimension parameters
 n_year <- 34
@@ -19,7 +19,7 @@ n1_calf <- 100
 n1_f <- 500
 n1_m <- 500
 n1_sa_mf <- 500
-n1_sd <- 50
+n1_sd <- 500
 
 # JAGS control parameters
 n_i <- 2500
