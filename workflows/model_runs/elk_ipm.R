@@ -22,7 +22,7 @@ n1_sa_mf <- 500
 n1_sd <- 500
 
 # JAGS control parameters
-n_i <- 2500
+n_i <- 6000
 n_b <- 1000
 n_c <- 3
 n_t <- 10
@@ -30,6 +30,7 @@ n_t <- 10
 #Environment====================================================================
 
 require(tidyverse); require(rjags); require(mcmcplots)
+# load("data//elk_ipm_data.Rdata")
 load("data//elk_ipm_data.Rdata")
 
 #Data_prep======================================================================
@@ -91,6 +92,14 @@ inits <- function(){
 
 params = c(
   # "lambda",
+  "S_C_B0",
+  "sd_S_C",
+  "S_A_F_B0",
+  "sd_S_AF",
+  "S_A_M_B0",
+  "sd_S_AM",
+  "R_B0",
+  "sd_R",
   "N_tot",
   "N_ca",
   "N_af",
@@ -103,27 +112,45 @@ params = c(
 
 #Model==========================================================================
 
-jgs_mdl <- jags.model(
-  file = model_file,
+# jgs_mdl <- jags.model(
+#   file = model_file,
+#   data = jags_data,
+#   inits = inits,
+#   n.chains = n_c
+# )
+# 
+# update(jgs_mdl, n.iter = n_b)
+# 
+# rslt <- coda.samples(
+#   jgs_mdl,
+#   variable.names = params,
+#   n.iter = n_i,
+#   thin = n_t
+# )
+
+rslt <- R2jags::jags(
   data = jags_data,
-  # inits = inits,
-  n.chains = n_c
-)
-
-update(jgs_mdl, n.iter = n_b)
-
-rslt <- coda.samples(
-  jgs_mdl,
-  variable.names = params,
+  parameters.to.save = params,
+  model.file = model_file,
+  n.chains = n_c,
   n.iter = n_i,
-  thin = n_t
+  n.burnin = n_b,
+  n.thin = n_t
 )
 
-summary(rslt)
+rslt
+
+mcmcplots::mcmcplot(rslt)
 
 
 save(rslt, file = "results//ipm_result.Rdata")
 
-plot(rslt$BUGSoutput$summary[grep("N_af", dimnames(rslt$BUGSoutput$summary)[[1]]),1], type = "l")
+plot(rslt$BUGSoutput$summary[grep("N_tot", dimnames(rslt$BUGSoutput$summary)[[1]]),1], type = "l")
 plot(rslt$BUGSoutput$summary[grep("recruitment", dimnames(rslt$BUGSoutput$summary)[[1]]),1], type = "l")
-plot(rslt$BUGSoutput$summary[grep("survival_ca", dimnames(rslt$BUGSoutput$summary)[[1]]),1], type = "l")
+plot(rslt$BUGSoutput$summary[grep("survival_af", dimnames(rslt$BUGSoutput$summary)[[1]]),1], type = "l")
+
+
+dim(jags_data$s_cjs)
+dim(jags_data$r_ratio)
+jags_data$s_cjs
+

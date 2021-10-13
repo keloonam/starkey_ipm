@@ -53,11 +53,12 @@ model{
   S_A_F_B0 ~ dnorm(s_prior[3,1,1], s_prior[3,1,2])T(-10, 10)
   S_A_M_B0 ~ dnorm(s_prior[3,2,1], s_prior[3,2,2])T(-10, 10)
   
-  sd_S_C ~ dunif(0,50)
-  sd_S_A ~ dunif(0,50)
+  sd_S_C  ~ dunif(0,50)
+  sd_S_AF ~ dunif(0,50)
+  sd_S_AM ~ dunif(0,50)
   tau_S_C <- 1/(sd_S_C ^ 2)
-  tau_S_A_M <- 1/(sd_S_A ^ 2)
-  tau_S_A_F <- 1/(sd_S_A ^ 2)
+  tau_S_A_M <- 1/(sd_S_AM ^ 2)
+  tau_S_A_F <- 1/(sd_S_AF ^ 2)
   
   for(yr in 1:n_year){ # yr
     # Survival for age class 1 is not used in the process model
@@ -65,7 +66,6 @@ model{
     S[1,2,yr] <- 0
     
     # Survival from 0.5 to 1.5 years
-        # Random effect on year, male\female equal
     S_C_yr[yr] ~ dnorm(0, tau_S_C)T(-10, 10)
     logit(S[2,1,yr]) <- S_C_B0 + S_C_yr[yr]
     S[2,2,yr] <- S[2,1,yr]
@@ -113,7 +113,7 @@ model{
         # R indexing follows [age,yr]  . . .  males rarely get pregnant
         # Assumes equal sex ratio from birth to age 0.5 years
         # Assumes twinning is negligible
-    mu_r[yr] <- R[3,yr] * (N[3,1,yr] + N[2,1,yr]) # only females
+    mu_r[yr] <- R[3,yr] * (N[3,1,yr-1] + N[2,1,yr-1]) # only females
     tau_r[yr] <- abs(1/mu_r[yr])
     N[1,1,yr] ~ dnorm(mu_r[yr], tau_r[yr])T(0,)
     N[1,2,yr] <- N[1,1,yr]

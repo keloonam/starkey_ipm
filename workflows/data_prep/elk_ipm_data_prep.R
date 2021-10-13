@@ -10,7 +10,7 @@ cjs_yrs <- c(min_yr = 1, max_yr = 31)
 ratio_yrs <- c(min_yr = 2, max_yr = 31)
 first_year <- 1988
 
-cjs_file <- "rand_effect.Rdata"
+cjs_file <- "results//rslt_cjs_phifull_pfullrand.Rdata"
 ratio_file <- "results//recruitment_years_2to31.Rdata"
 abundance_file <- "data//elk_abundance_ipm_ready.csv"
 
@@ -108,4 +108,4 @@ ipm_data <- list(
   net_remove = rem_dat
 )
 
-save(ipm_data, file = "data//elk_ipm_data.Rdata")
+save(ipm_data, file = "data//elk_ipm_data_survival_includes_harvest.Rdata")
