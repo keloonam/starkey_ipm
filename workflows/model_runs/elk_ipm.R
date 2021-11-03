@@ -5,7 +5,7 @@
 #Variables======================================================================
 
 # Specify the model
-model_file <- "models//ipm//stky_elk_ipm_norm_approx.txt"
+model_file <- "models//ipm//stky_elk_ipm_oct_2020_meeting_version_abs.txt"
 
 # Loop dimension parameters
 n_year <- 34
@@ -15,10 +15,9 @@ logit_tau_prior <- 0.5
 logit_mean_prior <- 0
 
 # Priors for starting abundance
-n1_calf <- 100
-n1_f <- 500
-n1_m <- 500
-n1_sa_mf <- 500
+n1_calf <- 200
+n1_f <- 400
+n1_m <- 100
 n1_sd <- 500
 
 # JAGS control parameters
@@ -33,33 +32,74 @@ require(tidyverse); require(rjags); require(mcmcplots)
 # load("data//elk_ipm_data.Rdata")
 load("data//elk_ipm_data.Rdata")
 
+#Temporary_section_bypassing_ipm_data_prep_workflow=============================
+
+# Fix columns for new indexing and remove "bad" rows in survival data
+censor_rows <- c(9,11,12,13,27,29,31,42,62,66,70,71,73,74,75,76,89,91,93)
+ipm_data$s_cjs[,2] <- ipm_data$s_cjs[,2] - 1
+ipm_data$s_cjs[,1] <- ipm_data$s_cjs[,1] + 1
+ipm_data$s_cjs <- ipm_data$s_cjs[-censor_rows,]
+
+# Build 3 dim n_hnt array [age,sex,year]
+load("data//elk_harvest_data.Rdata")
+hntdat$age[hntdat$age == 3] <- 2
+n_hnt <- array(data = 0, dim = c(2,2,n_year))
+hntdat <- as.matrix(hntdat)
+for(i in 1:nrow(hntdat)){
+  n_hnt[hntdat[i,2], hntdat[i,3], hntdat[i,1]] <- n_hnt[hntdat[i,2], hntdat[i,3], hntdat[i,1]] + hntdat[i,4]
+}
+
+# Build 3 dim n_mov array [age,sex,year]
+mov_dat <- read_csv("data//mov_data_handle_summaries.csv") %>%
+  as.matrix()
+mov_dat[,1] <- mov_dat[,1] - 1987
+n_mov <- array(0, dim = c(2,2,n_year))
+for(i in 1:nrow(mov_dat)){
+  n_mov[1,1,mov_dat[i,1]] <- mov_dat[i,5]
+  n_mov[1,2,mov_dat[i,1]] <- mov_dat[i,4]
+  n_mov[2,1,mov_dat[i,1]] <- mov_dat[i,2]
+  n_mov[2,2,mov_dat[i,1]] <- mov_dat[i,3]
+}
+
+# Build 3 dim min_n array [age,sex,year]
+min_dat_han <- read_csv("data//min_n_handle_summaries.csv") %>%
+  as.matrix()
+min_dat_han[,1] <- min_dat_han[,1] - 1987
+n_min <- array(0, dim = c(2,2,n_year))
+for(i in 1:nrow(min_dat_han)){
+  n_min[1,1,min_dat_han[i,1]] <- floor(min_dat_han[i,4] / 2)
+  n_min[1,2,min_dat_han[i,1]] <- floor(min_dat_han[i,4] / 2)
+  n_min[2,1,min_dat_han[i,1]] <- min_dat_han[i,2]
+  n_min[2,2,min_dat_han[i,1]] <- min_dat_han[i,3]
+}
+
+
 #Data_prep======================================================================
 
 # Priors on recruitment -- only 2.5+ females breed
 r_prior <- array(
   data = NA,
-  dim = c(3, 2, 2)
+  dim = c(2, 2, 2)
 )
-r_prior[3,1,1] <- logit_mean_prior
-r_prior[3,1,2] <- logit_tau_prior
+r_prior[2,1,1] <- logit_mean_prior
+r_prior[2,1,2] <- logit_tau_prior
 
 # Priors on survival -- same prior for sex and age classes 
 s_prior <- array(
   data = NA,
-  dim = c(3,2,2)
+  dim = c(2,2,2)
 )
-s_prior[2:3,,1] <- logit_mean_prior
-s_prior[2:3,,2] <- logit_tau_prior
+s_prior[1:2,,1] <- logit_mean_prior
+s_prior[1:2,,2] <- logit_tau_prior
 
 # Priors on starting abundance -- same variance on all, initial am and af pops
 n1_prior <- array(
   data = NA,
-  dim = c(3,2,2)
+  dim = c(2,2,2)
 )
 n1_prior[1,1:2,1] <- n1_calf
-n1_prior[2,1:2,1] <- n1_sa_mf
-n1_prior[3,1,1] <- n1_f
-n1_prior[3,2,1] <- n1_m
+n1_prior[2,1,1] <- n1_f
+n1_prior[2,2,1] <- n1_m
 n1_prior[,,2] <- n1_sd
 
 # Build data for jags
@@ -79,16 +119,19 @@ jags_data <- list(
   nn_am = nrow(ipm_data$n_sight_am),
   ns = nrow(ipm_data$s_cjs),
   nr = nrow(ipm_data$r_ratio),
-  mindat = ipm_data$min_n_live,
-  n_rem = ipm_data$net_remove,
-  n_mindat = nrow(ipm_data$min_n_live)
+  # mindat = ipm_data$min_n_live,
+  # n_rem = ipm_data$net_remove,
+  # n_mindat = nrow(ipm_data$min_n_live)
+  n_min = n_min,
+  n_mov = n_mov,
+  n_hnt = n_hnt
 )
 
-inits <- function(){
-  list(
-    N = array(data = rpois(3*2*n_year, 500), dim = c(3,2,n_year))
-  )
-}
+# inits <- function(){
+#   list(
+#     N = array(data = rpois(3*2*n_year, 500), dim = c(3,2,n_year))
+#   )
+# }
 
 params = c(
   # "lambda",

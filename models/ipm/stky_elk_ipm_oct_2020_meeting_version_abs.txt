@@ -26,7 +26,7 @@ model{
       # random effect on year
       # indexing on r_prior -- [age, sex, mean\tau]
   
-  R_B0 ~ dnorm(r_prior[2,1,1], r_prior[2,1,2])
+  R_B0 ~ dnorm(r_prior[2,1,1], r_prior[2,1,2])T(-5,5)
   
   sd_R ~ dunif(0, 50)
   tau_R <- 1/(sd_R ^ 2)
@@ -112,9 +112,9 @@ model{
         # R indexing follows [age,yr]  . . .  males rarely get pregnant
         # Assumes equal sex ratio at 0.5 years
     mu_r[yr]  <- R[2,yr] * N[2,1,yr-1] # only females that were adults at yr-1
-    tau_r[yr] <- abs(1/(mu_r[yr] * (1-R[2,yr])))
-    N[1,1,yr] ~ dnorm(mu_r[yr] * 0.5, tau_r[yr])T(n_min[1,1,yr],)
-    N[1,2,yr] ~ dnorm(mu_r[yr] * 0.5, tau_r[yr])T(n_min[1,2,yr],)
+    tau_r[yr] <- abs(((N[2,1,yr-1] + 1) * R[2,yr] * (1-R[2,yr])))^-1
+    N[1,1,yr] ~ dnorm(mu_r[yr], tau_r[yr])
+    N[1,2,yr] ~ dnorm(mu_r[yr], tau_r[yr])
     
     for(x in 1:2){ # x (sex)
       ##### Survival 
@@ -131,26 +131,31 @@ model{
           # indexing follows [age, sex, year]
       
       # Expectation of survival for calves
-      n_ca[x,yr-1] <- N[1,x,yr-1] + n_mov[1,x,yr]
+      #n_ca[x,yr-1] <- N[1,x,yr-1] * exp(n_mov[1,x,yr] / N[1,x,yr-1]) 
+      n_ca[x,yr-1] <- N[1,x,yr-1]
       mu_n[1,x,yr-1] <- n_ca[x,yr-1] * S[1,x,yr]
       # Tau for calf survival
       t_n_s[1,x,yr] <- abs((n_ca[x,yr-1] + 1) * S[1,x,yr] *(1 - S[1,x,yr]))^(-1)
       # N_tmp[1,x,yr] ~ dnorm(mu_n[1,x,yr-1], t_n_s[1,x,yr])T(0,)
       
       # Expectation of survival for adults
-      n_ad[x,yr-1] <- N[2,x,yr-1] + n_mov[2,x,yr]
+      # n_ad[x,yr-1] <- N[2,x,yr-1] * exp(n_mov[2,x,yr] / N[2,x,yr-1]) 
+      n_ad[x,yr-1] <- N[2,x,yr-1]
       mu_n[2,x,yr-1] <- n_ad[x,yr-1] * S[2,x,yr]
       # Tau for adult survival
-      t_n_s[3,x,yr] <- abs((n_ad[x,yr-1] + 1) * S[2,x,yr] *(1 - S[2,x,yr]))^(-1)
+      t_n_s[2,x,yr] <- abs((n_ad[x,yr-1] + 1) * S[2,x,yr] *(1 - S[2,x,yr]))^(-1)
       # N_tmp[2,x,yr] ~ dnorm(mu_n[2,x,yr-1], t_n_s[2,x,yr])T(0,)
       
       # N adults = surviving calves and adults - hunted calves and adults
       # Sum of two normally distributed random variables nonsense
-      tau_tot[x,yr] <- 1 / (1 / t_n_s[1,x,yr] + 1 / t_n_s[3,x,yr])
-      mu_tot[x,yr]  <- mu_n[2,x,yr-1]+mu_n[1,x,yr-1] #-n_hnt[1,x,yr]-n_hnt[2,x,yr]
+      tau_tot[x,yr] <- 1 / (1 / t_n_s[1,x,yr] + 1 / t_n_s[2,x,yr])
+      #mu_tot[x,yr]  <- mu_n[2,x,yr-1] + mu_n[1,x,yr-1] #- n_hnt[1,x,yr]-n_hnt[2,x,yr]
+      #mu_tmp_1[x,yr] <- exp(-n_hnt[1,x,yr] / mu_n[1,x,yr-1]) * mu_n[1,x,yr-1]
+      #mu_tmp_2[x,yr] <-  exp(-n_hnt[2,x,yr] / mu_n[2,x,yr-1]) * mu_n[2,x,yr-1]      
+      mu_tot[x,yr]  <- exp(-n_hnt[1,x,yr] / mu_n[1,x,yr-1]) * mu_n[1,x,yr-1] + exp(-n_hnt[2,x,yr] / mu_n[2,x,yr-1]) * mu_n[2,x,yr-1]
       
       # N adults = surviving calves and adults - hunted calves and adults
-      N[2,x,yr] ~ dnorm(mu_tot[x,yr], tau_tot[x,yr])T(n_min[2,x,yr],)
+      N[2,x,yr] ~ dnorm(mu_tot[x,yr], tau_tot[x,yr])
       
     } # x (sex)
     
