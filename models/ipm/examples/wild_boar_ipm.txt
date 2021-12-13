@@ -1,0 +1,435 @@
+model{
+# from: https://github.com/ChloeRN/WildBoarIPM/blob/main/WildBoarIPM.R
+# for: Efficient use of harvest data: a size-class-structured integrated 
+       # population model for exploited populations
+       # Marlène Gamelon, Chloé R. Nater, Éric Baubet, Aurélien Besnard, 
+       # Laura Touzot, Jean-Michel Gaillard, Jean-Dominique Lebreton, 
+       # Olivier Gimenez
+       # 2021 in Ecography
+# copied for personal reference
+
+#######################
+  # 1) POPULATION MODEL #
+  #######################
+  
+  #-------------------#
+  # 1.1) Reproduction #
+  #-------------------#
+  
+  # Parameters:
+  # Off[z,t]: Number of female offspring produced by mothers in size class z in year t
+  # N[z,t]: Number of females in size class z in year t
+  # pB[z,t]: Breeding proportion (probability) of females in size class z in year t
+  # nF[z,t]: Fetus number of females in size class z in year t
+  # YOY[t]: Number of female offspring recruiting into the population as young-og-the year (YOY) in year t
+  # s0[t]: New offspring's probability to survive first non-harvest season (year t)
+
+  for(t in 1:Tmax){
+    for(z in 1:Z){
+      
+      # Number of offpring produced by mothers in size class z
+      Off[z,t] ~ dpois(marN[z,t]*pB[z,t]*0.5*nF[z,t])    
+    }
+    
+    # Number of produced offspring recruiting into the population    
+    YOY[t] ~ dbin(s0[t], sum(Off[1:Z,t]))
+
+  }
+  
+  Off[1:Z, Tmax+1] <- 0
+  
+  #-------------#
+  # 1.2) Growth #
+  #-------------#
+  
+  for(t in 1:Tmax){
+
+  	# Size class 1 - grow vs. not grow
+  	marN1_plus[t] ~ dbin(gP[1,t], marN[1,t] + YOY[t]) # Size 1 growing to any size > 1
+  	marN_g[1,1,t] <- (marN[1,t] + YOY[t]) - marN1_plus[t] # Size 1 remaining size 1
+  	
+  	# Size class 1 - grow to size class 2 vs. 3 (given growth)
+  	marN_g[1,3,t] ~ dbin(gSL[t], marN1_plus[t]) # Growing size 1 entering size 3
+  	marN_g[1,2,t] <- marN1_plus[t] - marN_g[1,3,t] # Growing size 1 entering size 2
+  	
+  	# Size class 2 - grow to size class 3 vs. not grow
+  	marN_g[2,3,t] ~ dbin(gP[2,t], marN[2,t]) # Size 2 growing to size 3
+  	marN_g[2,2,t] <-  marN[2,t] - marN_g[2,3,t] # Size 2 remaining size 2
+  	marN_g[2,1,t] <- 0
+  	
+  	# Size class 3 - no growth
+  	marN_g[3,3,t] <- marN[3,t] # Size 3 remaining size 3
+  	marN_g[3,1:2,t] <- 0	
+  }
+  
+  ## NOTE:
+  # Ideally, growth (state transition) would be modelled using a multinomial likelihood.
+  # However, NIMBLE's standard samplers do not work for latent multinomial models (i.e. with an un-fixed "size") as per this date (Feb 2021).
+  # We therefore use sequential binomial likelihoods as a work-around. 
+  
+  
+  #-----------------------------------#
+  # 1.3) Non-harvest season (Mar-Sep) #
+  #-----------------------------------#
+  
+  for(t in 1:Tmax){
+  	for(z in 1:Z){
+  		octN_g[z,t] ~ dbin(sN[z,t], sum(marN_g[1:Z,z,t])) # Survivors
+  	}
+  }
+  
+  
+  #-------------------------------#
+  # 1.4) Harvest season (Oct-Mar) #
+  #-------------------------------#
+  
+  for(t in 1:Tmax){
+  	for(z in 1:Z){
+  		marN[z,t+1] ~ dbin(sH[z,t], octN_g[z,t]) # Survivors
+  		H[z,t+1] <- octN_g[z,t] - marN[z,t+1] # Harvests
+  	}
+  }
+  
+  H[1:Z,1] <- 0
+  
+  
+  
+  #############################
+  # 2) SIZE-AT-HARVEST MODULE #
+  #############################
+  
+  # Data:
+  # SaH[z,t] = Size-at-Harvest matrix (number of size class z individuals reported as harvested in the Oct[t-1] to Feb[t] harvest season)
+  
+  # Parameters:
+  # H[z,t] = number of size class z individuals harvested in the Oct[t-1] to Feb[t] harvest season
+  # ll[z,t] = recovery rate of size class z individuals harvested in the Oct[t-1] to Feb[t] harvest season
+  
+  for(t in 2:Tmax){
+    for(z in 1:Z){
+      SaH[z,t] ~ dbin(ll[z,t], H[z,t])
+    }
+  }
+  
+  
+  
+  #####################################
+  # 3) MARK-RECAPTURE-RECOVERY MODULE #
+  #####################################
+  
+  # Data:
+  # y[ind,t] = capture history of indivdual 'ind' (in each year t)
+  
+  # Parameters:
+  # ps[i,j,t] = transition probability from state i to state j in year t
+  # po[i,obs,t] = observation probability of state i as obs in year t
+  
+  #------------------------------#
+  # 3.1) State transition matrix #
+  #------------------------------#
+  
+  # States:
+  # 1 = alive, small
+  # 2 = alive, medium
+  # 3 = alive, large
+  # 4 = newly dead (harvest), small
+  # 5 = newly dead (harvest), medium
+  # 6 = newly dead (harvest), large
+  # 7 = dead (includes newly dead from non-harvest causes)
+  
+  for(t in 1:Tmax){
+    
+    # Alive transitions (stochastic)
+    
+    ps[1,1,t] <- (1-gP[1,t])*sN[1,t]*sH[1,t] 
+    ps[1,2,t] <- gP[1,t]*(1-gSL[t])*sN[2,t]*sH[2,t]
+    ps[1,3,t] <- gP[1,t]*gSL[t]*sN[3,t]*sH[3,t]
+    ps[1,4,t] <- (1-gP[1,t])*sN[1,t]*(1-sH[1,t])
+    ps[1,5,t] <- gP[1,t]*(1-gSL[t])*sN[2,t]*(1-sH[2,t]) 
+    ps[1,6,t] <- gP[1,t]*gSL[t]*sN[3,t]*(1-sH[3,t]) 
+    ps[1,7,t] <- 1-sum(ps[1,1:6,t])
+    
+    ps[2,1,t] <- 0 
+    ps[2,2,t] <- (1-gP[2,t])*sN[2,t]*sH[2,t]
+    ps[2,3,t] <- gP[2,t]*sN[3,t]*sH[3,t] 
+    ps[2,4,t] <- 0
+    ps[2,5,t] <- (1-gP[2,t])*sN[2,t]*(1-sH[2,t]) 
+    ps[2,6,t] <- gP[2,t]*sN[3,t]*(1-sH[3,t]) 
+    ps[2,7,t] <- 1-sum(ps[2,1:6,t])
+    
+    ps[3,1,t] <- 0 
+    ps[3,2,t] <- 0
+    ps[3,3,t] <- sN[3,t]*sH[3,t]
+    ps[3,4,t] <- 0 
+    ps[3,5,t] <- 0
+    ps[3,6,t] <- sN[3,t]*(1-sH[3,t])
+    ps[3,7,t] <- 1-sum(ps[3,1:6,t])
+    
+    
+    # Dead transitions (deterministic)
+    
+    ps[4,1:6,t] <- 0
+    ps[4,7,t] <- 1
+    
+    ps[5,1:6,t] <- 0
+    ps[5,7,t] <- 1
+    
+    ps[6,1:6,t] <- 0
+    ps[6,7,t] <- 1
+    
+    ps[7,1:6,t] <- 0
+    ps[7,7,t] <- 1
+    
+  }
+  
+  
+  #------------------------#
+  # 3.2) Obervation matrix #
+  #------------------------#
+  
+  # Observations
+  # 1 = captured alive, small
+  # 2 = captured alive, medium
+  # 3 = captured alive, large
+  # 4 = reported dead (harvest), small
+  # 5 = reported dead (harvest), medium
+  # 6 = reported dead (harvest), large
+  # 7 = not observed
+  
+  for(t in 2:Tmax){
+    
+    po[1,1,t] <- pp[1,t]
+    po[1,2:6,t] <- 0
+    po[1,7,t] <- 1-pp[1,t]
+    
+    po[2,1,t] <- 0
+    po[2,2,t] <- pp[2,t]
+    po[2,3:6,t] <- 0
+    po[2,7,t] <- 1-pp[2,t]
+    
+    po[3,1:2,t] <- 0
+    po[3,3,t] <- pp[3,t]
+    po[3,4:6,t] <- 0
+    po[3,7,t] <- 1-pp[3,t]
+    
+    po[4,1:3,t] <- 0
+    po[4,4,t] <- ll[1,t]
+    po[4,5:6,t] <- 0
+    po[4,7,t] <- 1-ll[1,t]
+    
+    po[5,1:4,t] <- 0
+    po[5,5,t] <- ll[2,t]
+    po[5,6,t] <- 0
+    po[5,7,t] <- 1-ll[2,t]
+    
+    po[6,1:5,t] <- 0
+    po[6,6,t] <- ll[3,t]
+    po[6,7,t] <- 1-ll[3,t]
+    
+    po[7,1:6,t] <- 0
+    po[7,7,t] <- 1
+    
+  }
+  
+  
+  #------------------------#
+  # 3.3) Likelihood (dcat) #
+  #------------------------#
+  
+    # Likelihood
+  for(i in 1:n.ind){
+  	
+  	# Define latent state at first capture
+  	x[i, first[i]] <- y[i, first[i]]
+  	
+  	for(t in (first[i]+1):last[i]){
+  		
+  		# State process: draw x(t) given x(t-1)
+  		x[i, t] ~ dcat(ps[x[i, t-1], 1:7, t-1])
+  		
+  		# Observation process: draw y(t) given x(t)
+  		y[i, t] ~ dcat(po[x[i, t], 1:7, t])
+  	}
+  	
+  }
+  
+  
+  
+  #######################
+  # 4) FECUNDITY MODULE #
+  #######################
+  
+  # Data: 
+  # nRep[z,t] = total number of size class z harvested females reproducing in year t
+  # nFemS[z,t] = total number of size class z harvested females sampled for reproductive status in year t
+  # nPreg[z,t] = total number of size class z harvested females pregnant in year t
+  # nFetus[z,t] = total number of fetuses counted for pregnant, harvested size class z females in year t
+  
+  # Parameters:
+  # pB[z,t] = breeding probability of size class z females in year t
+  # nF[z,t] = fetus number of size class z females in year t
+  
+  for(t in 1:Tmax){
+    for(z in 1:Z){
+      
+      #--------------------------------------#
+      # 4.1) Breeding proportion/probability #
+      #--------------------------------------#
+      
+      nRep[z,t] ~ dbin(pB[z,t], nFemS[z,t])	
+      
+           
+      #-------------------#
+      # 4.2) Fetus number #
+      #-------------------#
+      
+      nFetus[z,t] ~ dpois(nPreg[z,t]*nF[z,t])
+      
+    }
+  }
+  
+  
+  
+  #############################
+  # 5) PRIORS AND CONSTRAINTS #
+  #############################
+  
+  #---------------------------#
+  # 5.1) Mortality parameters #
+  #---------------------------#
+  
+  for(z in 1:Z){
+    
+    sN[z,1:Tmax] <- exp(-mN[z,1:Tmax])
+    sH[z,1:Tmax] <- exp(-mH[z,1:Tmax])
+    
+    log(mN[z,1:Tmax]) <- log(Mu.mN[z]) + epsilon.mN[1:Tmax]
+    log(mH[z,1:Tmax]) <- log(Mu.mH[z]) + epsilon.mH[1:Tmax]
+    
+    Mu.mN[z] ~ dunif(0, 5)
+    Mu.mH[z] ~ dunif(0, 5)
+    
+  }
+  
+  for(t in 1:Tmax){
+    
+    epsilon.mN[t] ~ dnorm(0, sd = sigma.mN)
+    epsilon.mH[t] ~ dnorm(0, sd = sigma.mH)
+  }
+  
+  sigma.mN ~ dunif(0, 5)
+  sigma.mH ~ dunif(0, 5)
+  
+  
+  #------------------------#
+  # 5.2) Growth parameters #
+  #------------------------#
+  
+  for(z in 1:(Z-1)){
+  	
+  	logit(gP[z,1:Tmax]) <- logit(Mu.gP[z]) + epsilon.gP[z,1:Tmax]
+
+  	Mu.gP[z] ~ dunif(0, 1)
+  	sigma.gP[z] ~ dunif(0, 5)
+  }
+  
+  
+  for(t in 1:Tmax){
+    
+  	for(z in 1:(Z-1)){
+  		epsilon.gP[z,t] ~ dnorm(0, sd = sigma.gP[z])
+  	}
+    
+    epsilon.gSL[t] ~ dnorm(0, sd = sigma.gSL)
+  }
+  
+  logit(gSL[1:Tmax]) <- logit(Mu.gSL) + epsilon.gSL[1:Tmax]
+  
+  Mu.gSL ~ dunif(0, 1)
+  sigma.gSL ~ dunif(0, 5)
+  
+  
+  #------------------------------------#
+  # 5.3) Recapture/Recovery parameters #
+  #------------------------------------#
+  
+  for(z in 1:Z){
+    
+    logit(pp[z,1:Tmax]) <- logit(Mu.pp[z]) + epsilon.pp[1:Tmax]
+    
+    logit(ll[z,1:Tmax]) <- logit(Mu.ll) + epsilon.ll[1:Tmax]
+    
+    Mu.pp[z] ~ dunif(0, 1)
+  }
+  
+  Mu.ll ~ dunif(0, 1)
+
+  
+  for(t in 1:Tmax){
+    
+    epsilon.pp[t] ~ dnorm(0, sd = sigma.pp)
+    epsilon.ll[t] ~ dnorm(0, sd = sigma.ll)
+  }
+  
+  sigma.pp ~ dunif(0, 5)
+  sigma.ll ~ dunif(0, 5)
+  
+  
+  #------------------------------#
+  # 5.3) Reproduction parameters #
+  #------------------------------#
+  
+  for(z in 1:Z){
+    
+    for(t in 1:Tmax){
+    	logit(pB[z,t]) <- logit(Mu.pB[z,AcornCat[t]]) + epsilon.pB[t]
+    }
+    
+    for(a in 1:3){
+   		Mu.pB[z,a] ~ dunif(0, 1)
+    }
+
+    log(nF[z,1:Tmax]) <- log(Mu.nF[z]) + epsilon.nF[1:Tmax]
+
+    Mu.nF[z] ~ dunif(0, 10)
+    
+  }
+  
+  
+  for(t in 1:Tmax){
+    
+    epsilon.pB[t] ~ dnorm(0, sd = sigma.pB)
+    epsilon.nF[t] ~ dnorm(0, sd = sigma.nF)
+  }
+  
+  sigma.pB ~ dunif(0, 5)
+  sigma.nF ~ dunif(0, 5)
+  
+  
+  #----------------------------#
+  # 5.4) Population parameters #
+  #----------------------------#
+  
+  ## Initial population sizes
+
+  for(z in 1:Z){
+  	initN[z] ~ T(dnorm(50, 50), 0, Inf)
+  	marN[z,1] <- round(initN[z])
+  }
+  
+  
+  #----------------------------------------#
+  # 5.5) Early survival ('Free' Parameter) #
+  #----------------------------------------#
+  
+  for(t in 1:Tmax){
+  	
+  	s0[t] <- exp(-m0[t])
+  	log(m0[t]) <- log(Mu.m0) + epsilon.m0[t]
+   	epsilon.m0[t] ~ dnorm(0, sd = sigma.m0)
+  }
+  
+  Mu.m0 ~ dunif(0, 5)
+  sigma.m0 ~ dunif(0, 5)
+  
+}
