@@ -5,7 +5,7 @@
 #Variables======================================================================
 
 # Specify the model
-model_file <- "models//ipm//stky_elk_ipm_oct_2020_meeting_version_abs.txt"
+model_file <- "models//ipm//ipm_elk_null_dec2021.txt"
 
 # Loop dimension parameters
 n_year <- 34
