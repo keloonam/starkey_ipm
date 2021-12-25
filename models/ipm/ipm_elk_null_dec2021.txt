@@ -26,7 +26,7 @@ model{
       # random effect on year
       # indexing on r_prior -- [age, sex, mean\tau]
   
-  R_B0 ~ dnorm(r_prior[3,1,1], r_prior[3,1,2])
+  R_B0 ~ dnorm(r_prior[2,1,1], r_prior[2,1,2])
   
   sd_R ~ dunif(0, 50)
   tau_R <- 1/(sd_R ^ 2)
@@ -49,9 +49,9 @@ model{
       # _A_ = adult, all other age steps
       # _F_ = female, _M_ = male
   
-  S_C_B0   ~ dnorm(s_prior[2,1,1], s_prior[2,1,2])T(-10, 10)
-  S_A_F_B0 ~ dnorm(s_prior[3,1,1], s_prior[3,1,2])T(-10, 10)
-  S_A_M_B0 ~ dnorm(s_prior[3,2,1], s_prior[3,2,2])T(-10, 10)
+  S_C_B0   ~ dnorm(s_prior[1,1,1], s_prior[1,1,2])T(-10, 10)
+  S_A_F_B0 ~ dnorm(s_prior[2,1,1], s_prior[2,1,2])T(-10, 10)
+  S_A_M_B0 ~ dnorm(s_prior[2,2,1], s_prior[2,2,2])T(-10, 10)
   
   sd_S_C ~ dunif(0,50)
   sd_S_A ~ dunif(0,50)
@@ -137,9 +137,9 @@ model{
       S_h[3,x,yr] ~ dunif(0,1)
       
       N[2,x,yr] ~ dbin(S_h[2,x,yr], N_august[2,x,yr])
-      n_mov[2,x,yr] <- N_august[2,x,yr] - N[2,x,yr]
+      n_mov[1,x,yr] <- N_august[2,x,yr] - N[2,x,yr]
       N[3,x,yr] ~ dbin(S_h[3,x,yr], N_august[3,x,yr])
-      n_mov[3,x,yr] <- N_august[3,x,yr] - N[3,x,yr]
+      n_mov[2,x,yr] <- N_august[3,x,yr] - N[3,x,yr]
     } # x (sex)
     
     ##### Abundance

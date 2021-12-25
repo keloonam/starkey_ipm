@@ -1,6 +1,5 @@
 # Starkey elk CJS model fit workflow
 # Kenneth Loonam
-# March 2020
 
 #Variables======================================================================
 
@@ -11,30 +10,28 @@ end_year <- 2020
 params <- c(
   "phi", 
   "p",
-  "hnt",
-  "tau_ind"
+  "sd_ind"
 )
 
-# Tau for logistic transformed priors
-pr_p <- 0.5
-
 # File names/paths
-model_file <- "models//survival//survival_multi_state_model.txt"
-result_file <- "results//survival//survival_multistate_result.Rdata"
+model_file <- "models//survival//cjs_model_elk.R"
+result_file <- "results//survival//cjs_rslt_24dec2021.Rdata"
 
 
 # Sampler variables
-n_i <- 20000
-n_t <- 1
-n_b <- 10000
+n_i <- 20
+n_t <- 2
+n_b <- 10
 n_c <- 3
+
+params <- c("survival_af", "survival_am", "survival_ca")
 
 #Environment====================================================================
 
-require(tidyverse); require(nimble); require(mcmcplots)
+require(tidyverse); require(rjags); require(mcmcplots); require(nimble)
 load("data//elk_data.Rdata")
 
-ch_init_fn <- function(ch, f){
+ch_init_fn <- function(ch, f, l){
   for(i in 1:nrow(ch)){
     ch[i,1:f[i]] <- NA
   }
@@ -73,7 +70,7 @@ w <- elk_data$hnt_tib %>%
   abs()
 
 for(i in 1:length(l)){
-  y[i,l[i]] <- 0
+  y[i,l[i]] <- 1
 }
 
 male <- elk_data$sex_tib %>%
@@ -98,61 +95,122 @@ herd <- elk_data$hrd_tib %>%
   select(as.character(start_year:end_year)) %>%
   mutate_all(funs(case_when(
     . == "main" ~ 1,
-    . == "ne_e" ~ 2,
-    . == "ne_w" ~ 3,
-    . == "ne_o" ~ 4,
-    . == "camp" ~ 5,
-    . == "otsd" ~ 6,
-    . == "hand" ~ 7
+    T ~ 2
   ))) %>%
   as.matrix()
 
-bad_elk <- which(f == l)
+gone_elk <- apply(herd - 1, 1, sum) == ncol(herd)
+weird_elk <- f == l
+bad_elk <- which((gone_elk + weird_elk) != 0)
 y <- y[-bad_elk,]
 f <- f[-bad_elk]
 l <- l[-bad_elk]
 w <- w[-bad_elk,]
 male <- male[-bad_elk]
 calf <- calf[-bad_elk,]
-herd <- herd[-bad_elk,]
-
-jags_data <- list(
-  y = y,
-  f = f,
-  l = l,
-  w = w,
-  male = male,
-  calf = calf,
-  herd = herd,
-  n_ind = nrow(y),
-  n_occ = ncol(y),
-  pr_p = pr_p
-)
-
-z <- ch_init_fn(jags_data$y, jags_data$f)
-
-inits <- function(){
-  list(
-    z = z
-  )
-}
+herd <- herd[-bad_elk,] - 1
 
 #Fit_model======================================================================
 
-# run the MCMC chain in nimble
-model_object <- readBUGSmodel(
-  model = model_file,
-  data = jags_data,
-  inits = list(z = z)
+source("models//survival//cjs_model_elk.R")
+cjs_constants <- list(
+  f = f,
+  l = l,
+  male = male,
+  calf = calf,
+  herd = herd,
+  n_occ = nrow(y),
+  n_ind = ncol(y)
 )
 
-rslt <- nimbleMCMC(
-  model = model_object,
-  monitors = params,
-  thin = n_t,
-  niter = n_i,
-  nburnin = n_b,
-  nchains = n_c
+z_data <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
+for(i in 1:nrow(y)){
+  z_data[i, f[i]] <- 1
+}
+cjs_data <- list(
+  y = y,
+  z = z_data
 )
 
-summary(rslt)
+cjs_inits <- list(
+  s0_ps  = runif(1, 0.5, 0.9),
+  p0_ps  = runif(1, 0, 1),
+  mu_ms  = rnorm(1),
+  mu_cs  = rnorm(1),
+  mu_mp  = rnorm(1),
+  sd_ms  = runif(1,1,5),
+  sd_cs  = runif(1,1,5),
+  sd_mp  = runif(1,1,5),
+  sd_s0  = runif(1,1,5),
+  sd_p0  = runif(1,1,5),
+  s0     = rnorm(nrow(y)),
+  sm     = rnorm(nrow(y)),
+  sc     = rnorm(nrow(y)),
+  p0     = rnorm(nrow(y)),
+  pm     = rnorm(nrow(y)),
+  sh     = rnorm(1),
+  ph     = rnorm(1),
+  sd_ind = rnorm(1),
+  b_ind  = rnorm(1),
+  z      = ch_init_fn(y, f, l)
+)
+
+# nimbleMCMC(
+#   code = cjs_code,
+#   data = cjs_data,
+#   monitors = params,
+#   thin = 1,
+#   niter = 1000,
+#   nburnin = 100,
+#   nchains = 1,
+#   inits = cjs_inits,
+#   constants = cjs_constants
+# )
+
+cjs_nimble_model <- nimbleModel(
+  code = cjs_code,
+  name = "elk_cjs",
+  constants = cjs_constants,
+  data = cjs_data,
+  inits = cjs_inits
+)
+
+MCMC_cjs <- configureMCMC(cjs_nimble_model, monitors = params, print = T)
+cjs_MCMC <- buildMCMC(MCMC_cjs)
+matt_type <- compileNimble(cjs_nimble_model, showCompilerOutput = TRUE)
+comp_cjs <- compileNimble(cjs_MCMC, project = matt_type)
+cjs_rslt <- runMCMC(
+  comp_cjs,
+  mcmc = comp_cjs,
+  niter = 1000,
+  nburnin = 100,
+  thin = 1,
+  nchains = 3
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
