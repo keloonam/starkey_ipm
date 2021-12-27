@@ -77,25 +77,22 @@ male <- elk_data$sex_tib %>%
   filter(id %in% elk_data$cap_tib$id) %>%
   arrange(id) %>%
   mutate(male = as.numeric(Sex == "M")) %>%
-  pull(male) %>%
-  magrittr::add(1)
+  pull(male)
 
 calf <- elk_data$age_tib %>%
   filter(id %in% elk_data$cap_tib$id) %>%
   arrange(id) %>%
   select(as.character(start_year:end_year)) %>%
   as.matrix() %>%
-  replace_na(0) %>%
-  magrittr::subtract(2) %>%
-  abs()
+  replace_na(0)
 
 herd <- elk_data$hrd_tib %>%
   filter(id %in% elk_data$cap_tib$id) %>%
   arrange(id) %>%
   select(as.character(start_year:end_year)) %>%
   mutate_all(funs(case_when(
-    . == "main" ~ 1,
-    T ~ 2
+    . == "main" ~ 0,
+    T ~ 1
   ))) %>%
   as.matrix()
 
@@ -116,11 +113,11 @@ source("models//survival//cjs_model_elk.R")
 cjs_constants <- list(
   f = f,
   l = l,
-  male = male,
+  male = male - 1,
   calf = calf,
   herd = herd,
-  n_occ = nrow(y),
-  n_ind = ncol(y)
+  n_occ = ncol(y),
+  n_ind = nrow(y)
 )
 
 z_data <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
@@ -155,38 +152,38 @@ cjs_inits <- list(
   z      = ch_init_fn(y, f, l)
 )
 
-# nimbleMCMC(
+cjs_rslt <- nimbleMCMC(
+  code = cjs_code,
+  data = cjs_data,
+  monitors = params,
+  thin = 1,
+  niter = 5000,
+  nburnin = 2000,
+  nchains = 3,
+  # inits = cjs_inits,
+  constants = cjs_constants
+)
+
+# cjs_nimble_model <- nimbleModel(
 #   code = cjs_code,
+#   name = "elk_cjs",
+#   constants = cjs_constants,
 #   data = cjs_data,
-#   monitors = params,
-#   thin = 1,
+#   inits = cjs_inits
+# )
+# 
+# MCMC_cjs <- configureMCMC(cjs_nimble_model, monitors = params, print = T)
+# cjs_MCMC <- buildMCMC(MCMC_cjs)
+# matt_type <- compileNimble(cjs_nimble_model, showCompilerOutput = TRUE)
+# comp_cjs <- compileNimble(cjs_MCMC, project = matt_type)
+# cjs_rslt <- runMCMC(
+#   comp_cjs,
+#   mcmc = comp_cjs,
 #   niter = 1000,
 #   nburnin = 100,
-#   nchains = 1,
-#   inits = cjs_inits,
-#   constants = cjs_constants
+#   thin = 1,
+#   nchains = 3
 # )
-
-cjs_nimble_model <- nimbleModel(
-  code = cjs_code,
-  name = "elk_cjs",
-  constants = cjs_constants,
-  data = cjs_data,
-  inits = cjs_inits
-)
-
-MCMC_cjs <- configureMCMC(cjs_nimble_model, monitors = params, print = T)
-cjs_MCMC <- buildMCMC(MCMC_cjs)
-matt_type <- compileNimble(cjs_nimble_model, showCompilerOutput = TRUE)
-comp_cjs <- compileNimble(cjs_MCMC, project = matt_type)
-cjs_rslt <- runMCMC(
-  comp_cjs,
-  mcmc = comp_cjs,
-  niter = 1000,
-  nburnin = 100,
-  thin = 1,
-  nchains = 3
-)
 
 
 

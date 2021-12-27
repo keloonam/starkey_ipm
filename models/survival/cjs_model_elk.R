@@ -56,7 +56,6 @@ cjs_code <- nimbleCode({
   ##### Likelihood
   # s and p don't have values for occ = 1, p/s-1 shifts the vector
   for(i in 1:n_ind){
-    # z[i, f[i]] <- 1
     for(t in (f[i]+1):(l[i])){
       
       # state -- did ind i survive?
