@@ -16,27 +16,15 @@ cjs_code <- nimbleCode({
   for(t in 1:n_occ){
     s0_ps[t] ~ dunif(0,1)
     s0[t] <- logit(s0_ps[t])
-    sm[t] ~ dnorm(0, sd = 50)
-    sc[t] ~ dnorm(0, sd = 50)
     p0_ps[t] ~ dunif(0,1)
     p0[t] <- logit(p0_ps[t])
   }
   
-  # Constant effects (herds that aren't main)
-  sh ~ T(dnorm(0, sd = 50), -10, 10)
-  ph ~ T(dnorm(0, sd = 50), -10, 10)
-  
-  # Individual effects -- mean = 0 because there shouldn't be a direction bias
-  sd_ind ~ dunif(0,50)
-  for(i in 1:n_ind){
-    b_ind[i] ~ dnorm(0, sd = sd_ind)
-  } #i
-  
   # Probabilities
   for(i in 1:n_ind){
     for(t in f[i]:(n_occ-1)){
-      logit(s[i,t])   <- s0[t] + sc[t]*c[i,t] + sm[t]*m[i]*abs((c[i]-1))   + sh*h[i,t]
-      logit(p[i,t])   <- p0[t] + pm[t]*m[i]   + b_ind[i]     + ph*h[i,t]
+      logit(s[i,t])   <- s0[t]
+      logit(p[i,t])   <- p0[t]
     } #t
   } #i
 
@@ -57,9 +45,7 @@ cjs_code <- nimbleCode({
   
   ##### Derived quantities
   for(t in 1:n_occ){
-    logit(survival_af[t]) <- s0[t]
-    logit(survival_am[t]) <- s0[t] + sm[t]
-    logit(survival_ca[t]) <- s0[t] + sc[t]
+    logit(survival[t]) <- s0[t]
   }
 }
 )

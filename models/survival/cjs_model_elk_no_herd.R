@@ -22,10 +22,6 @@ cjs_code <- nimbleCode({
     p0[t] <- logit(p0_ps[t])
   }
   
-  # Constant effects (herds that aren't main)
-  sh ~ T(dnorm(0, sd = 50), -10, 10)
-  ph ~ T(dnorm(0, sd = 50), -10, 10)
-  
   # Individual effects -- mean = 0 because there shouldn't be a direction bias
   sd_ind ~ dunif(0,50)
   for(i in 1:n_ind){
@@ -35,8 +31,8 @@ cjs_code <- nimbleCode({
   # Probabilities
   for(i in 1:n_ind){
     for(t in f[i]:(n_occ-1)){
-      logit(s[i,t])   <- s0[t] + sc[t]*c[i,t] + sm[t]*m[i]*abs((c[i]-1))   + sh*h[i,t]
-      logit(p[i,t])   <- p0[t] + pm[t]*m[i]   + b_ind[i]     + ph*h[i,t]
+      logit(s[i,t])   <- s0[t] + sc[t]*c[i,t] + sm[t]*m[i]*abs((c[i]-1))
+      logit(p[i,t])   <- p0[t] + pm[t]*m[i]   + b_ind[i]
     } #t
   } #i
 

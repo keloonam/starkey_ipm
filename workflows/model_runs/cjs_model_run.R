@@ -8,9 +8,11 @@ end_year <- 2020
 
 # Parameters to track
 params <- c(
-  "phi", 
-  "p",
-  "sd_ind"
+  "survival_af", 
+  "survival_am", 
+  "survival_ca",
+  "s0_ps",
+  "p0_ps"
 )
 
 # File names/paths
@@ -24,7 +26,7 @@ n_t <- 2
 n_b <- 10
 n_c <- 3
 
-params <- c("survival_af", "survival_am", "survival_ca")
+
 
 #Environment====================================================================
 
@@ -105,7 +107,7 @@ l <- l[-bad_elk]
 w <- w[-bad_elk,]
 male <- male[-bad_elk]
 calf <- calf[-bad_elk,]
-herd <- herd[-bad_elk,] - 1
+herd <- herd[-bad_elk,]
 
 #Fit_model======================================================================
 
@@ -113,7 +115,7 @@ source("models//survival//cjs_model_elk.R")
 cjs_constants <- list(
   f = f,
   l = l,
-  male = male - 1,
+  male = male,
   calf = calf,
   herd = herd,
   n_occ = ncol(y),
@@ -206,8 +208,8 @@ cjs_rslt <- nimbleMCMC(
 
 
 
-
-
+min(f)
+min(l)
 
 
 
