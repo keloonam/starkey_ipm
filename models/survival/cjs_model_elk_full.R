@@ -35,7 +35,7 @@ cjs_code <- nimbleCode({
   # Probabilities
   for(i in 1:n_ind){
     for(t in f[i]:(n_occ-1)){
-      logit(s[i,t])   <- s0[t] + sc[t]*c[i,t] + sm[t]*m[i]*abs((c[i]-1))   + sh*h[i,t]
+      logit(s[i,t])   <- s0[t] + sc[t]*c[i,t] + sm[t]*m[i]*abs((c[i,t]-1))   + sh*h[i,t]
       logit(p[i,t])   <- p0[t] + pm[t]*m[i]   + b_ind[i]     + ph*h[i,t]
     } #t
   } #i

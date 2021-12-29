@@ -16,8 +16,8 @@ params <- c(
 )
 
 # File names/paths
-model_file <- "models//survival//cjs_model_elk.R"
-result_file <- "results//survival//cjs_rslt_24dec2021.Rdata"
+model_file <- "models//survival//cjs_model_elk_full.R"
+result_file <- "results//survival//cjs_rslt_full_28dec2021.Rdata"
 
 
 # Sampler variables
@@ -111,7 +111,7 @@ herd <- herd[-bad_elk,]
 
 #Fit_model======================================================================
 
-source("models//survival//cjs_model_elk.R")
+source(model_file)
 cjs_constants <- list(
   f = f,
   l = l,
@@ -159,13 +159,16 @@ cjs_rslt <- nimbleMCMC(
   data = cjs_data,
   monitors = params,
   thin = 1,
-  niter = 5000,
-  nburnin = 2000,
+  niter = 110000,
+  nburnin = 10000,
   nchains = 3,
   # inits = cjs_inits,
   constants = cjs_constants
 )
 
+save(cjs_rslt, file = result_file)
+
+summary(lapply(cjs_rslt, as.mcmc)[[1]])
 # cjs_nimble_model <- nimbleModel(
 #   code = cjs_code,
 #   name = "elk_cjs",
