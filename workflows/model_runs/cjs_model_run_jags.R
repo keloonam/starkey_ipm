@@ -8,6 +8,8 @@ end_year <- 2020
 
 # Parameters to track
 params <- c(
+  "test",
+  "test_ps",
   "survival_af", 
   "survival_am", 
   "survival_ca",
@@ -16,21 +18,21 @@ params <- c(
 )
 
 # File names/paths
-model_file <- "models//survival//cjs_model_elk_full.R"
-result_file <- "results//survival//cjs_rslt_full_28dec2021.Rdata"
-
+model_file <- "models//survival//cjs_model_elk.txt"
+result_file <- "results//survival//cjs_rslt_jags_29dec2021.Rdata"
 
 # Sampler variables
-n_i <- 20
+n_i <- 5000
 n_t <- 2
-n_b <- 10
+n_b <- 10000
 n_c <- 3
+n_a <- 1000
 
 
 
 #Environment====================================================================
 
-require(tidyverse); require(rjags); require(mcmcplots); require(nimble)
+require(tidyverse); require(rjags); require(mcmcplots)
 load("data//elk_data.Rdata")
 
 ch_init_fn <- function(ch, f, l){
@@ -67,13 +69,9 @@ w <- elk_data$hnt_tib %>%
   filter(id %in% elk_data$cap_tib$id) %>%
   arrange(id) %>%
   select(as.character(start_year:end_year)) %>%
-  as.matrix() %>%
-  magrittr::subtract(1) %>%
-  abs()
+  as.matrix() 
 
-for(i in 1:length(l)){
-  y[i,l[i]] <- 1
-}
+y <- w + y # harvests count as observed alive that year (did not die naturally)
 
 male <- elk_data$sex_tib %>%
   filter(id %in% elk_data$cap_tib$id) %>%
@@ -111,108 +109,61 @@ herd <- herd[-bad_elk,]
 
 #Fit_model======================================================================
 
-source(model_file)
-cjs_constants <- list(
+z_data <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
+for(i in 1:nrow(y)){
+  l_k[i] <- max(which(y[i,] == 1))
+  z_data[i, f[i]:l_k[i]] <- 1
+}
+
+# z_init <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
+# for(i in 1:nrow(y)){
+#   z_init[i,f[i]:l[i]] <- 1
+# }
+
+cjs_data <- list(
+  y = y,
+  z = z_data,
   f = f,
   l = l,
-  male = male,
-  calf = calf,
-  herd = herd,
+  m = male,
+  c = calf,
+  h = herd,
   n_occ = ncol(y),
   n_ind = nrow(y)
 )
 
-z_data <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
-for(i in 1:nrow(y)){
-  z_data[i, f[i]] <- 1
-}
-cjs_data <- list(
-  y = y,
-  z = z_data
-)
-
 cjs_inits <- list(
-  s0_ps  = runif(1, 0.5, 0.9),
-  p0_ps  = runif(1, 0, 1),
-  mu_ms  = rnorm(1),
-  mu_cs  = rnorm(1),
-  mu_mp  = rnorm(1),
-  sd_ms  = runif(1,1,5),
-  sd_cs  = runif(1,1,5),
-  sd_mp  = runif(1,1,5),
-  sd_s0  = runif(1,1,5),
-  sd_p0  = runif(1,1,5),
-  s0     = rnorm(nrow(y)),
-  sm     = rnorm(nrow(y)),
-  sc     = rnorm(nrow(y)),
-  p0     = rnorm(nrow(y)),
-  pm     = rnorm(nrow(y)),
+  s0_ps  = runif(ncol(y), 0.5, 0.9),
+  p0_ps  = runif(ncol(y), 0, 1),
+  sm     = rnorm(ncol(y)),
+  sc     = rnorm(ncol(y)),
+  pm     = rnorm(ncol(y)),
   sh     = rnorm(1),
   ph     = rnorm(1),
   sd_ind = rnorm(1),
-  b_ind  = rnorm(1),
+  b_ind  = rnorm(nrow(y)),
   z      = ch_init_fn(y, f, l)
 )
 
-cjs_rslt <- nimbleMCMC(
-  code = cjs_code,
+cjs_model <- jags.model(
+  file = model_file,
   data = cjs_data,
-  monitors = params,
-  thin = 1,
-  niter = 110000,
-  nburnin = 10000,
-  nchains = 3,
-  # inits = cjs_inits,
-  constants = cjs_constants
+  n.chains = n_c,
+  inits = cjs_inits,
+  n.adapt = n_a
+)
+
+update(
+  object = cjs_model,
+  n.iter = n_b
+)
+
+cjs_rslt <- coda.samples(
+  model = cjs_model,
+  variable.names = params,
+  n.iter = n_i,
+  thin = n_t
 )
 
 save(cjs_rslt, file = result_file)
-
-summary(lapply(cjs_rslt, as.mcmc)[[1]])
-# cjs_nimble_model <- nimbleModel(
-#   code = cjs_code,
-#   name = "elk_cjs",
-#   constants = cjs_constants,
-#   data = cjs_data,
-#   inits = cjs_inits
-# )
-# 
-# MCMC_cjs <- configureMCMC(cjs_nimble_model, monitors = params, print = T)
-# cjs_MCMC <- buildMCMC(MCMC_cjs)
-# matt_type <- compileNimble(cjs_nimble_model, showCompilerOutput = TRUE)
-# comp_cjs <- compileNimble(cjs_MCMC, project = matt_type)
-# cjs_rslt <- runMCMC(
-#   comp_cjs,
-#   mcmc = comp_cjs,
-#   niter = 1000,
-#   nburnin = 100,
-#   thin = 1,
-#   nchains = 3
-# )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-min(f)
-min(l)
-
-
 
