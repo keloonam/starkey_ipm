@@ -7,14 +7,14 @@ model{
   
   # Time effects
   for(t in 1:n_occ){
-    s0_ps[t] ~ dunif(0,1)
-    s0[t] <- logit(s0_ps[t])
+    sf_ps[t] ~ dunif(0,1)
+    sf[t] <- logit(s0_ps[t])
     sm_ps[t] ~ dunif(0,1)
     sm[t] <- logit(s0_ps[t])
     sc_ps[t] ~ dunif(0,1)
     sc[t] <- logit(s0_ps[t])
-    p0_ps[t] ~ dunif(0,1)
-    p0[t] <- logit(p0_ps[t])
+    pf_ps[t] ~ dunif(0,1)
+    pf[t] <- logit(p0_ps[t])
     pm_ps[t] ~ dunif(0,1)
     pm[t] <- logit(p0_ps[t])
   }
@@ -33,8 +33,8 @@ model{
   # Probabilities
   for(i in 1:n_ind){
     for(t in f[i]:l[i]){
-      logit(s[i,t]) <- s0[t] + sc[t]*c[i,t] - sm[t]*m[i]*(c[i,t]-1) + sh*h[i,t]
-      logit(p[i,t]) <- p0[t] + pm[t]*m[i] + b_ind[i] + ph*h[i,t]
+      logit(s[i,t]) <- sf[t]*abs(c[i,t]-1)*abs(m[i]-1) + sc[t]*c[i,t] - sm[t]*m[i]*(c[i,t]-1) + sh*h[i,t]
+      logit(p[i,t]) <- pf[t]*abs(m[i]-1) + pm[t]*m[i] + b_ind[i] + ph*h[i,t]
     } #t
   } #i
 

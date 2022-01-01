@@ -8,8 +8,7 @@ end_year <- 2020
 
 # Parameters to track
 params <- c(
-  "test",
-  "test_ps",
+  # "sd_ind",
   "survival_af", 
   "survival_am", 
   "survival_ca",
@@ -18,13 +17,13 @@ params <- c(
 )
 
 # File names/paths
-model_file <- "models//survival//cjs_model_elk.txt"
-result_file <- "results//survival//cjs_rslt_jags_29dec2021.Rdata"
+model_file <- "models//survival//cjs_model_elk_cip.txt"
+result_file <- "results//survival//cjs_rslt_cip_31dec2021.Rdata"
 
 # Sampler variables
-n_i <- 5000
+n_i <- 25000
 n_t <- 1
-n_b <- 10000
+n_b <- 15000
 n_c <- 3
 n_a <- 1000
 
@@ -32,7 +31,7 @@ n_a <- 1000
 
 #Environment====================================================================
 
-require(tidyverse); require(rjags); require(mcmcplots)
+require(tidyverse); require(rjags); require(mcmcplots); require(nimble)
 load("data//elk_data.Rdata")
 
 ch_init_fn <- function(ch, f, l){
@@ -107,6 +106,14 @@ male <- male[-bad_elk]
 calf <- calf[-bad_elk,]
 herd <- herd[-bad_elk,]
 
+# y <- y[1:100,]
+# f <- f[1:100]
+# l <- l[1:100]
+# w <- w[1:100,]
+# male <- male[1:100]
+# calf <- calf[1:100,]
+# herd <- herd[1:100,]
+
 #Fit_model======================================================================
 
 z_data <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
@@ -115,11 +122,6 @@ for(i in 1:nrow(y)){
   l_k[i] <- max(which(y[i,] == 1))
   z_data[i, (f[i]):l_k[i]] <- 1
 }
-
-# z_init <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
-# for(i in 1:nrow(y)){
-#   z_init[i,f[i]:l[i]] <- 1
-# }
 
 cjs_data <- list(
   y = y,
@@ -143,27 +145,25 @@ cjs_inits <- list(
   ph     = rnorm(1),
   sd_ind = rnorm(1),
   b_ind  = rnorm(nrow(y))
-  # z      = ch_init_fn(y, f, l)
 )
 
-cjs_model <- jags.model(
-  file = model_file,
+cjs_nimble_model <- readBUGSmodel(
+  model = model_file,
   data = cjs_data,
-  n.chains = n_c,
   inits = cjs_inits,
-  n.adapt = n_a
+  calculate = F,
+  check = F
 )
 
-update(
-  object = cjs_model,
-  n.iter = n_b
-)
-
-cjs_rslt <- coda.samples(
-  model = cjs_model,
-  variable.names = params,
-  n.iter = n_i,
+cjs_rslt <- nimbleMCMC(
+  model = cjs_nimble_model,
+  monitors = params,
+  niter = n_i,
+  nburnin = n_b,
+  nchains = n_c,
   thin = n_t
 )
+
+mcmcplots::mcmcplot(cjs_rslt)
 
 save(cjs_rslt, file = result_file)

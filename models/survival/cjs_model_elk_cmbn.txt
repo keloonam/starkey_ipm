@@ -7,16 +7,15 @@ model{
   
   # Time effects
   for(t in 1:n_occ){
+    test_ps[t] ~ dunif(0,1)
+    test[t] <- logit(test_ps[t])
     s0_ps[t] ~ dunif(0,1)
     s0[t] <- logit(s0_ps[t])
-    sm_ps[t] ~ dunif(0,1)
-    sm[t] <- logit(s0_ps[t])
-    sc_ps[t] ~ dunif(0,1)
-    sc[t] <- logit(s0_ps[t])
+    sm[t] ~ dnorm(0, 0.01)T(-10,10)
+    sc[t] ~ dnorm(0, 0.01)T(-10,0)
     p0_ps[t] ~ dunif(0,1)
     p0[t] <- logit(p0_ps[t])
-    pm_ps[t] ~ dunif(0,1)
-    pm[t] <- logit(p0_ps[t])
+    pm[t] ~ dnorm(0, 0.01)T(-10,10)
   }
   
   # Constant effects (herds that aren't main)
