@@ -170,17 +170,29 @@ model{
     n_sight_am[i,4] ~ dnorm(N_am[n_sight_am[i,1]], n_sight_am[i,5])T(0,)
   }
   
-  ##### Minimum known alive
-  # Capture histories - All capture methods
-  # r ~ dunif(0, 5000)
-  #for(i in 1:n_mindat){
-  #  mu[i] <- r/(r + N[mindat[i,2], mindat[i,3], mindat[i,1]] + 1)
-  #  mindat[i,4] ~ dnegbin(mu[i], r) 
-  #}
-  #for(i in 1:n_mindat){
-  #  p_min[i] ~ dunif(0,1)
-  #  mindat[i,4] ~ dbin(p_min[i], N[mindat[i,2], mindat[i,3], mindat[i,1]])
-  #}
+  # Counts - Feedgrounds
+  # Starts with probabilities of individuals attending feedground
+  # Longhand for informative priors (hopefully)
+  p0_c_fg   <- logit(dunif(0,1))
+  p0_f_fg   <- logit(dunif(0,1))
+  p0_m_fg   <- logit(dunif(0,1))
+  p_c_fg_sd <- dunif(0, 50)
+  p_f_fg_sd <- dunif(0, 50)
+  p_m_fg_sd <- dunif(0, 50)
+  for(yr in 1:n_year){
+    logit(P_FG_C[yr]) <- dnorm(p0_c_fg, sd = p_c_fg_sd)
+    logit(P_FG_F[yr]) <- dnorm(p0_f_fg, sd = p_f_fg_sd)
+    logit(P_FG_M[yr]) <- dnorm(p0_m_fg, sd = p_m_fg_sd)
+  }
+  for(i in 1:nn_fg_ca){
+    n_fg_c[i,4] ~ dbinom(P_FG_C[n_fg_c[i,1]], N_c[n_fg_c[i,1]])
+  }
+  for(i in 1:nn_fg_ca){
+    n_fg_f[i,4] ~ dbinom(P_FG_F[n_fg_f[i,1]], N_f[n_fg_f[i,1]])
+  }
+  for(i in 1:nn_fg_ca){
+    n_fg_m[i,4] ~ dbinom(P_FG_M[n_fg_m[i,1]], N_m[n_fg_m[i,1]])
+  }
   
   
   
