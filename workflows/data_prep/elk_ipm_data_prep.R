@@ -114,36 +114,79 @@ min_dat <- read_csv("data//min_n_handle_summaries.csv") %>%
   pivot_longer(cols = c(fe_ad, ma_ad, ca)) %>%
   filter(value != 0) %>%
   mutate(year = year - 1987)
-mindat <- matrix(1, nrow = nrow(min_dat), ncol = 5)
-mindat[,1] <- min_dat$year
-mindat[which(min_dat$name == "ca"),2] <- 1
-mindat[which(min_dat$name != "ca"),2] <- 3
 
+n_fg_c <- matrix(NA, nrow = sum(min_dat$name == "ca"), ncol = 4)
+n_fg_c[,1] <- min_dat$year[min_dat$name == "ca"]
+n_fg_c[,4] <- min_dat$value[min_dat$name == "ca"]
+
+n_fg_m <- matrix(NA, nrow = sum(min_dat$name == "ma_ad"), ncol = 4)
+n_fg_m[,1] <- min_dat$year[min_dat$name == "ma_ad"]
+n_fg_m[,4] <- min_dat$value[min_dat$name == "ma_ad"]
+
+n_fg_f <- matrix(NA, nrow = sum(min_dat$name == "fe_ad"), ncol = 4)
+n_fg_f[,1] <- min_dat$year[min_dat$name == "fe_ad"]
+n_fg_f[,4] <- min_dat$value[min_dat$name == "fe_ad"]
 
 #Harvested======================================================================
 
 load("data//elk_harvest_data.Rdata")
-
-#Pasture_changes================================================================
-
-load("data//elk_net_pasture_movement_data.Rdata")
-r_df <- movdat %>%
-  mutate(mean = mean - hntdat$mean) 
-
-rem_dat <- array(NA, dim = c(3,2,34))
-for(i in 1:nrow(r_df)){
-  rem_dat[r_df$age[i], r_df$sex[i], r_df$year[i]] <- r_df$mean[i]
+n_hnt <- array(data = 0, dim = c(4,2,n_yrs))
+hntdat <- as.matrix(hntdat)
+for(i in 1:(nrow(hntdat) - 6)){
+  n_hnt[hntdat[i,2] + 1, hntdat[i,3], hntdat[i,1]] <- hntdat[i,4]
 }
+
+#Animal_movement================================================================
+
+# Build 3 dim n_mov array [age,sex,year]
+mov_dat <- read_csv("data//mov_data_handle_summaries.csv") %>%
+  as.matrix()
+mov_dat[,1] <- mov_dat[,1] - 1987
+n_mov <- array(0, dim = c(3,2,n_yrs))
+for(i in 1:nrow(mov_dat)){
+  n_mov[1,1,mov_dat[i,1]] <- mov_dat[i,5]
+  n_mov[1,2,mov_dat[i,1]] <- mov_dat[i,4]
+  n_mov[3,1,mov_dat[i,1]] <- mov_dat[i,2]
+  n_mov[3,2,mov_dat[i,1]] <- mov_dat[i,3]
+}
+
+n_add <- array(0, dim = dim(n_mov))
+n_rem <- array(0, dim = dim(n_mov))
+
+for(i in 1:dim(n_mov)[1]){
+  for(j in 1:dim(n_mov)[2]){
+    for(k in 1:dim(n_mov)[3]){
+      if(n_mov[i,j,k] > 0){
+        n_add[i,j,k] <- n_mov[i,j,k]
+      }
+      if(n_mov[i,j,k] < 0){
+        n_rem[i,j,k] <- n_mov[i,j,k]
+      }
+    }
+  }
+}
+
+n_ad_rem <- n_rem[2,,] + n_rem[3,,]
+n_ca_rem <- n_rem[1,,]
+n_ad_add <- n_add[2,,] + n_rem[3,,]
+n_ca_add <- n_add[1,,]
+
 #Combine========================================================================
 
 ipm_data <- list(
-  s_cjs = s_cjs,
+  s_cjs = cjs_dat,
   r_ratio = r_ratio,
   n_sight_ca = n_sight_ca,
   n_sight_af = n_sight_af,
   n_sight_am = n_sight_am,
-  min_n_live = mindat,
-  net_remove = rem_dat
+  n_fg_c = n_fg_c,
+  n_fg_m = n_fg_m,
+  n_fg_f = n_fg_f,
+  n_ad_add = n_ad_add,
+  n_ad_rem = n_ad_rem,
+  n_ca_add = n_ca_add,
+  n_ca_rem = n_ca_rem,
+  n_hnt = n_hnt
 )
 
-save(ipm_data, file = "data//elk_ipm_data_survival_includes_harvest.Rdata")
+save(ipm_data, file = "data//elk_ipm_data_07jan2022.Rdata")
