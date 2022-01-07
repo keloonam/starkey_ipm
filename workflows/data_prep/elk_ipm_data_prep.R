@@ -76,6 +76,7 @@ cjs_dat[cjs_calfs,2] <- 2
 cjs_dat[cjs_males,3] <- 2
 cjs_dat[,4] <- cjs_means
 cjs_dat[,5] <- 1/(cjs_sd^2)
+cjs_dat <- cjs_dat[-69,]
 #Ratio_Recruitment==============================================================
 
 load(ratio_file)
@@ -112,7 +113,6 @@ n_sight_am[,1] <- n_sight_am[,1] - first_year + 1
 
 min_dat <- read_csv("data//min_n_handle_summaries.csv") %>%
   pivot_longer(cols = c(fe_ad, ma_ad, ca)) %>%
-  filter(value != 0) %>%
   mutate(year = year - 1987)
 
 n_fg_c <- matrix(NA, nrow = sum(min_dat$name == "ca"), ncol = 4)

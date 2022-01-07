@@ -53,26 +53,18 @@ model{
   S_C_B0_ps   ~ dunif(0, 1)
   S_Y_F_B0_ps ~ dunif(0, 1)
   S_Y_M_B0_ps ~ dunif(0, 1)
-  S_A_F_B0_ps ~ dunif(0, 1)
-  S_A_M_B0_ps ~ dunif(0, 1)
   
   S_C_B0   <- logit(S_C_B0_ps)
   S_Y_F_B0 <- logit(S_Y_F_B0_ps)
   S_Y_M_B0 <- logit(S_Y_M_B0_ps)
-  S_A_F_B0 <- logit(S_A_F_B0_ps)
-  S_A_M_B0 <- logit(S_A_M_B0_ps)
-  
+ 
   sd_S_C   ~ dunif(0,50)
   sd_S_Y_F ~ dunif(0,50)
   sd_S_Y_M ~ dunif(0,50)
-  sd_S_A_F ~ dunif(0,50)
-  sd_S_A_M ~ dunif(0,50)
   
   tau_S_C   <- 1/sd_S_C^2
   tau_S_Y_F <- 1/sd_S_Y_F^2
   tau_S_Y_M <- 1/sd_S_Y_M^2
-  tau_S_A_F <- 1/sd_S_A_F^2
-  tau_S_A_M <- 1/sd_S_A_M^2
   
   for(yr in 1:n_year){ # yr
     # Survival for age class 1 is not used in the process model
@@ -95,11 +87,8 @@ model{
     logit(S[3,2,yr]) <- S_Y_M_B0 + S_Y_M_yr[yr]
     
     # Survival from 2.5+ (to age class 4)
-    # Separate random effects by year for both males and females
-    S_A_F_yr[yr] ~ dnorm(0, tau_S_A_F)
-    S_A_M_yr[yr] ~ dnorm(0, tau_S_A_M)
-    logit(S[4,1,yr]) <- S_A_F_B0 + S_A_F_yr[yr]
-    logit(S[4,2,yr]) <- S_A_M_B0 + S_A_M_yr[yr]
+    S[4,1,yr] <- S[3,1,yr]
+    S[4,2,yr] <- S[4,1,yr]
     
     # Derived survivals for easy tracking
     survival_af[yr] <- S[4,1,yr]
@@ -153,9 +142,16 @@ model{
       # All ages have separate survivals except 2.5 to 3.5 and 3.5+
       # indexing follows [age, sex, year]
       
+      #N_NOV[2,x,yr] ~ dbin(S[2,x,yr], N[1,x,yr-1])
+      #N_NOV[3,x,yr] ~ dbin(S[3,x,yr], N[2,x,yr-1])
+      #N_NOV[4,x,yr] ~ dbin(S[4,x,yr], N[3,x,yr-1] + N[4,x,yr-1])
+      #N[2,x,yr] <- N_NOV[2,x,yr] + n_ca_add[x,yr]
+      #N[3,x,yr] <- N_NOV[3,x,yr]
+      #N[4,x,yr] <- N_NOV[4,x,yr] + n_ad_add[x,yr]
+      
       N[2,x,yr] ~ dbin(S[2,x,yr], N[1,x,yr-1])
       N[3,x,yr] ~ dbin(S[3,x,yr], N[2,x,yr-1])
-      N[4,x,yr] ~ dbin(S[4,x,yr], N[3,x,yr-1] + N[3,x,yr-1])
+      N[4,x,yr] ~ dbin(S[4,x,yr], N[3,x,yr-1] + N[4,x,yr-1])
       
     } # x (sex)
     

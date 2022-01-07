@@ -10,10 +10,6 @@ model_file <- "models//ipm//ipm_elk_null_07jan2022.txt"
 # Loop dimension parameters
 n_year <- 33
 
-# Priors for logistically transformed parameters
-logit_tau_prior <- 0.5
-logit_mean_prior <- 0
-
 # Priors for starting abundance
 n1_calf <- 200
 n1_f <- 400
@@ -48,8 +44,8 @@ jags_data <- list(
   nn_fg_f = nrow(ipm_data$n_fg_f),
   n_fg_m = ipm_data$n_fg_m,
   nn_fg_m = nrow(ipm_data$n_fg_m),
-  # n_ad_add = ipm_data$n_ad_add,
-  # n_ca_add = ipm_data$n_ca_add,
+  n_ad_add = ipm_data$n_ad_add,
+  n_ca_add = ipm_data$n_ca_add,
   # n_ad_rem = abs(ipm_data$n_ad_rem),
   # n_ca_rem = abs(ipm_data$n_ca_rem),
   n_year = n_year,
@@ -63,15 +59,16 @@ jags_data <- list(
 
 inits <- function(){
   N <- array(data = NA, dim = c(4,2))
-  N[,] <- 500
+  N[,] <- 5000
   out <- list(init_N = N)
   return(out)
 }
 
 params = c(
   "N_tot",
+  "survival_ca",
   "survival_af",
-  "recruitment"
+  "R"
 )
 
 #Model==========================================================================
@@ -111,11 +108,12 @@ mcmcplots::mcmcplot(rslt)
 save(rslt, file = "results//ipm_result.Rdata")
 
 plot(rslt$BUGSoutput$summary[grep("N_tot", dimnames(rslt$BUGSoutput$summary)[[1]]),1], type = "l")
-plot(rslt$BUGSoutput$summary[grep("recruitment", dimnames(rslt$BUGSoutput$summary)[[1]]),1], type = "l")
+plot(rslt$BUGSoutput$summary[grep("R", dimnames(rslt$BUGSoutput$summary)[[1]]),1], type = "l")
 plot(rslt$BUGSoutput$summary[grep("survival_af", dimnames(rslt$BUGSoutput$summary)[[1]]),1], type = "l")
+plot(rslt$BUGSoutput$summary[grep("survival_ca", dimnames(rslt$BUGSoutput$summary)[[1]]),1], type = "l")
 
 
-dim(jags_data$s_cjs)
-dim(jags_data$r_ratio)
+jags_data$n_fg_c[,4] / jags_data$n_fg_f[,4]
+jags_data$r_ratio[,4]
 jags_data$s_cjs
 
