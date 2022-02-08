@@ -166,9 +166,9 @@ for(i in 1:dim(n_mov)[1]){
   }
 }
 
-n_ad_rem <- n_rem[2,,] + n_rem[3,,]
-n_ca_rem <- n_rem[1,,]
-n_ad_add <- n_add[2,,] + n_rem[3,,]
+n_ad_rem <- abs(n_rem[2,,] + n_rem[3,,])
+n_ca_rem <- abs(n_rem[1,,])
+n_ad_add <- n_add[2,,] + n_add[3,,]
 n_ca_add <- n_add[1,,]
 
 #Combine========================================================================
