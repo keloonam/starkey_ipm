@@ -12,9 +12,9 @@ save_file <- paste0("results//ipm_result_", date(), ".Rdata")
 n_year <- 33
 
 # JAGS control parameters
-n_i <- 5000
+n_i <- 10000
 n_a <- 1000
-n_b <- 10000
+n_b <- 50000
 n_c <- 3
 n_t <- 10
 
@@ -27,6 +27,12 @@ load("data//elk_ipm_data_07jan2022.Rdata")
 #Data_prep======================================================================
 
 # Build data for jags
+p_har <- array(data = 0, dim = dim(ipm_data$n_hnt[2:4,,]))
+p_har[which(ipm_data$n_hnt[2:4,,] != 0)] <- NA
+
+p_rem <- array(data = 0, dim = dim(p_har))
+p_rem[1,,][which(ipm_data$n_ca_rem != 0)] <- NA
+p_rem[2,,][which(ipm_data$n_ad_rem != 0)] <- NA
 
 jags_data <- list(
   s_cjs = ipm_data$s_cjs,
@@ -34,16 +40,14 @@ jags_data <- list(
   n_sight_ca = ipm_data$n_sight_ca,
   n_sight_am = ipm_data$n_sight_am,
   n_sight_af = ipm_data$n_sight_af,
-  n_fg_c = ipm_data$n_fg_c,
-  nn_fg_ca = nrow(ipm_data$n_fg_c),
-  n_fg_f = ipm_data$n_fg_f,
-  nn_fg_f = nrow(ipm_data$n_fg_f),
-  n_fg_m = ipm_data$n_fg_m,
-  nn_fg_m = nrow(ipm_data$n_fg_m),
-  n_ad_add = ipm_data$n_ad_add,
-  n_ca_add = ipm_data$n_ca_add,
-  n_ad_rem = abs(ipm_data$n_ad_rem),
-  n_ca_rem = abs(ipm_data$n_ca_rem),
+  # n_fg_c = ipm_data$n_fg_c,
+  # nn_fg_ca = nrow(ipm_data$n_fg_c),
+  # n_fg_f = ipm_data$n_fg_f,
+  # nn_fg_f = nrow(ipm_data$n_fg_f),
+  # n_fg_m = ipm_data$n_fg_m,
+  # nn_fg_m = nrow(ipm_data$n_fg_m),
+  n_a_mov = ipm_data$n_ad_add - abs(ipm_data$n_ad_rem),
+  n_c_mov = ipm_data$n_ca_add - abs(ipm_data$n_ca_rem),
   n_year = n_year,
   nn_ca = nrow(ipm_data$n_sight_ca),
   nn_af = nrow(ipm_data$n_sight_af),
@@ -51,6 +55,8 @@ jags_data <- list(
   ns = nrow(ipm_data$s_cjs),
   nr = nrow(ipm_data$r_ratio),
   n_har = ipm_data$n_hnt[2:4,,]
+  # p_har = p_har,
+  # p_rem = p_rem
 )
 
 inits <- function(){
@@ -59,15 +65,15 @@ inits <- function(){
   N[,] <- 500
   
   # Recruitment
-  R <- rep(0.99, 33)
+  R <- 0.9
   
-  # Harvest
-  p_har <- array(data = 0.01, dim = c(3,2,33))
-  p_har[,,1] <- NA
+  # # Harvest
+  # p_har <- array(data = 0, dim = c(3,2,33))
+  # p_har[,,1] <- NA
   
-  # Removals
-  p_rem <- array(data = 0.01, dim = c(2,2,33))
-  p_rem[,,1] <- NA
+  # # Removals
+  # p_rem <- array(data = 0.01, dim = c(2,2,33))
+  # p_rem[,,1] <- NA
   
   # Survival
   S_C_B0_ps <- 0.99
@@ -78,14 +84,14 @@ inits <- function(){
   
   out <- list(
     init_N = N,
-    R = R,
+    R_B0_ps = R,
     S_C_B0_ps = S_C_B0_ps,
     S_Y_F_B0_ps = S_Y_F_B0_ps,
     S_Y_M_B0_ps = S_Y_M_B0_ps,
     S_A_F_B0_ps = S_A_F_B0_ps,
-    S_A_M_B0_ps = S_A_M_B0_ps,
-    p_har = p_har,
-    p_rem = p_rem
+    S_A_M_B0_ps = S_A_M_B0_ps
+    # p_har = p_har,
+    # p_rem = p_rem
   )
   return(out)
 }
@@ -93,6 +99,10 @@ inits <- function(){
 initial_values <- inits()
 
 params = c(
+  "R_B0_ps",
+  "sd_R",
+  "S_A_F_B0_ps",
+  "sd_S_A_F",
   "N_tot",
   "survival_ca",
   "survival_af",
