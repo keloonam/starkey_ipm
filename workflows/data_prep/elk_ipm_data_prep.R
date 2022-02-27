@@ -77,6 +77,7 @@ cjs_dat[cjs_males,3] <- 2
 cjs_dat[,4] <- cjs_means
 cjs_dat[,5] <- 1/(cjs_sd^2)
 cjs_dat <- cjs_dat[-69,]
+
 #Ratio_Recruitment==============================================================
 
 load(ratio_file)
@@ -109,7 +110,7 @@ n_sight_am <- n_raw %>%
   as.matrix(.)
 n_sight_am[,1] <- n_sight_am[,1] - first_year + 1
 
-#Minimum_known_alive============================================================
+#N_Feed_Grounds=================================================================
 
 min_dat <- read_csv("data//min_n_handle_summaries.csv") %>%
   pivot_longer(cols = c(fe_ad, ma_ad, ca)) %>%
@@ -171,6 +172,15 @@ n_ca_rem <- abs(n_rem[1,,])
 n_ad_add <- n_add[2,,] + n_add[3,,]
 n_ca_add <- n_add[1,,]
 
+#Min_N_alive_capture_database===================================================
+
+load("data//elk_minimum_count_data.Rdata")
+n_alive <- array(data = 0, dim = c(4,2,n_yrs))
+mindat <- as.matrix(mindat)
+for(i in 1:(nrow(mindat) - 8)){
+  n_alive[mindat[i,2], mindat[i,3], mindat[i,1]] <- mindat[i,4]
+}
+
 #Combine========================================================================
 
 ipm_data <- list(
@@ -186,7 +196,8 @@ ipm_data <- list(
   n_ad_rem = n_ad_rem,
   n_ca_add = n_ca_add,
   n_ca_rem = n_ca_rem,
-  n_hnt = n_hnt
+  n_hnt = n_hnt,
+  min_n_alive = n_alive
 )
 
 save(ipm_data, file = "data//elk_ipm_data_07jan2022.Rdata")

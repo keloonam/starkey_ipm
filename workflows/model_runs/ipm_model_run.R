@@ -6,15 +6,15 @@
 
 # Specify the model
 model_file <- "models//ipm//ipm_elk_null_in_progress.txt"
-save_file <- paste0("results//ipm_result_", date(), ".Rdata")
+save_file <- "results//ipm_result_18feb2022.Rdata"
 
 # Loop dimension parameters
 n_year <- 33
 
 # JAGS control parameters
-n_i <- 10000
+n_i <- 100000
 n_a <- 1000
-n_b <- 50000
+n_b <- 100000
 n_c <- 3
 n_t <- 10
 
@@ -26,26 +26,12 @@ load("data//elk_ipm_data_07jan2022.Rdata")
 
 #Data_prep======================================================================
 
-# Build data for jags
-p_har <- array(data = 0, dim = dim(ipm_data$n_hnt[2:4,,]))
-p_har[which(ipm_data$n_hnt[2:4,,] != 0)] <- NA
-
-p_rem <- array(data = 0, dim = dim(p_har))
-p_rem[1,,][which(ipm_data$n_ca_rem != 0)] <- NA
-p_rem[2,,][which(ipm_data$n_ad_rem != 0)] <- NA
-
 jags_data <- list(
   s_cjs = ipm_data$s_cjs,
   r_ratio = ipm_data$r_ratio,
   n_sight_ca = ipm_data$n_sight_ca,
   n_sight_am = ipm_data$n_sight_am,
   n_sight_af = ipm_data$n_sight_af,
-  # n_fg_c = ipm_data$n_fg_c,
-  # nn_fg_ca = nrow(ipm_data$n_fg_c),
-  # n_fg_f = ipm_data$n_fg_f,
-  # nn_fg_f = nrow(ipm_data$n_fg_f),
-  # n_fg_m = ipm_data$n_fg_m,
-  # nn_fg_m = nrow(ipm_data$n_fg_m),
   n_a_mov = ipm_data$n_ad_add - abs(ipm_data$n_ad_rem),
   n_c_mov = ipm_data$n_ca_add - abs(ipm_data$n_ca_rem),
   n_year = n_year,
@@ -54,9 +40,8 @@ jags_data <- list(
   nn_am = nrow(ipm_data$n_sight_am),
   ns = nrow(ipm_data$s_cjs),
   nr = nrow(ipm_data$r_ratio),
-  n_har = ipm_data$n_hnt[2:4,,]
-  # p_har = p_har,
-  # p_rem = p_rem
+  n_har = ipm_data$n_hnt[2:4,,],
+  min_n = ipm_data$n_hnt + ipm_data$min_n_alive
 )
 
 inits <- function(){
@@ -99,14 +84,14 @@ inits <- function(){
 initial_values <- inits()
 
 params = c(
-  "R_B0_ps",
-  "sd_R",
-  "S_A_F_B0_ps",
-  "sd_S_A_F",
   "N_tot",
   "survival_ca",
   "survival_af",
-  "R"
+  "survival_yf",
+  "survival_am",
+  "survival_ym",
+  "R",
+  "N"
 )
 
 #Model==========================================================================
@@ -132,14 +117,3 @@ mcmcplots::mcmcplot(rslt)
 
 
 save(rslt, file = save_file)
-
-# plot(rslt$BUGSoutput$summary[grep("N_tot", dimnames(rslt$BUGSoutput$summary)[[1]]),1], type = "l")
-# plot(rslt$BUGSoutput$summary[grep("R", dimnames(rslt$BUGSoutput$summary)[[1]]),1], type = "l")
-# plot(rslt$BUGSoutput$summary[grep("survival_af", dimnames(rslt$BUGSoutput$summary)[[1]]),1], type = "l")
-# plot(rslt$BUGSoutput$summary[grep("survival_ca", dimnames(rslt$BUGSoutput$summary)[[1]]),1], type = "l")
-# 
-# 
-# jags_data$n_fg_c[,4] / jags_data$n_fg_f[,4]
-# jags_data$r_ratio[,4]
-# jags_data$s_cjs
-
