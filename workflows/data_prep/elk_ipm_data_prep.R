@@ -5,7 +5,7 @@
 #Variables======================================================================
 
 # User Specified
-n_yrs <- 33
+n_yrs <- 34
 cjs_yrs <- c(min_yr = 1, max_yr = 31)
 ratio_yrs <- c(min_yr = 2, max_yr = 31)
 first_year <- 1988
@@ -110,7 +110,7 @@ n_sight_am <- n_raw %>%
   as.matrix(.)
 n_sight_am[,1] <- n_sight_am[,1] - first_year + 1
 
-#N_Feed_Grounds=================================================================
+#Min_N==========================================================================
 
 min_dat <- read_csv("data//min_n_handle_summaries.csv") %>%
   pivot_longer(cols = c(fe_ad, ma_ad, ca)) %>%
@@ -133,8 +133,8 @@ n_fg_f[,4] <- min_dat$value[min_dat$name == "fe_ad"]
 load("data//elk_harvest_data.Rdata")
 n_hnt <- array(data = 0, dim = c(4,2,n_yrs))
 hntdat <- as.matrix(hntdat)
-for(i in 1:(nrow(hntdat) - 6)){
-  n_hnt[hntdat[i,2] + 1, hntdat[i,3], hntdat[i,1]] <- hntdat[i,4]
+for(i in 1:(nrow(hntdat))){
+  n_hnt[hntdat[i,2], hntdat[i,3], hntdat[i,1]] <- hntdat[i,4]
 }
 
 #Animal_movement================================================================
@@ -175,10 +175,27 @@ n_ca_add <- n_add[1,,]
 #Min_N_alive_capture_database===================================================
 
 load("data//elk_minimum_count_data.Rdata")
-n_alive <- array(data = 0, dim = c(4,2,n_yrs))
-mindat <- as.matrix(mindat)
-for(i in 1:(nrow(mindat) - 8)){
-  n_alive[mindat[i,2], mindat[i,3], mindat[i,1]] <- mindat[i,4]
+
+min_ad <- matrix(0, nrow = 2, ncol = n_yrs)
+min_ca <- rep(0, n_yrs)
+for(i in 1:nrow(min_counts)){
+  j <- min_counts$year[i] - 1987
+  min_ca[j] <- min_counts$ca[i]
+  min_ad[1,j] <- min_counts$af[i]
+  min_ad[2,j] <- min_counts$am[i]
+}
+
+#Climate========================================================================
+
+monthly_temp <- read_csv("data//climate//ElkClimateChange_microclimate.csv")
+
+mean_ann_temp <- monthly_temp %>%
+  group_by(Year) %>%
+  summarise(temp = mean(Starkey_HQ_temp_C)) %>%
+  mutate(temp = scale(temp))
+ann_temp <- rep(0, n_yrs)
+for(i in 1:nrow(mean_ann_temp)){
+  ann_temp[mean_ann_temp$Year - 1987] <- mean_ann_temp$temp
 }
 
 #Combine========================================================================
@@ -197,7 +214,9 @@ ipm_data <- list(
   n_ca_add = n_ca_add,
   n_ca_rem = n_ca_rem,
   n_hnt = n_hnt,
-  min_n_alive = n_alive
+  min_ca = min_ca,
+  min_ad = min_ad,
+  annual_temp = ann_temp
 )
 
-save(ipm_data, file = "data//elk_ipm_data_07jan2022.Rdata")
+save(ipm_data, file = "data//elk_ipm_data_25march2022.Rdata")

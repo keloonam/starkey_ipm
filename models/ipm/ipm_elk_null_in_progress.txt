@@ -35,8 +35,8 @@ model{
     # R indexing follows [age,yr]  . . .  males rarely get pregnant
     # Assumes equal sex ratio from birth to age 0.5 years
     
-    n_exp[1,1,yr] <- R[yr] * sum(N[2:4,1,yr-1]) * 0.5
-    N[1,1,yr] ~ dnorm(n_exp[1,1,yr], abs(1/n_exp[1,1,yr]))T(min_n[1,1,yr],)
+    n_exp[1,1,yr] <- R[yr] * sum(N[2:4,1,yr]) * 0.5
+    N[1,1,yr] ~ dnorm(n_exp[1,1,yr], abs(1/n_exp[1,1,yr]))T(min_ca[yr],)
     N[1,2,yr] <- N[1,1,yr]
     
     for(x in 1:2){ # x (sex)
@@ -45,14 +45,27 @@ model{
       # All ages have separate survivals except 2.5 to 3.5 and 3.5+ (ages 3 & 4)
       # indexing follows [age, sex, year]
       
+      # approximate proportion of aults in each age class
+      prop_ad[1,x,yr] <- 0
+      prop_ad[2,x,yr] <- N[1,x,yr-1] / sum(N[1:4,x,yr-1])
+      prop_ad[3,x,yr] <- N[2,x,yr-1] / sum(N[1:4,x,yr-1])
+      prop_ad[4,x,yr] <- sum(N[3:4,x,yr-1]) / sum(N[1:4,x,yr-1])
+      
+      for(a in 1:4){
+        # minimum adults and adults moved broken down by age classes 
+        # assumed proportional to corresponding age classes in yr-1
+        min_ad_app[a,x,yr] <- min_ad[x,yr] * prop_ad[a,x,yr] + n_har[a,x,yr]
+        n_ad_mov[a,x,yr] <- n_a_mov[x,yr] * prop_ad[a,x,yr]
+      } # a (age)
+      
       n_exp[2,x,yr] <- (N[1,x,yr-1] + n_c_mov[x,yr]) * S[2,x,yr]
-      n_exp[3,x,yr] <- N[2,x,yr-1] * S[3,x,yr]
-      n_exp[4,x,yr] <- (sum(N[3:4,x,yr-1]) + n_a_mov[x,yr]) * S[4,x,yr]
+      n_exp[3,x,yr] <- (N[2,x,yr-1] + n_ad_mov[2,x,yr]) * S[3,x,yr]
+      n_exp[4,x,yr] <- (sum(N[3:4,x,yr-1])+sum(n_ad_mov[3:4,x,yr])) * S[4,x,yr]
       
       for(a in 2:4){
-        tau_exp[a,x,yr] <- 1 / ((n_exp[a,x,yr] + S[a,x,yr]) * (1 - S[a,x,yr])+1)
-        N_AUG[a,x,yr]~dnorm(n_exp[a,x,yr],abs(tau_exp[a,x,yr]))T(min_n[a,x,yr],)
-        N[a,x,yr] <- N_AUG[a,x,yr] - n_har[a-1,x,yr]
+        tau_exp[a,x,yr] <- abs(1 / ((n_exp[a,x,yr]) * (1 - S[a,x,yr])+1))
+        N_AUG[a,x,yr]~dnorm(n_exp[a,x,yr],tau_exp[a,x,yr])T(min_ad_app[a,x,yr],)
+        N[a,x,yr] <- N_AUG[a,x,yr] - n_har[a,x,yr]
       } # a (age)
     } # x (sex)
     
@@ -112,10 +125,12 @@ model{
   R_B0 <- logit(R_B0_ps)
   sd_R ~ dunif(0,50)
   tau_R <- 1/sd_R^2
+  R_B1_ps ~ dunif(0,1)
+  R_B1 <- logit(R_B1_ps)
   
   for(yr in 1:n_year){ # yr
     R_yr[yr] ~ dnorm(0, tau_R)
-    logit(R[yr]) <- R_B0 + R_yr[yr]
+    logit(R[yr]) <- R_B0 + R_yr[yr] + R_B1*x1[yr]
   } # yr
   
   

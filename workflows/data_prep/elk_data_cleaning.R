@@ -5,10 +5,10 @@
 
 #Variables======================================================================
 
-target_species <- "E"
-start_year <- 1988
-end_year <- 2020
-cap_window <- c(11, 3)
+target_species <- species
+start_year <- years[1]
+end_year <- years[length(years)]
+cap_window <- c(11, 3) # captures from november to march count for cjs
 
 #Environment====================================================================
 
@@ -16,13 +16,18 @@ require(tidyverse); require(clock); require(lubridate)
 
 #Initial_data_prep==============================================================
 
-raw_data <- read_csv("data//elk_handling.csv", guess_max = 26877) %>%
+raw_data <- read_csv("data//handling.csv", guess_max = 26877) %>%
   filter(Species == target_species) %>%
   filter(!is.na(Sex)) %>% # excludes 2 elk with no gender listed
   mutate(event_date = mdy(EventDate)) %>%
   mutate(death_date = mdy(DeathDate)) %>%
   mutate(birth_date = mdy(BirthDate)) %>%
-  mutate(id = AnimalHandling_AnimalId)
+  mutate(entry_date = mdy(AnimalHandling_CreateDate)) %>%
+  mutate(id = AnimalHandling_AnimalId) %>%
+  mutate(event_date = case_when(
+    event_date > entry_date ~ entry_date,
+    T ~ event_date # events aren't recorded before they happen
+  )) 
 
 # rewrite these as a list and the mutate functions as lapply calls?
 mains_pastures <- c("BALLY", "DOUGP", "HFMOO", "MAINS")
@@ -339,6 +344,6 @@ elk_data <- list(
   hnt is a 1 for the year an elk was removed from the population (hunting)"
 )
 
-save(elk_data, file = "data//elk_data.Rdata")
+save(elk_data, file = elk_data_location)
 
 rm(list = ls())

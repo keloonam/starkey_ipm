@@ -4,15 +4,18 @@
 
 #Variables======================================================================
 
-targe_herd <- "main"
-start_year <- 1988
-end_year <- 2021
+targe_herd <- target_herd
+start_year <- years[1]
+end_year <- years[length(years)]
+n_yr <- length(years)
 
 #Environment====================================================================
 
 require(tidyverse)
 
 load("data//elk_data.Rdata")
+# raw_data <- read_csv("handling.csv")
+fdg_data <- read_csv("data//min_n_handle_summaries.csv")
 
 #Workflow=======================================================================
 
@@ -52,8 +55,8 @@ hrd_tib <- elk_data$hrd_tib %>%
 # Prepare empty minimum count data tibble
 mindat <- tibble(
   year = sort(rep((start_year:end_year) - start_year + 1, 8)),
-  age = rep(c(1,2,3,4), 34*2),
-  sex = rep(c(1,1,1,1,2,2,2,2), 34),
+  age = rep(c(1,2,3,4), n_yr*2),
+  sex = rep(c(1,1,1,1,2,2,2,2), n_yr),
   mean = 0
 )
 
@@ -66,9 +69,33 @@ for(i in 1:nrow(mindat)){
   mindat[i,4] <- sum((age_tib[,yr+1] == age) * (sex_tib$sex == sex) * liv_tib[,yr+1] * (hrd_tib[,yr+1] == "main"))
 }
 
-x <- mindat %>%
+mindat_af <- mindat %>%
+  filter(age > 1) %>%
+  filter(sex == 1) %>%
   group_by(year) %>%
-  summarize(n = sum(mean))
-plot(x)
+  summarise(af = sum(mean)) %>%
+  mutate(year = year + 1987)
+mindat_am <- mindat %>%
+  filter(age > 1) %>%
+  filter(sex == 2) %>%
+  group_by(year) %>%
+  summarise(am = sum(mean)) %>%
+  mutate(year = year + 1987)
+mindat_ca <- mindat %>%
+  filter(age == 1) %>%
+  group_by(year) %>%
+  summarise(c = sum(mean)) %>%
+  mutate(year = year + 1987)
 
-save(mindat, file = "data//elk_minimum_count_data.Rdata")
+min_counts <- mindat_af %>%
+  left_join(mindat_am) %>%
+  left_join(mindat_ca) %>%
+  left_join(fdg_data) %>%
+  replace_na(list(fe_ad = 0, ma_ad = 0, ca = 0)) %>%
+  mutate(af = case_when(fe_ad > af ~ fe_ad, T ~ af)) %>%
+  mutate(am = case_when(ma_ad > am ~ ma_ad, T ~ am)) %>%
+  mutate(c = case_when(ca > c ~ ca, T ~ c)) %>%
+  select(1:4) %>%
+  rename(ca = c)
+
+save(min_counts, file = "data//elk_minimum_count_data.Rdata")

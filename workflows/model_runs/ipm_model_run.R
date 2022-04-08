@@ -6,15 +6,15 @@
 
 # Specify the model
 model_file <- "models//ipm//ipm_elk_null_in_progress.txt"
-save_file <- "results//ipm_result_18feb2022.Rdata"
+save_file <- "results//ipm_result_25march2022.Rdata"
 
 # Loop dimension parameters
-n_year <- 33
+n_year <- 34
 
 # JAGS control parameters
-n_i <- 100000
+n_i <- 50000
 n_a <- 1000
-n_b <- 100000
+n_b <- 50000
 n_c <- 3
 n_t <- 10
 
@@ -22,7 +22,7 @@ n_t <- 10
 
 require(tidyverse); require(rjags); require(mcmcplots)
 # load("data//elk_ipm_data.Rdata")
-load("data//elk_ipm_data_07jan2022.Rdata")
+load("data//elk_ipm_data_25march2022.Rdata")
 
 #Data_prep======================================================================
 
@@ -40,8 +40,10 @@ jags_data <- list(
   nn_am = nrow(ipm_data$n_sight_am),
   ns = nrow(ipm_data$s_cjs),
   nr = nrow(ipm_data$r_ratio),
-  n_har = ipm_data$n_hnt[2:4,,],
-  min_n = ipm_data$n_hnt + ipm_data$min_n_alive
+  n_har = ipm_data$n_hnt,
+  min_ad = ipm_data$min_ad,
+  min_ca = ipm_data$min_ca,
+  x1 = ipm_data$annual_temp
 )
 
 inits <- function(){
