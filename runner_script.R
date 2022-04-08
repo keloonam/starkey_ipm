@@ -26,12 +26,13 @@ source("workflows//data_prep//elk_data_cleaning.R")
 target_herd <- "main"
 years <- 1988:2021
 source("workflows//data_prep//elk_harvest.R")
-
 rm(list = ls())
 
 #Elk_min_n======================================================================
 
 target_herd <- "main"
 years <- 1988:2021
-
-#combine feedground and capture and handling into one min n for elk and mule deer
+elk_data_location <- "data//elk_data.Rdata"
+feedground_data_location <- "data//min_n_handle_summaries.csv"
+data_destination <- "data//elk_minimum_count_data.Rdata"
+rm(list = ls())
