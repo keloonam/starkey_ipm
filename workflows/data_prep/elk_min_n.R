@@ -13,9 +13,9 @@ n_yr <- length(years)
 
 require(tidyverse)
 
-load("data//elk_data.Rdata")
+load(elk_data_location)
 # raw_data <- read_csv("handling.csv")
-fdg_data <- read_csv("data//min_n_handle_summaries.csv")
+fdg_data <- read_csv(feedground_data_location)
 
 #Workflow=======================================================================
 
@@ -98,4 +98,4 @@ min_counts <- mindat_af %>%
   select(1:4) %>%
   rename(ca = c)
 
-save(min_counts, file = "data//elk_minimum_count_data.Rdata")
+save(min_counts, file = data_destination)

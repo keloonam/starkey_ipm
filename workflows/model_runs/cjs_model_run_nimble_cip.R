@@ -18,7 +18,7 @@ params <- c(
 
 # File names/paths
 model_file <- "models//survival//cjs_model_elk_cip.txt"
-result_file <- "results//survival//cjs_rslt_cip_03jan2022.Rdata"
+result_file <- "results//survival//cjs_rslt_cip_08apr2022.Rdata"
 
 # Sampler variables
 n_i <- 75000
@@ -59,7 +59,7 @@ f <- apply(y, 1, function(x) min(which(x != 0)))
 l <- elk_data$hnt_tib %>%
   filter(id %in% elk_data$cap_tib$id) %>%
   arrange(id) %>%
-  mutate('2020' = 1) %>%
+  mutate('2021' = 1) %>%
   select(as.character(start_year:end_year)) %>%
   as.matrix() %>%
   apply(., 1, function(x) min(which(x != 0)))

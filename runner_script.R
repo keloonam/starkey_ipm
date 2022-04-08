@@ -35,4 +35,6 @@ years <- 1988:2021
 elk_data_location <- "data//elk_data.Rdata"
 feedground_data_location <- "data//min_n_handle_summaries.csv"
 data_destination <- "data//elk_minimum_count_data.Rdata"
+source("workflows//data_prep//elk_min_n.R")
 rm(list = ls())
+
