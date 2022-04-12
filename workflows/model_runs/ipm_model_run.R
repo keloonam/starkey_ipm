@@ -6,7 +6,7 @@
 
 # Specify the model
 model_file <- "models//ipm//ipm_elk_null_in_progress.txt"
-save_file <- "results//ipm_result_25march2022.Rdata"
+save_file <- "results//ipm_result_12apr2022.Rdata"
 
 # Loop dimension parameters
 n_year <- 34
@@ -22,7 +22,7 @@ n_t <- 10
 
 require(tidyverse); require(rjags); require(mcmcplots)
 # load("data//elk_ipm_data.Rdata")
-load("data//elk_ipm_data_25march2022.Rdata")
+load("data//elk_ipm_data_12apr2022.Rdata")
 
 #Data_prep======================================================================
 
@@ -93,7 +93,8 @@ params = c(
   "survival_am",
   "survival_ym",
   "R",
-  "N"
+  "N",
+  "R_B1"
 )
 
 #Model==========================================================================
