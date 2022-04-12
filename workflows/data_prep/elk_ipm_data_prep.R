@@ -7,10 +7,10 @@
 # User Specified
 n_yrs <- 34
 cjs_yrs <- c(min_yr = 1, max_yr = 31)
-ratio_yrs <- c(min_yr = 2, max_yr = 31)
+ratio_yrs <- c(min_yr = 2, max_yr = 34)
 first_year <- 1988
 
-cjs_file <- "results//survival//cjs_rslt_03jan2022.Rdata"
+cjs_file <- "results//survival//cjs_rslt_cip_08apr2022.Rdata"
 ratio_file <- "results//recruitment_years_2to31.Rdata"
 abundance_file <- "data//elk_abundance_ipm_ready.csv"
 
@@ -36,12 +36,15 @@ cjs_removals <- c(
   "am[31]",
   "am[32]",
   "am[33]",
+  "am[34]",
   "ca[1]",
   "ca[4]",
   "ca[17]",
   "ca[32]",
   "ca[33]",
+  "ca[34]",
   "af[29]",
+  "af[30]",
   "af[11]",
   "af[13]",
   "af[14]"
@@ -70,13 +73,13 @@ cjs_means <- unlist(map(cjs_raw, mean))
 cjs_sd    <- unlist(map(cjs_raw, sd))
 
 cjs_dat <- matrix(1, nrow = length(cjs_years), ncol = 5)
-cjs_dat[,1] <- cjs_years + 1
+cjs_dat[,1] <- cjs_years
 cjs_dat[,2] <- 3
 cjs_dat[cjs_calfs,2] <- 2
 cjs_dat[cjs_males,3] <- 2
 cjs_dat[,4] <- cjs_means
 cjs_dat[,5] <- 1/(cjs_sd^2)
-cjs_dat <- cjs_dat[-69,]
+# cjs_dat <- cjs_dat[-69,] # ??? low calf survival 
 
 #Ratio_Recruitment==============================================================
 
@@ -84,12 +87,16 @@ load(ratio_file)
 ratio_raw <- rslt$BUGSoutput$summary
 rm(rslt)
 
+# years that recruitment model didn't converge (no data)
+ratio_removals <- c(3,4,5,6,7,9,16,33)
+
 ratio_data <- ratio_raw[grep("R", dimnames(ratio_raw)[[1]]),]
 
 r_ratio <- matrix(NA, nrow = nrow(ratio_data), ncol = 5)
 r_ratio[,1] <- ratio_yrs[1]:ratio_yrs[2]
 r_ratio[,4] <- ratio_data[,1]
 r_ratio[,5] <- 1/ratio_data[,2]^2
+r_ratio <- r_ratio[-ratio_removals,]
 
 #Abundance======================================================================
 
@@ -219,4 +226,4 @@ ipm_data <- list(
   annual_temp = ann_temp
 )
 
-save(ipm_data, file = "data//elk_ipm_data_25march2022.Rdata")
+save(ipm_data, file = "data//elk_ipm_data_12apr2022.Rdata")

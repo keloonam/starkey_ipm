@@ -2,8 +2,7 @@ model{
   
   # Priors
   for(t in 1:n_years){
-    b.0[t] ~ dnorm(0, pr_p)T(-10,10)
-    logit(R[t]) <- b.0[t]
+    R[t] ~ dunif(0,1)
   } # t
   
   # Model

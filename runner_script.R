@@ -38,3 +38,20 @@ data_destination <- "data//elk_minimum_count_data.Rdata"
 source("workflows//data_prep//elk_min_n.R")
 rm(list = ls())
 
+#CJS_model_run==================================================================
+
+# do this in CJS script!!
+# "source(workflows//model_runs//cjs_model_run_nimble_cip.R)"
+# rm(list = ls())
+
+#Ratio_recruitment_data=========================================================
+
+source("workflows//model_runs//recruitment_model_run.R")
+rm(list = ls())
+
+#IPM_data_prep==================================================================
+
+source("workflows//data_prep//elk_ipm_data_prep.R")
+rm(list = ls())
+# You are on the ratio data. You need to filter the years with bad estimates.
+# After that, you are moving on through the ipm data prep.
