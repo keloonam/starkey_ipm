@@ -6,17 +6,17 @@
 
 # Specify the model
 model_file <- "models//ipm//ipm_elk_null_in_progress.txt"
-save_file <- "results//ipm_result_12apr2022.Rdata"
+save_file <- "results//ipm_result_22apr2022.Rdata"
 
 # Loop dimension parameters
 n_year <- 34
 
 # JAGS control parameters
-n_i <- 50000
-n_a <- 1000
-n_b <- 50000
+n_i <- 500000
+n_a <- 10000
+n_b <- 500000
 n_c <- 3
-n_t <- 10
+n_t <- 100
 
 #Environment====================================================================
 
@@ -93,7 +93,9 @@ params = c(
   "survival_am",
   "survival_ym",
   "R",
-  "N",
+  "N_f",
+  "N_c",
+  "N_yf",
   "R_B1"
 )
 
@@ -117,6 +119,14 @@ rslt <- coda.samples(
 )
 
 mcmcplots::mcmcplot(rslt)
+
+# data <- summary(rslt)
+# 
+# q <- data$quantiles
+# 
+# n_tot <- q[grep("N_tot", dimnames(q)[[1]]), c(1,3,5)] %>%
+#   as_tibble() %>%
+#   mutate(year = 1988:2021)
 
 
 save(rslt, file = save_file)
