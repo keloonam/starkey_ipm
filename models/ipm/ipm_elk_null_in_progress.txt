@@ -121,16 +121,33 @@ model{
   # subadults do not breed
   # random effect on year
   
-  R_B0_ps ~ dunif(0,1)
-  R_B0 <- logit(R_B0_ps)
   sd_R ~ dunif(0,50)
   tau_R <- 1/sd_R^2
-  R_B1_ps ~ dunif(0,1)
-  R_B1 <- logit(R_B1_ps)
+  
+  R_B0_ps ~ dunif(0,1)
+  R_B0 <- logit(R_B0_ps)
+  
+  R_st_ps ~ dunif(0,1)
+  R_st <- logit(R_st_ps)
+  
+  R_sp_ps ~ dunif(0,1)
+  R_sp <- logit(R_sp_ps)
+  
+  R_wt_ps ~ dunif(0,1)
+  R_wt <- logit(R_wt_ps)
+  
+  R_wp_ps ~ dunif(0,1)
+  R_wp <- logit(R_wp_ps)
+  
+  R_dd_ps ~ dunif(0,1)
+  R_dd <- logit(R_dd_ps)
   
   for(yr in 1:n_year){ # yr
     R_yr[yr] ~ dnorm(0, tau_R)
-    logit(R[yr]) <- R_B0 + R_yr[yr] + R_B1*x1[yr]
+    climate_R[yr] <- R_st*st[yr] + R_sp*sp[yr] + R_wt*wt[yr] + R_wp*wp[yr]
+    n_adj[yr] <- (N_tot[yr] - mean(N_tot[])) / sd(N_tot[])
+    
+    logit(R[yr]) <- R_B0 + R_yr[yr] + climate_R[yr] + R_dd*n_adj[yr]
   } # yr
   
   

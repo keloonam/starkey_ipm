@@ -194,7 +194,11 @@ for(i in 1:nrow(min_counts)){
 
 #Climate========================================================================
 
-monthly_temp <- read_csv("data//climate//ElkClimateChange_microclimate.csv")
+monthly_temp <- read_csv("data//climate//ElkClimateChange_microclimate.csv") %>%
+  mutate(add_year = case_when(
+    Month >= 11 ~ Year + 1,
+    T ~ Year
+  ))
 
 mean_ann_temp <- monthly_temp %>%
   group_by(Year) %>%
@@ -202,8 +206,55 @@ mean_ann_temp <- monthly_temp %>%
   mutate(temp = scale(temp))
 ann_temp <- rep(0, n_yrs)
 for(i in 1:nrow(mean_ann_temp)){
-  ann_temp[mean_ann_temp$Year - 1987] <- mean_ann_temp$temp
+  ann_temp[mean_ann_temp$Year[i] - 1987] <- mean_ann_temp$temp[i]
 }
+
+summer_temp <- monthly_temp %>%
+  filter(between(Month, 7, 9)) %>%
+  group_by(Year) %>%
+  summarise(st = mean(Starkey_HQ_temp_C)) %>%
+  mutate(st = scale(st))
+sum_temp <- rep(0, n_yrs)
+for(i in 1:nrow(summer_temp)){
+  sum_temp[summer_temp$Year[i] - 1987] <- summer_temp$st[i]
+}
+
+winter_temp <- monthly_temp %>%
+  filter(!between(Month, 3, 10)) %>%
+  group_by(Year) %>%
+  summarise(wt = mean(Starkey_HQ_temp_C)) %>%
+  mutate(wt = scale(wt))
+win_temp <- rep(0, n_yrs)
+for(i in 1:nrow(winter_temp)){
+  win_temp[winter_temp$Year[i] - 1987] <- winter_temp$wt[i]
+}
+
+
+
+get_precip <- function(climate_df, season_months, n_yrs){
+  seasonal_precip <- climate_df %>%
+    filter(Month %in% season_months) %>%
+    group_by(Year) %>%
+    summarise(seasonal_precip = sum(SNOTEL_CL_precipt_mm)) %>%
+    mutate(seasonal_precip = scale(seasonal_precip))
+  out <- rep(0, n_yrs)
+  for(i in 1:nrow(seasonal_precip)){
+    out[seasonal_precip$Year[i] - 1987] <- seasonal_precip$seasonal_precip[i]
+  }
+  return(out)
+}
+
+summer_precip <- get_precip(
+  climate_df = monthly_temp, 
+  season_months = c(7, 8, 9),
+  n_yrs = n_yrs
+)
+winter_precip <- get_precip(
+  climate_df = monthly_temp, 
+  season_months = c(1, 2, 12),
+  n_yrs = n_yrs
+)
+  
 
 #Combine========================================================================
 
@@ -223,7 +274,11 @@ ipm_data <- list(
   n_hnt = n_hnt,
   min_ca = min_ca,
   min_ad = min_ad,
-  annual_temp = ann_temp
+  annual_temp = ann_temp,
+  summer_temp = sum_temp,
+  winter_temp = win_temp,
+  summer_precip = summer_precip,
+  winter_precip = winter_precip
 )
 
-save(ipm_data, file = "data//elk_ipm_data_12apr2022.Rdata")
+save(ipm_data, file = "data//elk_ipm_data_25apr2022.Rdata")

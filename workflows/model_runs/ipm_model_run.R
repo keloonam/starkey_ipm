@@ -6,7 +6,7 @@
 
 # Specify the model
 model_file <- "models//ipm//ipm_elk_null_in_progress.txt"
-save_file <- "results//ipm_result_22apr2022.Rdata"
+save_file <- "results//ipm_result_09may2022.Rdata"
 
 # Loop dimension parameters
 n_year <- 34
@@ -22,7 +22,7 @@ n_t <- 100
 
 require(tidyverse); require(rjags); require(mcmcplots)
 # load("data//elk_ipm_data.Rdata")
-load("data//elk_ipm_data_12apr2022.Rdata")
+load("data//elk_ipm_data_25apr2022.Rdata")
 
 #Data_prep======================================================================
 
@@ -43,7 +43,12 @@ jags_data <- list(
   n_har = ipm_data$n_hnt,
   min_ad = ipm_data$min_ad,
   min_ca = ipm_data$min_ca,
-  x1 = ipm_data$annual_temp
+  st = ipm_data$summer_temp,
+  wt = ipm_data$winter_temp,
+  sp = ipm_data$summer_precip,
+  wp = ipm_data$winter_precip,
+  est_mean_n = 450,
+  est_sd_n = 126
 )
 
 inits <- function(){
@@ -96,7 +101,18 @@ params = c(
   "N_f",
   "N_c",
   "N_yf",
-  "R_B1"
+  "N_m",
+  "N_ym",
+  "R_st",
+  "R_wt",
+  "R_sp",
+  "R_wp",
+  "R_st_ps",
+  "R_wt_ps",
+  "R_sp_ps",
+  "R_wp_ps",
+  "R_dd_ps",
+  "R_dd"
 )
 
 #Model==========================================================================
