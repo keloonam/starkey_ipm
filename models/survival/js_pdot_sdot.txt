@@ -1,0 +1,56 @@
+model{
+  ##### Priors #####
+  mean_p_ps ~ dbeta(1, 1)
+  mean_s_ps ~ dbeta(1, 1)
+
+  for(t in 1:(nocc - 1)){
+    s[t] <- mean_s_ps
+  } # end t loop
+  
+  for(t in 1:(nocc)){
+    # capture probability in the first session is estimated in js models
+    p[t] <- mean_p_ps
+    
+    # a is probability individuals are added
+    # has no bio meaning -> depends on nind available in augmented population
+    a[t] ~ dunif(0, 1)
+  } # end t loop
+  
+  ##### Likelihood #####
+  for(i in 1:M){
+    # First occasion state and observation processes
+    # it's only broken out of the other loop to keep indexing on p and s easier
+    z[i,1] ~ dbern(a[1])
+    y[i,1] ~ dbern(z[i,1] * p[1])
+    
+    # All subsequent occasions
+    for(t in 2:nocc){
+      # State process
+      # q is availability to be added
+      q[i,t-1] <- 1 - z[i,t-1]
+      # wolves don't come back to life
+      # prod(q[i,1:(t-1)]) sets a*q to zero for wolves that were alive but died
+      mu[i,t] <- s[t-1] * z[i,t-1] + a[t] * prod(q[i,1:(t-1)])
+      z[i,t] ~ dbern(mu[i,t])
+
+      # Observation process
+      y[i,t] ~ dbern(p[t] * z[i,t])
+      
+    } # end t loop
+  } # end i loop
+  
+  ##### Derived Parameters #####
+  for(i in 1:M){
+    recruit[i,1] <- z[i,1]
+    for(t in 2:nocc){
+      recruit[i,t] <- (1 - z[i,t-1]) * z[i,t]
+    }
+  }
+  
+  for(t in 1:nocc){
+    N[t] <- sum(z[1:M,t])
+    B[t] <- sum(recruit[1:M,t])
+    r[t] <- B[t] / (N[t] + 0.0001)
+  }
+} # end model
+    
