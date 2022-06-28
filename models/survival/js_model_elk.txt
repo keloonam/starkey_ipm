@@ -1,0 +1,81 @@
+model{
+  # cjs
+  # phi -- year, sex-year (adults), age-year
+  # p   -- year, sex-year
+  # harvest is a terminal detection; the individual was alive to be harvested
+    # (e.g. survived the natural mortality period), but unavailable after
+  
+  ##### Priors
+  # Time effects
+  for(t in 1:n_occ){ # might need to index survival seperately?
+    # Survival
+    s0_ps[t] ~ dunif(0,1)
+    sm_ps[t] ~ dunif(0,1)
+    sc_ps[t] ~ dunif(0,1)
+    
+    # Detection Probability
+    p0_ps[t] ~ dunif(0,1)
+    pm_ps[t] ~ dunif(0,1)
+    pc_ps[t] ~ dunif(0,1)
+    
+    # Nuisance addition probability
+    a0_ps[t] ~ dunif(0,1)
+    am_ps[t] ~ dunif(0,1)
+    ac_ps[t] ~ dunif(0,1)
+    
+    # Logit Transormations
+    s0[t] <- logit(s0_ps[t])
+    sm[t] <- logit(sm_ps[t])
+    sc[t] <- logit(sc_ps[t])
+    p0[t] <- logit(p0_ps[t])
+    pm[t] <- logit(pm_ps[t])
+    pc[t] <- logit(pc_ps[t])
+    a0[t] <- logit(a0_ps[t])
+    am[t] <- logit(am_ps[t])
+    ac[t] <- logit(ac_ps[t])
+  }
+  
+  # Constant effects (herds that aren't main)
+  sh ~ dnorm(0, 0.01)T(-10, 10)
+  ph ~ dnorm(0, 0.01)T(-10, 10)
+  
+  # Probabilities
+  for(i in 1:M){
+    for(t in f[i]:l[i]){
+      logit(s[i,t]) <- s0[t] + sc[t]*c[i,t] - sm[t]*m[i]*(c[i,t]-1) + sh*h[i,t]
+      logit(p[i,t]) <- p0[t] + pc[t]*c[i,t] - pm[t]*m[i]*(c[i,t]-1) + ph*h[i,t]
+      logit(a[i,t]) <- a0[t] + ac[t]*c[i,t] - am[t]*m[i]*(c[i,t]-1)
+    } #t
+  } #i
+
+  ##### Likelihood
+  # s and p don't have values for occ = 1, p/s-1 shifts the vector
+  for(i in 1:M){
+    z[i,1] ~ dbern(a[i,1])
+    y[i,1] ~ dbern(z[i,1] * p[i,1])
+    
+    for(t in 2:(l[i])){
+      # is it a calf?
+      c[i,t] <- q[i,t-1] - q[i,t]
+    
+      # augmented population shenanigans, q is availability to be added
+      q[i,t-1] <- 1 - z[i, t-1]
+      
+      # state -- did ind i survive?
+      z[i,t] ~ dbern(mu1[i,t])
+      mu1[i,t] <- s[i,t-1] * z[i,t-1] + a[i,t] * prod(q[i,1:(t-1)])
+      
+      # observation -- did we see ind i?
+      y[i,t] ~ dbern(mu2[i,t])
+      mu2[i,t] <- p[i,t-1] * z[i,t]
+    } #t
+  } #i
+  
+  ##### Derived quantities
+  for(t in 1:n_occ){
+    logit(survival_af[t]) <- s0[t]
+    logit(survival_am[t]) <- s0[t] + sm[t]
+    logit(survival_ca[t]) <- s0[t] + sc[t]
+    N[t] <- sum(z[1:M,t])
+  }
+}

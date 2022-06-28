@@ -3,6 +3,9 @@
 
 #Variables======================================================================
 
+# amount to MULTIPLY the population by for augmentation
+aug <- 10
+
 start_year <- 1988
 end_year <- 2021
 
@@ -13,19 +16,20 @@ params <- c(
   "survival_am", 
   "survival_ca",
   "s0_ps",
-  "p0_ps"
+  "p0_ps",
+  "N"
 )
 
 # File names/paths
-model_file <- "models//survival//cjs_model_elk_cip.txt"
-result_file <- "results//survival//cjs_rslt_cip_08apr2022.Rdata"
+model_file <- "models//survival//js_model_elk.txt"
+result_file <- "results//survival//js_rslt_28jun2022.Rdata"
 
 # Sampler variables
-n_i <- 75000
+n_i <- 750
 n_t <- 1
-n_b <- 25000
+n_b <- 250
 n_c <- 3
-n_a <- 1000
+n_a <- 10
 
 
 
@@ -114,30 +118,42 @@ herd <- herd[-bad_elk,]
 # calf <- calf[1:100,]
 # herd <- herd[1:100,]
 
-#Fit_model======================================================================
-
-z_data <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
+z <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
 l_k <- rep(NA, nrow(y))
 for(i in 1:nrow(y)){
   l_k[i] <- max(which(y[i,] == 1))
   z_data[i, (f[i]):l_k[i]] <- 1
 }
 
-cjs_data <- list(
+#Augment========================================================================
+
+n_aug <- nrow(y) * aug
+y <- rbind(y, matrix(0,  nrow = n_aug, ncol = ncol(y)))
+z <- rbind(z, matrix(NA, nrow = n_aug, ncol = ncol(y)))
+l <- c(l, rep(34, n_aug))
+male <- c(male, rbinom(n_aug, 1, 0.5))
+herd <- rbind(herd, matrix(0, nrow = n_aug, ncol = ncol(y)))
+
+#Fit_model======================================================================
+
+
+
+js_data <- list(
   y = y,
-  z = z_data,
-  f = f,
+  z = z,
+  # f = f,
   l = l,
   m = male,
-  c = calf,
+  # c = calf,
   h = herd,
   n_occ = ncol(y),
-  n_ind = nrow(y)
+  M = nrow(y)
 )
 
-cjs_inits <- list(
+js_inits <- list(
   s0_ps  = runif(ncol(y), 0.5, 0.9),
   p0_ps  = runif(ncol(y), 0, 1),
+  a0_ps  = runif(ncol(y), 0, 1),
   sm     = rnorm(ncol(y)),
   sc     = rnorm(ncol(y)),
   pm     = rnorm(ncol(y)),
@@ -147,23 +163,31 @@ cjs_inits <- list(
   b_ind  = rnorm(nrow(y))
 )
 
-cjs_nimble_model <- readBUGSmodel(
-  model = model_file,
-  data = cjs_data,
-  inits = cjs_inits,
-  calculate = F,
-  check = F
+require(rjags)
+js_model <- jags.model(
+  file = model_file,
+  data = js_data,
+  n.chains = 3,
+  n.adapt = 100
 )
 
-cjs_rslt <- nimbleMCMC(
-  model = cjs_nimble_model,
-  monitors = params,
-  niter = n_i,
-  nburnin = n_b,
-  nchains = n_c,
-  thin = n_t
-)
-
-mcmcplots::mcmcplot(cjs_rslt)
-
-save(cjs_rslt, file = result_file)
+# js_nimble_model <- readBUGSmodel(
+#   model = model_file,
+#   data = js_data,
+#   inits = js_inits,
+#   calculate = F,
+#   check = F
+# )
+# 
+# js_rslt <- nimbleMCMC(
+#   model = cjs_nimble_model,
+#   monitors = params,
+#   niter = n_i,
+#   nburnin = n_b,
+#   nchains = n_c,
+#   thin = n_t
+# )
+# 
+# mcmcplots::mcmcplot(js_rslt)
+# 
+# save(js_rslt, file = result_file)
