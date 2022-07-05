@@ -4,7 +4,7 @@
 #Variables======================================================================
 
 # amount to MULTIPLY the population by for augmentation
-aug <- 10
+aug <- 2
 
 start_year <- 1988
 end_year <- 2021
@@ -110,19 +110,19 @@ male <- male[-bad_elk]
 calf <- calf[-bad_elk,]
 herd <- herd[-bad_elk,]
 
-# y <- y[1:100,]
-# f <- f[1:100]
-# l <- l[1:100]
-# w <- w[1:100,]
-# male <- male[1:100]
-# calf <- calf[1:100,]
-# herd <- herd[1:100,]
+# y <- y[1:50,]
+# f <- f[1:50]
+# l <- l[1:50]
+# w <- w[1:50,]
+# male <- male[1:50]
+# calf <- calf[1:50,]
+# herd <- herd[1:50,]
 
 z <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
 l_k <- rep(NA, nrow(y))
 for(i in 1:nrow(y)){
   l_k[i] <- max(which(y[i,] == 1))
-  z_data[i, (f[i]):l_k[i]] <- 1
+  z[i, (f[i]):l_k[i]] <- 1
 }
 
 #Augment========================================================================
@@ -167,8 +167,20 @@ require(rjags)
 js_model <- jags.model(
   file = model_file,
   data = js_data,
-  n.chains = 3,
+  n.chains = 1,
   n.adapt = 100
+)
+
+update(
+  object = js_model,
+  n.iter = n_b
+)
+
+coda.samples(
+  model = js_model,
+  variable.names = params,
+  n.iter = n_i,
+  n.thin = n_t
 )
 
 # js_nimble_model <- readBUGSmodel(

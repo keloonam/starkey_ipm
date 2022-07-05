@@ -41,7 +41,7 @@ model{
   
   # Probabilities
   for(i in 1:M){
-    for(t in f[i]:l[i]){
+    for(t in 1:l[i]){
       logit(s[i,t]) <- s0[t] + sc[t]*c[i,t] - sm[t]*m[i]*(c[i,t]-1) + sh*h[i,t]
       logit(p[i,t]) <- p0[t] + pc[t]*c[i,t] - pm[t]*m[i]*(c[i,t]-1) + ph*h[i,t]
       logit(a[i,t]) <- a0[t] + ac[t]*c[i,t] - am[t]*m[i]*(c[i,t]-1)
@@ -53,6 +53,8 @@ model{
   for(i in 1:M){
     z[i,1] ~ dbern(a[i,1])
     y[i,1] ~ dbern(z[i,1] * p[i,1])
+    q[i,n_occ] <- 0
+    c[i,1] <- 0
     
     for(t in 2:(l[i])){
       # is it a calf?
