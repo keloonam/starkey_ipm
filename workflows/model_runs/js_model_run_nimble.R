@@ -21,7 +21,6 @@ params <- c(
 )
 
 # File names/paths
-model_file <- "models//survival//js_model_elk.txt"
 result_file <- "results//survival//js_rslt_28jun2022.Rdata"
 
 # Sampler variables
@@ -163,43 +162,105 @@ js_inits <- list(
   b_ind  = rnorm(nrow(y))
 )
 
-require(rjags)
-js_model <- jags.model(
-  file = model_file,
-  data = js_data,
-  n.chains = 1,
-  n.adapt = 100
+js_superpop_model <- nimbleCode({
+  # Nimble version of jolly-seber super population formulation with age data
+  
+  # Priors
+  psi  ~ dbeta(1, 1)    # probability animals is in superpopulation
+  p0   ~ dbeta(1, 1)    # mean capture probability
+  phi0 ~ dbeta(1, 1)    # prior for survival at theoretical age 0
+  alpha0 <- logit(phi0) 
+  
+  # starting age distribution: not yet recruited (age = 0), or age
+  piAGE[1:max.age] ~ ddirch(a[1:max.age])
+  # age distribution conditioned on alive at t=1
+  piAGEuncond[1:(max.age + 1)] <- c((1 - eta[1]), eta[1] * piAGE[1:max.age])
+  
+  # recruitment rate from 'not entered population' at t 
+  beta[1:K] ~ ddirch(b[1:K])
+  eta[1] <- beta[1]
+  for(k in 2:K){
+    eta[k] <- beta[k]/(1-sum(beta[1:(k-1)]))
+  }
+  
+  # Likelihoods 
+  for (i in 1:M){
+    # is individual i real?
+    w[i] ~ dbern(psi)
+    
+    # initial ages
+    agePlusOne[i] ~ dcat(piAGEuncond[1:(max.age+1)]) # where agePlusOne are data
+    age[i,1] <- (agePlusOne[i]-1) 
+    # I think age+1 is solving the age = zero indexing issue??
+    
+    # state process
+    u[i,1] <- step(age[i,1]-.1) # sets u to zero if age is zero
+    z[i,1] <- u[i,1]*w[i] # z is the "real" state
+    
+    # Observation process
+    y[i,1] ~ dbern(z[i,1]*p)
+    
+    # derived stuff
+    avail[i,1] <- 1 - u[i,1] # still available -- i.e. not yet recruited
+    
+    # for occasions > 1     
+    for (t in 2:K){
+      
+      # State process
+      u[i,t] ~ dbern(u[i,t-1]*phi[i,t] + avail[i,t-1]*eta[t])   
+      logit(phi[i,t]) <- alpha0 
+      z[i,t] <- u[i,t]*w[i]
+      
+      # Age process
+      age[i,t] <- age[i,t-1] + max(u[i,1:t]) 
+      # ages by one year after recruitment (NIMBLE allows this syntax)
+      
+      # Observation process
+      y[i,t] ~ dbern(z[i,t]*p)
+      
+      # derived stuff
+      avail[i,t] <- 1- max(u[i,1:t]) # still available -- i.e. not yet recruited
+    } #t
+  } #i
+  
+  ## Derived population level stuff
+  # Annual abundance
+  for (t in 1:K){
+    N[t] <- sum(z[1:M,t])               
+  } #t
+  
+  # Annual growth rate
+  for (t in 1:(K-1)){
+    lambda[t] <- N[t+1]/N[t]               
+  } #t
+  
+  # Superpopulation size
+  Nsuper <- sum(w[1:M])       
+  
+})# end model
+
+js_conf <- configureMCMC(
+  model = js_superpop_model,
+  monitors = params,
+  control = list(adaptInterval = n_a), 
+  thin = n_t, 
+  useConjugacy = TRUE
+)
+js_mcmc <- buildMCMC(js_conf)
+js_comp <- compileNimble(js_superpop_model)
+js_mcmc_comp <- compileNimble(
+  js_mcmc,
+  project = js_superpop_model
+)
+rslt <- runMCMC(
+  js_mcmc_comp,
+  niter = n_i,
+  nburnin = n_b,
+  nchains = n_c,
+  inits = inits,
+  setSeed = F,
+  progressBar = T,
+  samplesAsCodaMCMC = T
 )
 
-update(
-  object = js_model,
-  n.iter = n_b
-)
-
-js_rslt <- coda.samples(
-  model = js_model,
-  variable.names = params,
-  n.iter = n_i,
-  n.thin = n_t
-)
-
-# js_nimble_model <- readBUGSmodel(
-#   model = model_file,
-#   data = js_data,
-#   inits = js_inits,
-#   calculate = F,
-#   check = F
-# )
-# 
-# js_rslt <- nimbleMCMC(
-#   model = cjs_nimble_model,
-#   monitors = params,
-#   niter = n_i,
-#   nburnin = n_b,
-#   nchains = n_c,
-#   thin = n_t
-# )
-# 
-# mcmcplots::mcmcplot(js_rslt)
-# 
-save(js_rslt, file = result_file)
+save(rslt, file = result_file)
