@@ -78,57 +78,53 @@ full_data <- raw_data %>%
     !is.na(release_herd) ~ release_herd,
     !is.na(herd) ~ herd
   )) %>%
-  mutate(next_bio_year = case_when(
+  mutate(next_bio_year = case_when( # what is the next Nov1 that will occur?
     month(event_date) > 10 ~ year(event_date) + 1,
     T ~ year(event_date)
   ))
 
-x <- full_data %>%
-  filter(population == "main") %>%
-  filter(CaptureMethod == "HUNTED")
-
-# Population assignment rules:
-  # Priority: release_herd, capture_herd, herd
-  # NA -> next step in priority
-  # "hand" -> next step in priority
-    # "hand" only the population if no other herd is given
-  # Event interpreted as: individual switched to population "new"
-    # If population "new" == "old", no switch occurred, population maintained
 
 #Herd_matrix====================================================================
+# Population assignment rules:
+# Priority: release_herd, capture_herd, herd
+# NA -> next step in priority
+#  "hand" -> next step in priority
+#  "hand" only the population if no other herd is given
+# Event interpreted as: individual switched to population "new"
+# If population "new" == "old", no switch occurred, population maintained
 
 build_herd_history <- function(targ_id, full_data, start_year, end_year){
   # Assigns an individual to a heard on each Nov 1 after its first observation
   
-  herd_id <- tibble(
+  herd_id <- tibble( # empty single-individual tibble
     year = start_year:(end_year + 1),
     herd = NA
   )
   
-  ind_data <- full_data %>%
+  ind_data <- full_data %>% # get events of target individual
     filter(id == targ_id) %>%
     arrange(event_date)
   
-  for(i in 1:nrow(ind_data)){
+  for(i in 1:nrow(ind_data)){ # assign herds to tibble column
     herd_id$herd[herd_id$year == ind_data$next_bio_year[i]] <- ind_data$population[i]
   }
   
   first_obs <- which.min(is.na(herd_id$herd))
-  if(first_obs > 1){
+  if(first_obs > 1){ # fill back one year, didn't come from nowhere
     herd_id$herd[first_obs - 1] <- herd_id$herd[first_obs]
   }
   
   for(i in first_obs:nrow(herd_id)){
-    if(is.na(herd_id$herd[i])){
+    if(is.na(herd_id$herd[i])){ # fill forward to end 
       herd_id$herd[i] <- herd_id$herd[i-1]
     }
   }
-  out <- c(targ_id, herd_id$herd)
+  out <- c(targ_id, herd_id$herd) # build vector output
   names(out) <- c("id", herd_id$year)
   return(out)
 }
 
-herd_tib <- bind_rows(map(
+herd_tib <- bind_rows(map( # apply over all ids in full data
   .x = unique(full_data$id), 
   .f = build_herd_history, 
   full_data = full_data,
@@ -145,18 +141,18 @@ f_l_data <- full_data %>%
     CaptureMethod %in% c(
       "TRAPPED", "HUNTED", "HANDLD", "MRT-TRAP", "NETTED", "DARTED", "CLOVER", 
       "MOVEDA",  "OBSRVD", "SEARCH" 
-      )
+      ) # only want events where the individual had to be alive
     ) %>%
   group_by(id) %>%
   summarize(
     first_capture = min(event_date),
-    last_capture = max(event_date)
+    last_capture = max(event_date) # pull first/last live sighting of each id
   ) %>%
-  mutate(first_alive = case_when(
+  mutate(first_alive = case_when( # Assign to capture years (alive on Nov 1)
     month(first_capture) <= cap_window[2] ~ year(first_capture) - 1,
-    T ~ year(first_capture)
+    T ~ year(first_capture) # this mutate assumes calves not observed before Nov
   )) %>%
-  mutate(last_alive = case_when(
+  mutate(last_alive = case_when( # assign last known alive year
     month(last_capture) >= cap_window[1] ~ year(last_capture),
     T ~ year(last_capture) - 1
   )) %>%
@@ -166,22 +162,28 @@ alive_tib <- matrix(NA, nrow = nrow(herd_tib), ncol = ncol(herd_tib))
 
 for(i in 1:nrow(herd_tib)){
   
-  alive_tib[i,1] <- herd_tib$id[i]
+  alive_tib[i,1] <- herd_tib$id[i] # share ids between tibs
   
-  if(herd_tib$id[i] %in% f_l_data$id){
+  if(herd_tib$id[i] %in% f_l_data$id){ # do we have i in herd data?
+    # assign first year, adjust if before study start
     first_year <- f_l_data[f_l_data$id == herd_tib$id[i],]$first_alive
     if(first_year < start_year){first_year <- start_year} 
+    # assign last year, adjust if before study start
     last_year  <- f_l_data[f_l_data$id == herd_tib$id[i],]$last_alive
     if(last_year < start_year){last_year <- start_year} 
+    # fill in ones for all years between first and last year
+    # +2 because 1-1=0 and id takes a column
     alive_tib[i,(first_year:last_year) - start_year + 2] <- 1
   }
 }
 
+# get the tibble version together and sorted
 alive_tib <- alive_tib %>% as_tibble()
 names(alive_tib) <- c("id", as.character(start_year:(end_year+1)))
 alive_tib <- alive_tib %>%
   arrange(id)
 
+# use known deaths to fill in trailing zeros
 death_dates <- full_data %>%
   group_by(id) %>%
   summarise(death_date = max(death_date)) %>%
@@ -198,6 +200,38 @@ for(i in 1:nrow(alive_tib)){
     death_column <- death_dates$dead_year[i] - start_year + 2
     if(death_column < 2){death_column <- 2}
     alive_tib[i,death_column:ncol(alive_tib)] <- "0"
+  }
+}
+
+# use known births to fill in leading zeros and ones
+birth_dates <- full_data %>%
+  group_by(id) %>%
+  summarise(birth_date = min(birth_date)) %>%
+  ungroup() %>%
+  arrange(id) %>%
+  mutate(birth_year = case_when(
+    month(birth_date) >= cap_window[1] ~ year(birth_date) + 1,
+    T ~ year(birth_date)
+  ))
+
+birth_column <- rep(NA, nrow(alive_tib))
+first_column <- rep(NA, nrow(alive_tib))
+for(i in 1:nrow(alive_tib)){
+  if(sum(alive_tib[i,2:ncol(alive_tib)], na.rm = T) > 0){
+    if(!is.na(birth_dates$birth_year[i])){
+      assertthat::assert_that(birth_dates$id[i] == alive_tib$id[i])
+      birth_column[i] <- birth_dates$birth_year[i] - start_year + 2
+      if(birth_column[i] < 2){birth_column[i] <- 2}
+      first_column[i] <- min(which(alive_tib[i,] == 1))
+      # alive_tib[i,birth_column[i]:first_column[i]]
+      if((first_column[i] - birth_column[i]) > 0){
+        alive_tib[i,birth_column[i]:first_column[i]]
+        # all of this is hacked together to sidestep errors, best of luck 
+        # untangling this mess future Kenneth
+        # Sincerely,
+        # That jerk from the past
+      }
+    }
   }
 }
 
@@ -370,6 +404,8 @@ for(i in 1:nrow(cap_data)){
 #Z_JS===========================================================================
 # status (alive = 1, not alive = 0) of every animal X year
 
+
+
 #Clean_up=======================================================================
 
 elk_data <- list(
@@ -379,9 +415,9 @@ elk_data <- list(
   liv_tib = alive_tib,
   hrd_tib = herd_tib,
   hnt_tib = hunt_tib,
-  y_js    = y_js,
-  age_js  = age_js,
-  z_js    = z_js,
+  # y_js    = y_js,
+  # age_js  = age_js,
+  # z_js    = z_js,
   explainer = "cap is capture history for cjs -- 
   age is year that id was a calf -- 
   sex is sex of id -- 
