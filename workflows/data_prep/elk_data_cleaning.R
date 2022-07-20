@@ -5,6 +5,7 @@
 
 #Variables======================================================================
 
+elk_data_location <- "data//elk_data.Rdata"
 target_species <- "E"
 start_year <- 1988
 end_year <- 2021
@@ -181,7 +182,8 @@ for(i in 1:nrow(herd_tib)){
 alive_tib <- alive_tib %>% as_tibble()
 names(alive_tib) <- c("id", as.character(start_year:(end_year+1)))
 alive_tib <- alive_tib %>%
-  arrange(id)
+  arrange(id) %>%
+  mutate_at(2:ncol(.), as.numeric)
 
 # use known deaths to fill in trailing zeros
 death_dates <- full_data %>%
@@ -199,7 +201,7 @@ for(i in 1:nrow(alive_tib)){
     assertthat::assert_that(death_dates$id[i] == alive_tib$id[i])
     death_column <- death_dates$dead_year[i] - start_year + 2
     if(death_column < 2){death_column <- 2}
-    alive_tib[i,death_column:ncol(alive_tib)] <- "0"
+    alive_tib[i,death_column:ncol(alive_tib)] <- 0
   }
 }
 
@@ -216,27 +218,35 @@ birth_dates <- full_data %>%
 
 birth_column <- rep(NA, nrow(alive_tib))
 first_column <- rep(NA, nrow(alive_tib))
+
+# This commented stuff doesn't work because of numeric issues. Grumble.
+alive_tib <- alive_tib %>%
+  select(-id) %>%
+  as.matrix()
 for(i in 1:nrow(alive_tib)){
-  if(sum(alive_tib[i,2:ncol(alive_tib)], na.rm = T) > 0){
+  if(sum(alive_tib[i,], na.rm = T) > 0){
+    first_column[i] <- min(which(alive_tib[i,] == 1))
     if(!is.na(birth_dates$birth_year[i])){
-      assertthat::assert_that(birth_dates$id[i] == alive_tib$id[i])
-      birth_column[i] <- birth_dates$birth_year[i] - start_year + 2
-      if(birth_column[i] < 2){birth_column[i] <- 2}
-      first_column[i] <- min(which(alive_tib[i,] == 1))
-      # alive_tib[i,birth_column[i]:first_column[i]]
+      # assertthat::assert_that(birth_dates$id[i] == alive_tib$id[i])
+      birth_column[i] <- birth_dates$birth_year[i] - start_year + 1
+      if(birth_column[i] < 1){birth_column[i] <- 1}
       if((first_column[i] - birth_column[i]) > 0){
-        alive_tib[i,birth_column[i]:first_column[i]]
-        # all of this is hacked together to sidestep errors, best of luck 
+        alive_tib[i,birth_column[i]:first_column[i]] <- 1
+        # all of this is hacked together to sidestep errors, best of luck
         # untangling this mess future Kenneth
         # Sincerely,
         # That jerk from the past
       }
+      alive_tib[i,(1:(birth_column[i] - 1))] <- 0
     }
   }
 }
 
 alive_tib <- alive_tib %>%
-  mutate_at(vars(-id), funs(as.numeric))
+  as_tibble() %>%
+  mutate(id = birth_dates$id) %>%
+  select(id, 1:(ncol(.)-1))
+  # mutate_at(vars(-id), funs(as.numeric))
 
 
 #Sex============================================================================
@@ -259,24 +269,13 @@ get_birth_date <- function(x, id_x){
   if(any(!is.na(tmp$birth_date))){ # if birthday is given, use that
     out_date <- min(tmp$birth_date)
   }else{
-    if(all(is.na(tmp$Class))){ # if there is no age info
-      birth_year <- year(min(tmp$event_date)) - 3 # just assign an arbitrary adult age
-      out_date <- ymd(paste0(birth_year, "-06-01"))
-    }else{
-      if(any(tmp$Class == "CA" | tmp$Class == "NC", na.rm = T)){ # if its captured as a calf
-        birth_year <- year(min(tmp$event_date)) - (month(min(tmp$event_date)) < 5)
-        out_date <- ymd(paste0(birth_year, "-06-01")) # use most recent June 1st
-      }else{
-        if(any(tmp$Class == "AD" | tmp$Class == "AG", na.rm = T)){ # if captured adult
-          birth_year <- year(min(tmp$event_date)) - (month(min(tmp$event_date)) < 5) - 1
-          out_date <- ymd(paste0(birth_year, "-06-01")) # 2nd most recent June 1st
-        }else{ # If they're older than that it won't matter. They haven't been observed before,
-          out_date <- NA # so they won't be used in any of the analyses for those years.
-        }
-      }
+    if(any(tmp$Class == "CA" | tmp$Class == "NC", na.rm = T)){ # if its captured as a calf
+      birth_year <- year(min(tmp$event_date)) - (month(min(tmp$event_date)) < 5)
+      out_date <- ymd(paste0(birth_year, "-06-01")) # use most recent June 1st
+    }else{ # If there is no age information
+      out_date <- NA # leave it blank
     }
   }
-  
   out <- tibble(id = id_x, birth_date = out_date)
 }
 
@@ -291,8 +290,8 @@ age_data <- full_data %>%
   mutate(calf_session = year(birth_date) - start_year + 1)
 age_data <- age_data %>%
   mutate(calf_session = case_when(
-    calf_session < 0  ~ 0,
-    calf_session >= 0 ~ calf_session
+    calf_session > 0   ~ calf_session,
+    T ~ 0
   ))
 
 age_tib <- matrix(NA, nrow = nrow(age_data), ncol = ncol(herd_tib) - 1)
@@ -313,7 +312,7 @@ age_tib <- age_data %>%
 names(age_tib) <- c("id", as.character(start_year:(end_year + 1)))
 
 #Capture_history================================================================
-
+# You've checked everything above this as of 12:29 on July 15
 cap_data <- full_data %>%
   # animals we know are alive
   filter(CaptureMethod %in% c(
@@ -332,10 +331,10 @@ cap_data <- full_data %>%
 
 cap_tib <- matrix(
   0, 
-  nrow = length(unique(cap_data$id)), 
+  nrow = nrow(herd_tib), 
   ncol = ncol(alive_tib) - 1) %>%
   as_tibble() %>%
-  bind_cols(unique(cap_data$id), .) 
+  bind_cols(herd_tib$id, .) 
 names(cap_tib) <- c("id", as.character(start_year:(end_year + 1)))
 
 for(i in 1:nrow(cap_data)){
@@ -365,47 +364,6 @@ for(i in 1:nrow(hunt_data)){
   hunt_tib[hunt_tib$id == hunt_data$id[i], hunt_data$session[i] + 1] <- 1
 }
 
-#Y_JS===========================================================================
-# capture history that includes all elk observed
-# includes ch for elk only observed terminally and elk observed out of season
-
-cap_data <- full_data %>%
-  # animals we know are alive
-  filter(CaptureMethod %in% c(
-    "TRAPPED", "HANDLD", "NETTED", "DARTED", "CLOVER", "MOVEDA",  "OBSRVD",
-    "HUNTED", "MRT-TRAP")) %>%
-  # events that happen after the survey start date
-  filter(event_date >= ymd(paste(start_year, cap_window[1], "1"))) %>%
-  mutate(cap_month = month(event_date)) %>%
-  # this is subsetting to specific months
-  # we want that for capture histories, but not known alive histories
-  filter(cap_month >= cap_window[1] | cap_month <= cap_window[2]) %>%
-  mutate(session = case_when(
-    cap_month >= cap_window[1] ~ year(event_date) - start_year + 1,
-    cap_month <= cap_window[2] ~ year(event_date) - start_year
-  )) %>%
-  arrange(id, session)
-
-cap_tib <- matrix(
-  0, 
-  nrow = length(unique(cap_data$id)), 
-  ncol = ncol(alive_tib) - 1) %>%
-  as_tibble() %>%
-  bind_cols(unique(cap_data$id), .) 
-names(cap_tib) <- c("id", as.character(start_year:(end_year + 1)))
-
-for(i in 1:nrow(cap_data)){
-  cap_tib[cap_tib$id == cap_data$id[i], cap_data$session[i] + 1] <- 1
-}
-
-#Age_JS=========================================================================
-# age of every animal X year when known, NA otherwise
-
-#Z_JS===========================================================================
-# status (alive = 1, not alive = 0) of every animal X year
-
-
-
 #Clean_up=======================================================================
 
 elk_data <- list(
@@ -415,19 +373,12 @@ elk_data <- list(
   liv_tib = alive_tib,
   hrd_tib = herd_tib,
   hnt_tib = hunt_tib,
-  # y_js    = y_js,
-  # age_js  = age_js,
-  # z_js    = z_js,
-  explainer = "cap is capture history for cjs -- 
+  explainer = "cap is capture history for js -- 
   age is year that id was a calf -- 
   sex is sex of id -- 
   liv is 1 for individual known alive, 0 for dead, NA for unknown -- 
   hrd is which herd id belonged to on 11-1 of each year -- 
-  hnt is a 1 for the year an elk was removed from the population (hunting) -- 
-  ys_js is capture history that includes all elk observed, including ch for elk 
-  only observed terminally and elk observed out of season -- 
-  z_js is status (alive = 1, not alive = 0, NA = unk) of every animal X year -- 
-  age_js is age of every animal X year when known, NA otherwise"
+  hnt is a 1 for the year an elk was removed from the population (hunting) --"
 )
 
 save(elk_data, file = elk_data_location)
