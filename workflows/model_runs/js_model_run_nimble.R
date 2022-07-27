@@ -21,34 +21,21 @@ params <- c(
 )
 
 # File names/paths
-result_file <- "results//survival//js_rslt_28jun2022.Rdata"
+result_file <- "results//survival//js_rslt_22jul2022.Rdata"
 
 # Sampler variables
 n_i <- 750
 n_t <- 1
 n_b <- 250
-n_c <- 3
+n_c <- 1
 n_a <- 10
 
 
 
 #Environment====================================================================
 
-require(tidyverse); require(rjags); require(mcmcplots); require(nimble)
+require(tidyverse); require(mcmcplots); require(nimble)
 load("data//elk_data.Rdata")
-
-ch_init_fn <- function(ch, f, l){
-  for(i in 1:nrow(ch)){
-    ch[i,1:f[i]] <- NA
-  }
-  out <- ifelse(!is.na(ch), 1, ch)
-  for(i in 1:nrow(out)){
-    if(l[i] < ncol(out)){
-      out[i,(l[i]+1):ncol(out)] <- NA
-    }
-  }
-  return(out)
-}
 
 #Prep_data======================================================================
 
@@ -60,7 +47,7 @@ y <- elk_data$cap_tib %>%
 f <- apply(y, 1, function(x) min(which(x != 0)))
 
 l <- elk_data$hnt_tib %>%
-  filter(id %in% elk_data$cap_tib$id) %>%
+  # filter(id %in% elk_data$cap_tib$id) %>%
   arrange(id) %>%
   mutate('2021' = 1) %>%
   select(as.character(start_year:end_year)) %>%
@@ -68,7 +55,7 @@ l <- elk_data$hnt_tib %>%
   apply(., 1, function(x) min(which(x != 0)))
 
 w <- elk_data$hnt_tib %>%
-  filter(id %in% elk_data$cap_tib$id) %>%
+  # filter(id %in% elk_data$cap_tib$id) %>%
   arrange(id) %>%
   select(as.character(start_year:end_year)) %>%
   as.matrix() 
@@ -76,20 +63,19 @@ w <- elk_data$hnt_tib %>%
 y <- w + y # harvests count as observed alive that year (did not die naturally)
 
 male <- elk_data$sex_tib %>%
-  filter(id %in% elk_data$cap_tib$id) %>%
+  # filter(id %in% elk_data$cap_tib$id) %>%
   arrange(id) %>%
   mutate(male = as.numeric(Sex == "M")) %>%
   pull(male)
 
 calf <- elk_data$age_tib %>%
-  filter(id %in% elk_data$cap_tib$id) %>%
+  # filter(id %in% elk_data$cap_tib$id) %>%
   arrange(id) %>%
   select(as.character(start_year:end_year)) %>%
-  as.matrix() %>%
-  replace_na(0)
+  as.matrix()
 
 herd <- elk_data$hrd_tib %>%
-  filter(id %in% elk_data$cap_tib$id) %>%
+  # filter(id %in% elk_data$cap_tib$id) %>%
   arrange(id) %>%
   select(as.character(start_year:end_year)) %>%
   mutate_all(funs(case_when(
@@ -98,16 +84,17 @@ herd <- elk_data$hrd_tib %>%
   ))) %>%
   as.matrix()
 
-gone_elk <- apply(herd - 1, 1, sum) == ncol(herd)
-weird_elk <- f == l
-bad_elk <- which((gone_elk + weird_elk) != 0)
-y <- y[-bad_elk,]
-f <- f[-bad_elk]
-l <- l[-bad_elk]
-w <- w[-bad_elk,]
-male <- male[-bad_elk]
-calf <- calf[-bad_elk,]
-herd <- herd[-bad_elk,]
+# We don't care about elk that were never in main study
+gone_elk <- which(apply(herd, 1, sum) == ncol(herd))
+# weird_elk <- f == l
+# bad_elk <- which((gone_elk + weird_elk) != 0)
+y <- y[-gone_elk,]
+f <- f[-gone_elk]
+l <- l[-gone_elk]
+w <- w[-gone_elk,]
+male <- male[-gone_elk]
+calf <- calf[-gone_elk,]
+herd <- herd[-gone_elk,]
 
 # y <- y[1:50,]
 # f <- f[1:50]
@@ -117,12 +104,17 @@ herd <- herd[-bad_elk,]
 # calf <- calf[1:50,]
 # herd <- herd[1:50,]
 
-z <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
-l_k <- rep(NA, nrow(y))
-for(i in 1:nrow(y)){
-  l_k[i] <- max(which(y[i,] == 1))
-  z[i, (f[i]):l_k[i]] <- 1
-}
+# z <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
+# l_k <- rep(NA, nrow(y))
+# for(i in 1:nrow(y)){
+#   l_k[i] <- max(which(y[i,] == 1))
+#   z[i, (f[i]):l_k[i]] <- 1
+# }
+
+z <- elk_data$liv_tib %>%
+  arrange(id) %>%
+  select(as.character(start_year:end_year)) %>%
+  as.matrix()
 
 #Augment========================================================================
 
@@ -131,7 +123,8 @@ y <- rbind(y, matrix(0,  nrow = n_aug, ncol = ncol(y)))
 z <- rbind(z, matrix(NA, nrow = n_aug, ncol = ncol(y)))
 l <- c(l, rep(34, n_aug))
 male <- c(male, rbinom(n_aug, 1, 0.5))
-herd <- rbind(herd, matrix(0, nrow = n_aug, ncol = ncol(y)))
+herd <- rbind(herd, matrix(0,  nrow = n_aug, ncol = ncol(y)))
+calf <- rbind(calf, matrix(NA, nrow = n_aug, ncol = ncol(y)))
 
 #Fit_model======================================================================
 
