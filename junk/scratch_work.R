@@ -1,44 +1,58 @@
 js_superpop_model <- nimbleCode({
   # Nimble version of jolly-seber super population formulation with age data
-  # Probabilities are capitalized
-  # Data,  and constants are lowercase
+  # Constants and data are CAPITALIZED
+  # Estimated parameters are lowercase
+  # Basically, if it needs to be passed to the model it is in all caps
   
   # Priors
-  E0 ~ dbeta(1, 1)    # probability animal is in superpopulation (i.e. exists)
-  P0   ~ dbeta(1, 1)    # mean capture probability
-  S0   ~ dbeta(1, 1)    # survival
-  s.b0 <- logit(S0)
-  p.b0 <- logit(P0)
+  e0   ~ dbeta(1, 1)    # probability animal is in superpopulation (i.e. exists)
+  p0   ~ dbeta(1, 1)    # mean capture probability
+  s0   ~ dbeta(1, 1)    # mean survival
+  s.b0 <- logit(s0)
+  p.b0 <- logit(p0)
+  p.sd ~ dunif(0, 50)
+  
+  for(k in 1:K){
+    logit(p[k]) ~ dnorm(p.b0, sd = p.sd) 
+  }
   
   # age distribution - given alive, what is the probability of being age 1:max?
-  piAGE[1:max.age] ~ ddirch(a[1:max.age])
+  a0[1:MAX_A] ~ ddirch(A[1:MAX_A])
   
   # age dist including unentered individuals, c(p(!entered), p(age(1:max))) == 1
-  piAGEuncond[1:(max.age + 1)] <- c((1 - eta[1]), eta[1] * piAGE[1:max.age])
+  # aka, age probabilities at start inclusive (i) of not yet entered age (0)
+  a0_i[1:(MAX_A + 1)] <- c((1 - eta[1]), eta[1] * a0[1:MAX_A])
   
   # recruitment rate from 'not entered population' at t 
-  beta[1:K] ~ ddirch(b[1:K])
-  eta[1] <- beta[1]
+  # r_n is a vector of length n_occasions that sums to 1
+    # it represents the naive probability of individuals entering. It is not 
+    # adjusted by time-step/n ind remaining
+  # r is the probability of the remaining true individuals to enter the pop at
+    # each time step. The final value of r is 1.
+  r_n[1:K] ~ ddirch(B[1:K])
+  r[1] <- r_n[1]
   for(k in 2:K){
-    eta[k] <- beta[k]/(1-sum(beta[1:(k-1)]))
+    r[k] <- r_n[k]/(1 - sum(r_n[1:(k-1)]))
   }
   
   # Likelihoods 
   for (i in 1:M){
     # is individual i real?
-    w[i] ~ dbern(psi)
+    w[i] ~ dbern(e0)
     
     # initial ages
-    agePlusOne[i] ~ dcat(piAGEuncond[1:(max.age+1)]) # where agePlusOne are data
-    age[i,1] <- (agePlusOne[i]-1) 
-    # I think age+1 is solving the age = zero indexing issue??
+    A_P1[i] ~ dcat(a0_i[1:(MAX_A + 1)]) # where agePlusOne are data
+    AGE[i,1] <- (A_P1[i] - 1) 
+    # dcat gives integers from 1 to the length of the vector passed
+    # age 0 can't be given, so add one to all initial ages.
+    # AGE is also data, but has NAs for augmented ind and ind w/o age
     
     # state process
-    u[i,1] <- step(age[i,1]-.1) # sets u to zero if age is zero, 1 otherwise
-    z[i,1] <- u[i,1]*w[i] # z is the "real" state
+    u[i,1] <- step(AGE[i,1]-.1) # sets u to zero if age is zero, 1 otherwise
+    z[i,1] <- u[i,1] * w[i] # z is the "real" state
     
     # Observation process
-    y[i,1] ~ dbern(z[i,1]*p)
+    y[i,1] ~ dbern(z[i,1] * p[k])
     
     # derived stuff
     avail[i,1] <- 1 - u[i,1] # still available -- i.e. not yet recruited
