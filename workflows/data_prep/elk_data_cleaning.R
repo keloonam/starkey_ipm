@@ -288,21 +288,36 @@ age_data <- full_data %>%
     id == "151203E01" ~ mdy("6-1-2015"),
     id != "151203E01" ~ .$birth_date)) %>%
   mutate(calf_session = year(birth_date) - start_year + 1)
-age_data <- age_data %>%
-  mutate(calf_session = case_when(
-    calf_session > 0   ~ calf_session,
-    T ~ 0
-  ))
+# okay. But calf session basically birth year in occasion units.
+# age_data <- age_data %>%
+#   mutate(calf_session = case_when(
+#     calf_session > 0   ~ calf_session,
+#     T ~ 0
+#   ))
 
 age_tib <- matrix(NA, nrow = nrow(age_data), ncol = ncol(herd_tib) - 1)
+# for(i in 1:nrow(age_data)){
+#   age_tib[i, age_data$calf_session[i]] <- 1
+# }
+# for(i in 1:nrow(age_tib)){
+#   if(all(is.na(age_tib[i,]))){
+#     age_tib[i,] <- 0
+#   }else{
+#     age_tib[i, (1 + which.min(age_tib[i,] == 1)):ncol(age_tib)] <- 0
+#   }
+# }
+c_occ <- age_data$calf_session
 for(i in 1:nrow(age_data)){
-  age_tib[i, age_data$calf_session[i]] <- 1
-}
-for(i in 1:nrow(age_tib)){
-  if(all(is.na(age_tib[i,]))){
-    age_tib[i,] <- 0
+  if(is.na(c_occ[i])){
+    age_tib[i,] <- NA
   }else{
-    age_tib[i, (1 + which.min(age_tib[i,] == 1)):ncol(age_tib)] <- 0
+    if(c_occ[i] < 1){
+      age_tib[i,] <- 2:(ncol(age_tib) + 1)
+    }else{
+      age_tib[i,c_occ[i]:ncol(age_tib)] <- 1
+      age_tib[i,c_occ[i]:ncol(age_tib)] <- cumsum(age_tib[i,c_occ[i]:ncol(age_tib)])
+      age_tib[i,1:(c_occ[i]-1)] <- 0
+    }
   }
 }
 

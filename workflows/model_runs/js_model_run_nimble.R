@@ -11,17 +11,19 @@ end_year <- 2021
 
 # Parameters to track
 params <- c(
-  # "sd_ind",
   "survival_af", 
   "survival_am", 
   "survival_ca",
-  "s0_ps",
-  "p0_ps",
-  "N"
+  "detection_f",
+  "detection_m",
+  "detection_c",
+  "N_super",
+  "N",
+  "lambda"
 )
 
 # File names/paths
-result_file <- "results//survival//js_rslt_22jul2022.Rdata"
+result_file <- "results//survival//js_rslt_28jul2022.Rdata"
 
 # Sampler variables
 n_i <- 750
@@ -44,7 +46,7 @@ y <- elk_data$cap_tib %>%
   select(as.character(start_year:end_year)) %>%
   as.matrix()
 
-f <- apply(y, 1, function(x) min(which(x != 0)))
+# f <- apply(y, 1, function(x) min(which(x != 0)))
 
 l <- elk_data$hnt_tib %>%
   # filter(id %in% elk_data$cap_tib$id) %>%
@@ -73,6 +75,20 @@ calf <- elk_data$age_tib %>%
   arrange(id) %>%
   select(as.character(start_year:end_year)) %>%
   as.matrix()
+for(i in 1:nrow(calf)){
+  if(sum(calf[i,], na.rm = T) > 0){
+    calf_sess <- min(which(calf[i,] == 1))
+    calf[i,calf_sess:ncol(calf)] <- 1
+  }
+  if(all(calf[i,] == 0)){
+    calf[i,1] <- 2
+    calf[i,2:ncol(calf)] <- 1
+  }
+  if(any(!is.na(calf[i,]))){
+    start_age <- min(which(!is.na(calf[i])))
+    calf[i,start_age:ncol(calf)] <- cumsum(calf[i,start_age:ncol(calf)])
+  }
+}
 
 herd <- elk_data$hrd_tib %>%
   # filter(id %in% elk_data$cap_tib$id) %>%
@@ -133,13 +149,12 @@ calf <- rbind(calf, matrix(NA, nrow = n_aug, ncol = ncol(y)))
 js_data <- list(
   y = y,
   z = z,
-  # f = f,
-  l = l,
-  m = male,
-  # c = calf,
-  h = herd,
-  n_occ = ncol(y),
-  M = nrow(y)
+  L = l,
+  M = male,
+  H = herd,
+  K = ncol(y),
+  M = nrow(y),
+  AGE = 
 )
 
 js_inits <- list(
@@ -155,82 +170,8 @@ js_inits <- list(
   b_ind  = rnorm(nrow(y))
 )
 
-js_superpop_model <- nimbleCode({
-  # Nimble version of jolly-seber super population formulation with age data
-  
-  # Priors
-  psi  ~ dbeta(1, 1)    # probability animals is in superpopulation
-  p0   ~ dbeta(1, 1)    # mean capture probability
-  phi0 ~ dbeta(1, 1)    # prior for survival at theoretical age 0
-  alpha0 <- logit(phi0) 
-  
-  # starting age distribution: not yet recruited (age = 0), or age
-  piAGE[1:max.age] ~ ddirch(a[1:max.age])
-  # age distribution conditioned on alive at t=1
-  piAGEuncond[1:(max.age + 1)] <- c((1 - eta[1]), eta[1] * piAGE[1:max.age])
-  
-  # recruitment rate from 'not entered population' at t 
-  beta[1:K] ~ ddirch(b[1:K])
-  eta[1] <- beta[1]
-  for(k in 2:K){
-    eta[k] <- beta[k]/(1-sum(beta[1:(k-1)]))
-  }
-  
-  # Likelihoods 
-  for (i in 1:M){
-    # is individual i real?
-    w[i] ~ dbern(psi)
-    
-    # initial ages
-    agePlusOne[i] ~ dcat(piAGEuncond[1:(max.age+1)]) # where agePlusOne are data
-    age[i,1] <- (agePlusOne[i]-1) 
-    # I think age+1 is solving the age = zero indexing issue??
-    
-    # state process
-    u[i,1] <- step(age[i,1]-.1) # sets u to zero if age is zero
-    z[i,1] <- u[i,1]*w[i] # z is the "real" state
-    
-    # Observation process
-    y[i,1] ~ dbern(z[i,1]*p)
-    
-    # derived stuff
-    avail[i,1] <- 1 - u[i,1] # still available -- i.e. not yet recruited
-    
-    # for occasions > 1     
-    for (t in 2:K){
-      
-      # State process
-      u[i,t] ~ dbern(u[i,t-1]*phi[i,t] + avail[i,t-1]*eta[t])   
-      logit(phi[i,t]) <- alpha0 
-      z[i,t] <- u[i,t]*w[i]
-      
-      # Age process
-      age[i,t] <- age[i,t-1] + max(u[i,1:t]) 
-      # ages by one year after recruitment (NIMBLE allows this syntax)
-      
-      # Observation process
-      y[i,t] ~ dbern(z[i,t]*p)
-      
-      # derived stuff
-      avail[i,t] <- 1- max(u[i,1:t]) # still available -- i.e. not yet recruited
-    } #t
-  } #i
-  
-  ## Derived population level stuff
-  # Annual abundance
-  for (t in 1:K){
-    N[t] <- sum(z[1:M,t])               
-  } #t
-  
-  # Annual growth rate
-  for (t in 1:(K-1)){
-    lambda[t] <- N[t+1]/N[t]               
-  } #t
-  
-  # Superpopulation size
-  Nsuper <- sum(w[1:M])       
-  
-})# end model
+# Load model as js_superpop_model
+source("models/survival/js_model_nimble.R")
 
 js_conf <- configureMCMC(
   model = js_superpop_model,
