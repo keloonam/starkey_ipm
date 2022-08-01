@@ -1,4 +1,4 @@
-js_superpop_model <- nimbleCode({
+js_model_code <- nimbleCode({
   # Nimble version of jolly-seber super population formulation with age data
   # Constants and data are CAPITALIZED
   # Estimated parameters are lowercase
@@ -51,24 +51,24 @@ js_superpop_model <- nimbleCode({
   
   ##### Model #####
   ### Session 1 ###
-  for (i in 1:M){
+  for (i in 1:NAUG){
     # is individual i real?
     w[i] ~ dbern(e0)
     
     # initial ages
-    A_P1[i] ~ dcat(a0_i[1:(MAX_A + 1)]) # A_P1 = age plust one
+    A_P1[i] ~ dcat(a0_i[1:(MAX_A + 1)]) # A_P1 = age plus one
     AGE[i,1] <- (A_P1[i] - 1) 
-    c[i,1] <- AGE[i,1] == 1 # is i a calf?
+    # c[i,1] <- AGE[i,1] == 1 # is i a calf?
     # dcat gives integers from 1 to the length of the vector passed
     # age 0 can't be given, so add one to all initial ages.
     # AGE is also data, but has NAs for augmented ind and ind w/o age
     
     # state process
-    u[i,1] <- step(AGE[i,1]-.1) # sets u to zero if age is zero, 1 otherwise
+    u[i,1] <- AGE[i,1] > 0 # sets u to zero if age is zero, 1 otherwise
     z[i,1] <- u[i,1] * w[i] # z is the "real" state
     
     # Observation probability
-    logit(p[i,1]) <- p.b0[1] + p.bc[1]*c[i,1] + p.bm[1]*M[i] + p.bh[1]*H[i,t]
+    logit(p[i,1]) <- p.b0[1] + p.bm[1]*M[i] + p.bh[1]*H[i,t]# + p.bc[1]*c[i,1]
     
     # Observation process
     y[i,1] ~ dbern(z[i,1] * p[i,1])
@@ -79,10 +79,10 @@ js_superpop_model <- nimbleCode({
     ### Sessions 2:K ###     
     for (t in 2:K[L[i]]){ # 2 to last session i was available
       # Survival probabilities
-      logit(s[i,t]) <- s.b0[t] + s.bc[t]*c[i,t] + s.bm[t]*M[i] + s.bh[t]*H[i,t]
+      logit(s[i,t]) <- s.b0[t] + s.bm[t]*M[i] + s.bh[t]*H[i,t]# + s.bc[t]*c[i,t]
       
       # Detection probabilities
-      logit(p[i,t]) <- p.b0[t] + p.bc[t]*c[i,t] + p.bm[t]*M[i] + p.bh[t]*H[i,t]
+      logit(p[i,t]) <- p.b0[t] + p.bm[t]*M[i] + p.bh[t]*H[i,t]# + p.bc[t]*c[i,t]
       
       # State process
       u[i,t] ~ dbern(u[i,t-1] * s[i,t] + avail[i,t-1] * r[t])   
@@ -91,7 +91,7 @@ js_superpop_model <- nimbleCode({
       # Age process
       AGE[i,t] <- AGE[i,t-1] + max(u[i,1:t]) 
       # ages by one year after recruitment (NIMBLE allows this syntax?)
-      c[i,t] <- AGE[i,t] == 1 # is i a calf?
+      # c[i,t] <- AGE[i,t] == 1 # is i a calf?
       
       # Observation process
       y[i,t] ~ dbern(z[i,t] * p[i,t])
@@ -105,14 +105,14 @@ js_superpop_model <- nimbleCode({
   for(t in 1:K){
     logit(survival_af[t]) <- s.b0[t]
     logit(survival_am[t]) <- s.b0[t] + s.bm[t]
-    logit(survival_ca[t]) <- s.b0[t] + s.bc[t]
+    # logit(survival_ca[t]) <- s.b0[t] + s.bc[t]
     logit(detection_f[t]) <- p.b0[t]
     logit(detection_m[t]) <- b.b0[t] + p.bm[t]
     logit(detection_c[t]) <- b.b0[t] + p.bc[t]
   }
   # Annual abundance
   for(t in 1:K){
-    N[t] <- sum(z[1:M,t])               
+    N[t] <- sum(z[1:NAUG,t])               
   } #t
   
   # Annual growth rate
@@ -121,6 +121,6 @@ js_superpop_model <- nimbleCode({
   } #t
   
   # Super-population size
-  N_super <- sum(w[1:M])       
+  N_super <- sum(w[1:NAUG])       
   
 })# end model

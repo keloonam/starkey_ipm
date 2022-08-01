@@ -105,20 +105,19 @@ gone_elk <- which(apply(herd, 1, sum) == ncol(herd))
 # weird_elk <- f == l
 # bad_elk <- which((gone_elk + weird_elk) != 0)
 y <- y[-gone_elk,]
-f <- f[-gone_elk]
 l <- l[-gone_elk]
 w <- w[-gone_elk,]
 male <- male[-gone_elk]
 calf <- calf[-gone_elk,]
 herd <- herd[-gone_elk,]
 
-# y <- y[1:50,]
-# f <- f[1:50]
-# l <- l[1:50]
-# w <- w[1:50,]
-# male <- male[1:50]
-# calf <- calf[1:50,]
-# herd <- herd[1:50,]
+random_elk <- sample(1:nrow(y), 100)
+y <- y[random_elk,]
+l <- l[random_elk]
+w <- w[random_elk,]
+male <- male[random_elk]
+calf <- calf[random_elk,]
+herd <- herd[random_elk,]
 
 # z <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
 # l_k <- rep(NA, nrow(y))
@@ -147,31 +146,46 @@ calf <- rbind(calf, matrix(NA, nrow = n_aug, ncol = ncol(y)))
 
 
 js_data <- list(
-  y = y,
-  z = z,
-  L = l,
-  M = male,
-  H = herd,
-  K = ncol(y),
-  M = nrow(y),
-  AGE = 
+  y    = y,
+  z    = z,
+  AGE  = calf,
+  A_P1 = calf[,1] + 1,
+  M    = male,
+  H    = herd
+)
+
+js_constants <- list(
+  L     = l,
+  K     = ncol(y),
+  NAUG  = nrow(y),
+  MAX_A = max(calf[,1], na.rm = T),
+  A     = rep(1, max(calf[,1], na.rm = T))
 )
 
 js_inits <- list(
-  s0_ps  = runif(ncol(y), 0.5, 0.9),
-  p0_ps  = runif(ncol(y), 0, 1),
-  a0_ps  = runif(ncol(y), 0, 1),
-  sm     = rnorm(ncol(y)),
-  sc     = rnorm(ncol(y)),
-  pm     = rnorm(ncol(y)),
-  sh     = rnorm(1),
-  ph     = rnorm(1),
-  sd_ind = rnorm(1),
-  b_ind  = rnorm(nrow(y))
+  s0   = runif(ncol(y), 0.5, 0.9),
+  p0   = runif(ncol(y), 0, 1),
+  e0   = runif(1, 0, 1),
+  a0   = rep(1/js_data$MAX_A, js_data$MAX_A),
+  s.ma = rnorm(ncol(y)),
+  s.ca = rnorm(ncol(y)),
+  s.he = rnorm(ncol(y)),
+  p.ma = rnorm(ncol(y)),
+  p.he = rnorm(ncol(y)),
+  p.ca = rnorm(ncol(y))
 )
 
 # Load model as js_superpop_model
 source("models/survival/js_model_nimble.R")
+
+js_superpop_model <- nimbleModel(
+  code      = js_model_code, 
+  constants = js_constants,
+  data      = js_data, 
+  calculate = F, 
+  check     = F, 
+  inits     = js_inits
+)
 
 js_conf <- configureMCMC(
   model = js_superpop_model,
