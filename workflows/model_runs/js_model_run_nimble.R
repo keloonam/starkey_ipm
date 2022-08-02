@@ -16,7 +16,6 @@ params <- c(
   "survival_ca",
   "detection_f",
   "detection_m",
-  "detection_c",
   "N_super",
   "N",
   "lambda"
@@ -151,7 +150,8 @@ js_data <- list(
   AGE  = calf,
   A_P1 = calf[,1] + 1,
   M    = male,
-  H    = herd
+  H    = herd,
+  c    = calf == 1
 )
 
 js_constants <- list(
@@ -166,13 +166,12 @@ js_inits <- list(
   s0   = runif(ncol(y), 0.5, 0.9),
   p0   = runif(ncol(y), 0, 1),
   e0   = runif(1, 0, 1),
-  a0   = rep(1/js_data$MAX_A, js_data$MAX_A),
+  a0   = rep(1/js_constants$MAX_A, js_constants$MAX_A),
   s.ma = rnorm(ncol(y)),
   s.ca = rnorm(ncol(y)),
   s.he = rnorm(ncol(y)),
   p.ma = rnorm(ncol(y)),
-  p.he = rnorm(ncol(y)),
-  p.ca = rnorm(ncol(y))
+  p.he = rnorm(ncol(y))
 )
 
 # Load model as js_superpop_model

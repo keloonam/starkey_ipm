@@ -11,8 +11,6 @@ js_model_code <- nimbleCode({
   for(t in 1:K){
     p0[t]   ~ dbeta(1, 1) # capture probability
     p.b0[t] <- logit(p0[t])
-    p.ca[t] ~ dbeta(1, 1) # calf adjustment
-    p.bc[t] <- logit(p.ca[t])
     p.ma[t] ~ dbeta(1, 1) # male adjustment
     p.bm[t] <- logit(p.ma[t])
     p.he[t] ~ dbeta(1, 1) # herd adjustment
@@ -35,7 +33,7 @@ js_model_code <- nimbleCode({
   
   # age dist including unentered individuals, c(p(!entered), p(age(1:max))) == 1
   # aka, age probabilities at start inclusive (i) of not yet entered age (0)
-  a0_i[1:(MAX_A + 1)] <- c((1 - eta[1]), eta[1] * a0[1:MAX_A])
+  a0_i[1:(MAX_A + 1)] <- c((1 - r[1]), r[1] * a0[1:MAX_A])
   
   # recruitment rate from 'not entered population' at t 
   # r_n is a vector of length n_occasions that sums to 1
@@ -58,7 +56,7 @@ js_model_code <- nimbleCode({
     # initial ages
     A_P1[i] ~ dcat(a0_i[1:(MAX_A + 1)]) # A_P1 = age plus one
     AGE[i,1] <- (A_P1[i] - 1) 
-    # c[i,1] <- AGE[i,1] == 1 # is i a calf?
+    # c[i,1] <- c_1[i] # is i a calf?
     # dcat gives integers from 1 to the length of the vector passed
     # age 0 can't be given, so add one to all initial ages.
     # AGE is also data, but has NAs for augmented ind and ind w/o age
@@ -68,7 +66,7 @@ js_model_code <- nimbleCode({
     z[i,1] <- u[i,1] * w[i] # z is the "real" state
     
     # Observation probability
-    logit(p[i,1]) <- p.b0[1] + p.bm[1]*M[i] + p.bh[1]*H[i,t]# + p.bc[1]*c[i,1]
+    logit(p[i,1]) <- p.b0[1] + p.bm[1]*M[i] + p.bh[1]*H[i,t]
     
     # Observation process
     y[i,1] ~ dbern(z[i,1] * p[i,1])
@@ -77,12 +75,12 @@ js_model_code <- nimbleCode({
     avail[i,1] <- 1 - u[i,1] # still available -- i.e. not yet recruited
     
     ### Sessions 2:K ###     
-    for (t in 2:K[L[i]]){ # 2 to last session i was available
+    for (t in 2:L[i]){ # 2 to last session i was available
       # Survival probabilities
-      logit(s[i,t]) <- s.b0[t] + s.bm[t]*M[i] + s.bh[t]*H[i,t]# + s.bc[t]*c[i,t]
+      logit(s[i,t]) <- s.b0[t] + s.bm[t]*M[i] + s.bh[t]*H[i,t] + s.bc[t]*c[i,t]*avail[i,t-1]
       
       # Detection probabilities
-      logit(p[i,t]) <- p.b0[t] + p.bm[t]*M[i] + p.bh[t]*H[i,t]# + p.bc[t]*c[i,t]
+      logit(p[i,t]) <- p.b0[t] + p.bm[t]*M[i] + p.bh[t]*H[i,t]
       
       # State process
       u[i,t] ~ dbern(u[i,t-1] * s[i,t] + avail[i,t-1] * r[t])   
@@ -91,13 +89,13 @@ js_model_code <- nimbleCode({
       # Age process
       AGE[i,t] <- AGE[i,t-1] + max(u[i,1:t]) 
       # ages by one year after recruitment (NIMBLE allows this syntax?)
-      # c[i,t] <- AGE[i,t] == 1 # is i a calf?
+      # c[i,t] <- AGE[i,t] * avail[i,t-1] # is i a calf?
       
       # Observation process
       y[i,t] ~ dbern(z[i,t] * p[i,t])
       
       # derived stuff
-      avail[i,t] <- 1- max(u[i,1:t]) # still available -- i.e. not yet recruited
+      avail[i,t] <- 1 - max(u[i,1:t]) # still available -- i.e. not recruited
     } #t
   } #i
   
@@ -105,10 +103,9 @@ js_model_code <- nimbleCode({
   for(t in 1:K){
     logit(survival_af[t]) <- s.b0[t]
     logit(survival_am[t]) <- s.b0[t] + s.bm[t]
-    # logit(survival_ca[t]) <- s.b0[t] + s.bc[t]
-    logit(detection_f[t]) <- p.b0[t]
+    logit(survival_ca[t]) <- s.b0[t] + s.bc[t]
+    logit(detection_f[t]) <- p.b0[t] # also calf detection
     logit(detection_m[t]) <- b.b0[t] + p.bm[t]
-    logit(detection_c[t]) <- b.b0[t] + p.bc[t]
   }
   # Annual abundance
   for(t in 1:K){
