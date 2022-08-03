@@ -1,15 +1,15 @@
 # PARALLEL NIMBLE ON CGRB
-# SGE_Batch -c "R CMD BATCH js_cqls.R js_cqls_OUT" -r js_cqls -q otter -P 3 -M kenneth.loonam@oregonstate.edu
+# SGE_Batch -c "R CMD BATCH js_cqls_speed_test.R js_speed_out" -r js_speed_test -q otter -P 3 -M kenneth.loonam@oregonstate.edu
 
 
 rm(list=ls())
 
-n_cores <- 5
+n_cores <- 3
 
 run_js_par <- function(seed){
   
-  nb <- 10000
-  ni <- 100000
+  nb <- 1000
+  ni <- 10000
   nc <- 1
   
   load("js_nimble_data_cqls.Rdata")
@@ -214,4 +214,4 @@ results <- as.mcmc.list(rslt)
 summary(results)
 gelman.diag(bear_nimble_results, multivariate = F)
 
-save(results, file = "js_results_2aug2022.RData")
+save(results, file = "js_results_2aug2022_speed_test.RData")

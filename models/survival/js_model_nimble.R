@@ -66,7 +66,7 @@ js_model_code <- nimbleCode({
     z[i,1] <- u[i,1] * w[i] # z is the "real" state
     
     # Observation probability
-    logit(p[i,1]) <- p.b0[1] + p.bm[1]*M[i] + p.bh[1]*H[i,t]
+    logit(p[i,1]) <- p.b0[1] + p.bm[1]*M[i] + p.bh[1]*H[i,1]
     
     # Observation process
     y[i,1] ~ dbern(z[i,1] * p[i,1])
@@ -109,15 +109,27 @@ js_model_code <- nimbleCode({
   }
   # Annual abundance
   for(t in 1:K){
-    N[t] <- sum(z[1:NAUG,t])               
+    N[t]         <- sum(z[1:NAUG,t])
+    N_males[t]   <- sum(AM[1:NAUG,t])
+    N_females[t] <- sum(AF[1:NAUG,t])
+    N_calves[t]  <- sum(CA[1:NAUG,t])
   } #t
+  
+  # Identities for abundance
+  for(i in 1:NAUG){
+    for(t in 1:K){
+      AM[i,t] <- z[i,t] * M[i] * (AGE[i,t] > 1)
+      AF[i,t] <- z[i,t] * (M[i] == 0) * (AGE[i,t] > 1)
+      CA[i,t] <- z[i,t] * (AGE[i,t] == 1)
+    }
+  }
   
   # Annual growth rate
   for(t in 1:(K-1)){
-    lambda[t] <- N[t+1]/N[t]               
+    lambda[t] <- N[t+1]/N[t]
   } #t
   
   # Super-population size
-  N_super <- sum(w[1:NAUG])       
+  N_super <- sum(w[1:NAUG])
   
 })# end model

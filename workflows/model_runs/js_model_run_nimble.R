@@ -25,11 +25,11 @@ params <- c(
 result_file <- "results//survival//js_rslt_28jul2022.Rdata"
 
 # Sampler variables
-n_i <- 750
-n_t <- 1
-n_b <- 250
-n_c <- 1
-n_a <- 10
+ni <- 750
+nt <- 1
+nb <- 250
+nc <- 1
+na <- 10
 
 
 
@@ -110,13 +110,13 @@ male <- male[-gone_elk]
 calf <- calf[-gone_elk,]
 herd <- herd[-gone_elk,]
 
-random_elk <- sample(1:nrow(y), 100)
-y <- y[random_elk,]
-l <- l[random_elk]
-w <- w[random_elk,]
-male <- male[random_elk]
-calf <- calf[random_elk,]
-herd <- herd[random_elk,]
+# random_elk <- sample(1:nrow(y), 100)
+# y <- y[random_elk,]
+# l <- l[random_elk]
+# w <- w[random_elk,]
+# male <- male[random_elk]
+# calf <- calf[random_elk,]
+# herd <- herd[random_elk,]
 
 # z <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
 # l_k <- rep(NA, nrow(y))
@@ -141,8 +141,6 @@ herd <- rbind(herd, matrix(0,  nrow = n_aug, ncol = ncol(y)))
 calf <- rbind(calf, matrix(NA, nrow = n_aug, ncol = ncol(y)))
 
 #Fit_model======================================================================
-
-
 
 js_data <- list(
   y    = y,
@@ -174,40 +172,30 @@ js_inits <- list(
   p.he = rnorm(ncol(y))
 )
 
+jsnm <- list(
+  constants = js_constants,
+  data = js_data,
+  monitors = params
+)
+
+save(jsnm, file = "cqls//js//js_nimble_data_cqls.Rdata")
+
 # Load model as js_superpop_model
 source("models/survival/js_model_nimble.R")
 
-js_superpop_model <- nimbleModel(
-  code      = js_model_code, 
+rslt <- nimbleMCMC(
+  code = js_model_code,
   constants = js_constants,
-  data      = js_data, 
-  calculate = F, 
-  check     = F, 
-  inits     = js_inits
-)
-
-js_conf <- configureMCMC(
-  model = js_superpop_model,
+  data = js_data,
   monitors = params,
-  control = list(adaptInterval = n_a), 
-  thin = n_t, 
-  useConjugacy = TRUE
-)
-js_mcmc <- buildMCMC(js_conf)
-js_comp <- compileNimble(js_superpop_model)
-js_mcmc_comp <- compileNimble(
-  js_mcmc,
-  project = js_superpop_model
-)
-rslt <- runMCMC(
-  js_mcmc_comp,
-  niter = n_i,
-  nburnin = n_b,
-  nchains = n_c,
-  inits = inits,
-  setSeed = F,
+  inits = js_inits,
+  niter = ni,
+  nburnin = nb,
+  nchains = nc,
   progressBar = T,
-  samplesAsCodaMCMC = T
-)
+  samplesAsCodaMCMC = T,
+  summary = F,
+  check = F
+)  
 
 save(rslt, file = result_file)
