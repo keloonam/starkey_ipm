@@ -1,18 +1,26 @@
 # PARALLEL NIMBLE ON CGRB
-# SGE_Batch -c "R CMD BATCH js_cqls.R js_cqls_OUT" -r js_cqls -q otter -P 3 -M kenneth.loonam@oregonstate.edu
+# SGE_Batch -c "R CMD BATCH js_cqls.R bear_nimble_cgrb_OUT" -r bear_nimble_cgrb -q otter -P 3 -M kenneth.loonam@oregonstate.edu
 
 
 rm(list=ls())
 
-n_cores <- 5
+library_location <- "/raid1/home/fw/loonamk/opt/R/library"
+.libPaths(c(library_location, .libPaths()))
+library(parallel, lib.loc = library_location)
+# library(snow, lib.loc = library_location)
+library(nimble, lib.loc = library_location)
+
+n_cores <- 3
 
 run_js_par <- function(seed){
   
   nb <- 10000
-  ni <- 100000
+  ni <- 50000
   nc <- 1
+  nt <- 10
   
-  load("js_nimble_data_cqls.Rdata")
+  library(nimble, lib.loc = "/raid1/home/fw/loonamk/opt/R/library")  
+  load("data_js.Rdata")
   
   data      <- jsnm$data
   constants <- jsnm$constants
@@ -20,14 +28,10 @@ run_js_par <- function(seed){
     "survival_af", 
     "survival_am", 
     "survival_ca",
-    "detection_f",
-    "detection_m",
     "N_super",
-    "N",
     "N_females",
     "N_males",
-    "N_calves",
-    "lambda"
+    "N_calves"
   )
   
   inits <- list(
@@ -41,8 +45,8 @@ run_js_par <- function(seed){
     p.ma = rnorm(ncol(data$y)),
     p.he = rnorm(ncol(data$y))
   )
-  
-  library(nimble)
+  #library(snow)
+  #library(nimble)
   
   js_model_code <- nimbleCode({
     # Nimble version of jolly-seber super population formulation with age data
@@ -189,6 +193,7 @@ run_js_par <- function(seed){
     niter             = ni,
     nburnin           = nb,
     nchains           = nc,
+    thin              = nt,
     progressBar       = T,
     samplesAsCodaMCMC = T,
     summary           = F,
@@ -199,7 +204,7 @@ run_js_par <- function(seed){
   return(out)
 }
 
-kl_cluster <- parallel::makeCluster(n_cores, type = "SOCK")
+kl_cluster <- parallel::makePSOCKcluster(n_cores)
 
 rslt <- parallel::parLapply(
   cl  = kl_cluster, 
@@ -214,4 +219,4 @@ results <- as.mcmc.list(rslt)
 summary(results)
 gelman.diag(bear_nimble_results, multivariate = F)
 
-save(results, file = "js_results_2aug2022.RData")
+save(results, file = "rslts_5aug2022.RData")
