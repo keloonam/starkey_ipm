@@ -35,12 +35,12 @@ js_model_code <- nimbleCode({
   # aka, age probabilities at start inclusive (i) of not yet entered age (0)
   a0_i[1:(MAX_A + 1)] <- c((1 - r[1]), r[1] * a0[1:MAX_A])
   
-  # recruitment rate from 'not entered population' at t 
+  # recruitment rate from 'not entered population' at t
   # r_n is a vector of length n_occasions that sums to 1
-    # it represents the naive probability of individuals entering. It is not 
-    # adjusted by time-step/n ind remaining
+  # it represents the naive probability of individuals entering. It is not
+  # adjusted by time-step/n ind remaining
   # r is the probability of the remaining true individuals to enter the pop at
-    # each time step. The final value of r is 1.
+  # each time step. The final value of r is 1.
   r_n[1:K] ~ ddirch(B[1:K])
   r[1] <- r_n[1]
   for(k in 2:K){
@@ -52,10 +52,11 @@ js_model_code <- nimbleCode({
   for (i in 1:NAUG){
     # is individual i real?
     w[i] ~ dbern(e0)
+    M[i] ~ dbern(0.5)
     
     # initial ages
     A_P1[i] ~ dcat(a0_i[1:(MAX_A + 1)]) # A_P1 = age plus one
-    AGE[i,1] <- (A_P1[i] - 1) 
+    AGE[i,1] <- (A_P1[i] - 1)
     # c[i,1] <- c_1[i] # is i a calf?
     # dcat gives integers from 1 to the length of the vector passed
     # age 0 can't be given, so add one to all initial ages.
@@ -74,20 +75,23 @@ js_model_code <- nimbleCode({
     # derived stuff
     avail[i,1] <- 1 - u[i,1] # still available -- i.e. not yet recruited
     
-    ### Sessions 2:K ###     
+    ### Sessions 2:K ###
     for (t in 2:L[i]){ # 2 to last session i was available
       # Survival probabilities
-      logit(s[i,t]) <- s.b0[t] + s.bm[t]*M[i] + s.bh[t]*H[i,t] + s.bc[t]*c[i,t]*avail[i,t-1]
+      logit(s[i,t]) <- s.b0[t] + 
+        s.bm[t] * M[i] + 
+        s.bh[t] * H[i,t] + 
+        s.bc[t] * c[i,t] * avail[i,t-1]
       
       # Detection probabilities
       logit(p[i,t]) <- p.b0[t] + p.bm[t]*M[i] + p.bh[t]*H[i,t]
       
       # State process
-      u[i,t] ~ dbern(u[i,t-1] * s[i,t] + avail[i,t-1] * r[t])   
+      u[i,t] ~ dbern(u[i,t-1] * s[i,t] + avail[i,t-1] * r[t])
       z[i,t] <- u[i,t] * w[i]
       
       # Age process
-      AGE[i,t] <- AGE[i,t-1] + max(u[i,1:t]) 
+      AGE[i,t] <- AGE[i,t-1] + max(u[i,1:t])
       # ages by one year after recruitment (NIMBLE allows this syntax?)
       # c[i,t] <- AGE[i,t] * avail[i,t-1] # is i a calf?
       
