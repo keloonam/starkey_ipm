@@ -20,13 +20,8 @@ js_nimble_code <- nimbleCode({
   for(i in 1:nind){
     for(t in f[i]:(nocc - 1)){
       # probabilities to actually use
-      logit(s[i,t]) <- s0[t] + 
-        sc[t] * c[i,t] + 
-        sm[t] * m[i] * (1 - c[i,t]) + 
-        sh * h[i,t]
-      logit(p[i,t]) <- p0[t] +               
-        pm[t] * m[i] * (1 - c[i,t]) + 
-        ph * h[i,t]
+      logit(s[i,t]) <- s0[t] + sc[t]*c[i,t] + sm[t]*m[i]*(1 - c[i,t]) + sh*h[i]
+      logit(p[i,t]) <- p0[t] + pm[t]*m[i]*(1 - c[i,t]) + ph*h[i,t]
       
       # Tracking values
       logit(s.m[t]) <- s0[t] + sm[t]
