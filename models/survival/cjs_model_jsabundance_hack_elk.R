@@ -1,25 +1,3 @@
-# sum_columns <- nimbleFunction(
-#   run = function(mat.x = double(2)){
-#   
-#   returnType(double(1))
-#   nc <- dim(mat.x)[2]
-#   nr <- dim(mat.x)[1]
-#   
-#   # sums <- matrix(0, nrow = 2, ncol = nc)
-#   sums <- numeric(nc)
-#   for(j in 1:nc){
-#     for(i in 1: nr){
-#       if(is.na(mat.x[i,j])){
-#         mat.x[i,j] <- 0
-#       }
-#       sums[j] <- sums[j] + mat.x[i,j] 
-#     }
-#   }
-#   # out <- matrix(c(sumf, summ), nrow = 2, ncol = nc, byrow = T)
-#   return(sums)
-# })
-# sumcols <- compileNimble(sum_columns)
-
 nimble_code <- nimbleCode({
   # cjs code for Starkey elk with js abundance estimate added
   # 18-August-2022
@@ -92,32 +70,26 @@ nimble_code <- nimbleCode({
     } #t
   } #i
   
-  Nm.a[1] <- 0
-  Nf.a[1] <- 0
-
   for(t in 2:nocc){
-    ntot.a[t] <- sum(z[1:nind,t])
+    # Number of adult males/females observed
     Nm.a[t] <- sum(m.a[1:nind,t])
     Nf.a[t] <- sum(f.a[1:nind,t])
-    # Number of adult males/females observed
-    # Nm.a[t] <- n.alive[2,t]
-    # Nf.a[t] <- n.alive[1,t]
-
+    
     # Expected value of N previously unobserved males/females
-    # expNm.un[t] <- newNm[t] / p.m[t]
-    # expNf.un[t] <- newNf[t] / p.f[t]
-    # 
-    # # SD of expected value (normal approx. of binomial)
-    # sdNm.un[t] <- sqrt(expNm.un[t] * p.m[t] * (1 - p.m[t]))
-    # sdNf.un[t] <- sqrt(expNf.un[t] * p.f[t] * (1 - p.f[t]))
-    # 
-    # # Estimate of previously unobserved males/females
-    # Nm.un[t] ~ T(dnorm(expNm.un[t], sd = sdNm.un[t]), 0, 1)
-    # Nf.un[t] ~ T(dnorm(expNf.un[t], sd = sdNf.un[t]), 0, 1)
-    # 
-    # # N = previously unobserved + know alive - 2*newly observed
-    # # Newly observed included in previously unobserved and n.alive
-    # Nm[t] <- Nm.un[t] + Nm.a[t] - 2*newNm[t]
-    # Nf[t] <- Nf.un[t] + Nm.a[t] - 2*newNm[t]
+    expNm.un[t] <- newNm[t] / p.m[t]
+    expNf.un[t] <- newNf[t] / p.f[t]
+    
+    # SD of expected value (normal approx. of binomial)
+    sdNm.un[t] <- sqrt(expNm.un[t] * p.m[t] * (1 - p.m[t]))
+    sdNf.un[t] <- sqrt(expNf.un[t] * p.f[t] * (1 - p.f[t]))
+    
+    # Estimate of previously unobserved males/females
+    Nm.un[t] ~ T(dnorm(expNm.un[t], sd = sdNm.un[t]), 0, 1)
+    Nf.un[t] ~ T(dnorm(expNf.un[t], sd = sdNf.un[t]), 0, 1)
+    
+    # N = previously unobserved + know alive - 2*newly observed
+    # Newly observed included in previously unobserved and n.alive
+    Nm[t] <- Nm.un[t] + Nm.a[t] - 2*newNm[t]
+    Nf[t] <- Nf.un[t] + Nm.a[t] - 2*newNm[t]
   } #t
 })

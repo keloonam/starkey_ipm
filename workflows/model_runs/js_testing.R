@@ -1,43 +1,57 @@
 require(nimble)
 
-n <- 100
-s <- 0.9
-p <- 0.5
-nocc <- 5
+n    <- 100
+s.f  <- 0.9
+s.m  <- 0.7
+s.c  <- 0.5
+p    <- 0.8
+nocc <- 7
 naug <- 200
 
 # Sampler variables
-ni <- 75000
+ni <- 100000
 nt <- 1
 nb <- 50000
-nc <- 1
+nc <- 3
 na <- 1000
 
 params <- c(
-  "N",
-  # "z",
-  # "N.old",
-  "N.new",
-  "expN.new",
-  "sdN.new",
-  "N.alive",
-  "mean.s",
-  "mean.p",
-  "s.b0",
-  "p.b0",
-  "N.bin"
+  "sf",
+  "sm",
+  "sc",
+  "pf",
+  "pm",
+  "ec",
+  "ea"
+  # "Nf",
+  # "Nm",
+  # "Nc",
+  # "Ns"
 )
 
 alive <- matrix( 0, nrow = n, ncol = nocc)
 y     <- matrix( 0, nrow = n, ncol = nocc)
-z     <- matrix(NA, nrow = n, ncol = nocc)
+c     <- matrix( 0, nrow = n, ncol = nocc)
+s     <- matrix(NA, nrow = n, ncol = nocc)
 f     <- sample(1:(nocc-1), replace = T, size = n)
+m     <- rbinom(n, 1, 0.5)
 drop  <- c()
 for(i in 1:nrow(alive)){
   alive[i, f[i]] <- 1
+  c[i, f[i]]     <- 1
+  
   for(j in 2:ncol(alive)){
+    if(c[i,j-1] == 1){
+      s[i,j] <- s.c
+    }else{
+      if(m[i] == 1){
+        s[i,j] <- s.m
+      }else{
+        s[i,j] <- s.f
+      }
+    }
     if(alive[i,j-1] == 1){
-      alive[i,j] <- rbinom(1, 1, s)
+      alive[i,j] <- rbinom(1, 1, s[i,j])
     }
   }
   for(j in 1:ncol(alive)){
@@ -49,64 +63,78 @@ for(i in 1:nrow(alive)){
 }
 
 y <- y[-drop,]
-z <- replace(y, y == 0, NA)
-# w <- rep(1, nrow(y))
-# y <- rbind(y, matrix( 0, nrow = naug, ncol = nocc))
-# z <- rbind(z, matrix(NA, nrow = naug, ncol = nocc))
-# 
-# w <- c(w, rep(NA, naug))
+c <- c[-drop,]
+m <- m[-drop ]
 
 f <- apply(y, 1, function(x){min(which(x == 1))})
 l <- apply(y, 1, function(x){max(which(x == 1))})
-z <- matrix(0, nrow = nrow(y), ncol = ncol(y))
+w <- matrix(0, nrow = nrow(y), ncol = ncol(y))
 for(i in 1:nrow(y)){
   for(j in f[i]:l[i]){
-    z[i,j] <- 1
+    w[i,j] <- 1
   }
   if(l[i] < ncol(y)){
     for(j in (l[i]+1):ncol(y)){
-      z[i,j] <- NA
+      w[i,j] <- NA
     }
   }
 }
-newN <- rep(0, ncol(y))
-for(i in 1:ncol(y)){
-  newN[i] <- sum(f == i)
+y <- cbind(rep(0, nrow(y)), y)
+c <- cbind(rep(0, nrow(c)), c)
+w <- cbind(rep(0, nrow(w)), w)
+
+# z:    1 -- not yet alive;    2 -- calf;    3 -- adult;    4 -- dead
+z <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
+for(i in 1:nrow(z)){
+  z[i,1] <- 1
+  for(t in 2:ncol(z)){
+    if(c[i,t] == 1){
+      z[i,t] <- 2
+    }else{if(!is.na(w[i,t])){
+      if(w[i,t] == 1){
+        z[i,t] <- 3
+      }}
+    }
+  }
 }
 
+y <- rbind(y, matrix(0, nrow = naug, ncol = ncol(y)))
+m <- c(m, rep(NA, naug))
+z <- rbind(z, matrix(NA, nrow = naug, ncol = ncol(z)))
 
-fake_js_data <- list(
+data <- list(
   y = y,
-  # w = w,
+  m = m,
   z = z,
-  z.constrain = matrix(1, nrow = nrow(z), ncol = ncol(z)),
-  newN = newN
+  z.constrain = matrix(1, nrow = nrow(z), ncol = ncol(z))
 )
-
-fake_js_constants <- list(
+nocc <- ncol(y)
+constants <- list(
   nocc = ncol(y),
   nind = nrow(y),
-  f    = f
-)
-jags_data <- list(
-  y = y,
-  z = z,
-  nocc = ncol(y),
-  nind = nrow(y),
-  f = f
+  l    = rep(ncol(y), nrow(y))
 )
 
-fake_js_inits <- list(
-  z = replace(z, is.na(z), 1)
+inits <- list(
+  sf = runif(nocc, 0, 1),
+  sm = runif(nocc, 0, 1),
+  sc = runif(nocc, 0, 1),
+  pf = runif(nocc, 0, 1),
+  pm = runif(nocc, 0, 1),
+  pc = runif(nocc, 0, 1),
+  ec = runif(nocc, 0, 1),
+  ea = runif(nocc, 0, 1),
+  sh = runif(1, 0, 1),
+  ph = runif(1, 0, 1)
 )
 
-source("models/survival/cjs_model_null.R")
+source("models/survival/js_multistate_elk.R")
 
 rslt <- nimbleMCMC(
-  code = js_nimble_code,
-  constants = fake_js_constants,
-  data = fake_js_data,
-  inits = fake_js_inits,
+  code = code,
+  constants = constants,
+  data = data,
+  inits = inits,
   monitors = params,
   niter = ni,
   nburnin = nb,
@@ -119,5 +147,5 @@ rslt <- nimbleMCMC(
 
 # save(rslt, file = result_file)
 mcmcplots::mcmcplot(rslt)
-apply(alive, 2, sum)
-summary(rslt[,c(2:5, 12:15)])
+# apply(alive, 2, sum)
+# summary(rslt[,c(2:5, 12:15)])
