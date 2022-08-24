@@ -1,4 +1,4 @@
-code <- nimbleCode({
+model{
   # cjs code for Starkey elk with js abundance estimate added
   # 18-August-2022
   
@@ -107,4 +107,4 @@ code <- nimbleCode({
   #   w[i]     <- 1 - equals(nt.al[i], 0)
   # }
   # Ns <- sum(w[1:nind])
-})
+}

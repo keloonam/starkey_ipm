@@ -1,6 +1,5 @@
-code <- nimbleCode({
-  # cjs code for Starkey elk with js abundance estimate added
-  # 18-August-2022
+model{
+  # 24-August-2022
   
   #Priors=======================================================================
   for(t in 1:(nocc-1)){
@@ -22,13 +21,6 @@ code <- nimbleCode({
   # Fixed effects of non-main study herd (h) on p and s
   sh ~ dunif(0, 1)
   ph ~ dunif(0, 1)
-  
-  for(i in 1:nind){
-    for(t in 1:nocc){
-      # Constrain z to be a number, not NA
-      z_con[i,t] ~ dconstraint(z[i,t] >= 1)
-    }
-  }
   
   #Probabilities================================================================
   for(t in 1:(nocc-1)){
@@ -107,4 +99,4 @@ code <- nimbleCode({
   #   w[i]     <- 1 - equals(nt.al[i], 0)
   # }
   # Ns <- sum(w[1:nind])
-})
+}

@@ -9,10 +9,10 @@ nocc <- 7
 naug <- 200
 
 # Sampler variables
-ni <- 100000
+ni <- 10000
 nt <- 1
-nb <- 50000
-nc <- 3
+nb <- 5000
+nc <- 1
 na <- 1000
 
 params <- c(
@@ -101,49 +101,94 @@ for(i in 1:nrow(z)){
 y <- rbind(y, matrix(0, nrow = naug, ncol = ncol(y)))
 m <- c(m, rep(NA, naug))
 z <- rbind(z, matrix(NA, nrow = naug, ncol = ncol(z)))
+for(i in 1:nrow(z)){
+  if(any(!is.na(z[i,]))){
+    if(any(z[i,] == 2)){
+      tmp <- which(z[i,] == 2) - 1
+      z[i,1:tmp] <- 1
+    }
+  }
+}
+
+z_init <- z
+z_init[,1] <- 1
+for(i in 1:nrow(z)){
+  for(t in 1:ncol(z)){
+    if(is.na(z_init[i,t])){
+      z_init[i,t] <- 3
+    }
+  }
+}
+for(i in 1:nrow(y)){
+  for(t in 1:ncol(y)){
+    if(y[i,t] == 0){
+      y[i,t] <- 2
+    }
+  }
+}
+h <- matrix(0, nrow = nrow(y), ncol = ncol(y))
 
 data <- list(
   y = y,
   m = m,
   z = z,
-  z.constrain = matrix(1, nrow = nrow(z), ncol = ncol(z))
+  h = h,
+  z_con = matrix(1, nrow = nrow(z), ncol = ncol(z))
 )
 nocc <- ncol(y)
 constants <- list(
   nocc = ncol(y),
-  nind = nrow(y),
-  l    = rep(ncol(y), nrow(y))
+  nind = nrow(y)
+  # l    = rep(ncol(y), nrow(y))
 )
+jags.data <- list(
+  y = y,
+  m = m,
+  h = h,
+  # z = z,
+  # z_con = matrix(1, nrow = nrow(z), ncol = ncol(z)),
+  nocc = ncol(y),
+  nind = nrow(y)
+)
+z_init[,1] <- NA
 
 inits <- list(
-  sf = runif(nocc, 0, 1),
-  sm = runif(nocc, 0, 1),
-  sc = runif(nocc, 0, 1),
-  pf = runif(nocc, 0, 1),
-  pm = runif(nocc, 0, 1),
-  pc = runif(nocc, 0, 1),
-  ec = runif(nocc, 0, 1),
-  ea = runif(nocc, 0, 1),
+  sf = runif(nocc-1, 0, 1),
+  sm = runif(nocc-1, 0, 1),
+  sc = runif(nocc-1, 0, 1),
+  pf = runif(nocc-1, 0, 1),
+  pm = runif(nocc-1, 0, 1),
+  pc = runif(nocc-1, 0, 1),
+  ec = runif(nocc-1, 0, 1),
+  ea[1] = runif(1, 0, 1),
   sh = runif(1, 0, 1),
-  ph = runif(1, 0, 1)
+  ph = runif(1, 0, 1),
+  z  = z_init
 )
 
-source("models/survival/js_multistate_elk.R")
+# source("models/survival/js_multistate_elk.R")
 
-rslt <- nimbleMCMC(
-  code = code,
-  constants = constants,
-  data = data,
-  inits = inits,
-  monitors = params,
-  niter = ni,
-  nburnin = nb,
-  nchains = nc,
-  progressBar = T,
-  samplesAsCodaMCMC = T,
-  summary = F,
-  check = F
-)  
+# rslt <- nimbleMCMC(
+#   code = code,
+#   constants = constants,
+#   data = data,
+#   inits = inits,
+#   monitors = params,
+#   niter = ni,
+#   nburnin = nb,
+#   nchains = nc,
+#   progressBar = T,
+#   samplesAsCodaMCMC = T,
+#   summary = F,
+#   check = F
+# )  
+
+require(rjags)
+jags.model(file = "models//survival//js_multistate_elk_jags.txt",
+           data = jags.data,
+           inits = inits,
+           n.chains = nc,
+           n.adapt = na)
 
 # save(rslt, file = result_file)
 mcmcplots::mcmcplot(rslt)
