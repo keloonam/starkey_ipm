@@ -1,4 +1,4 @@
-model{
+code <- nimbleCode({
   # 24-August-2022
   
   #Priors=======================================================================
@@ -74,8 +74,8 @@ model{
   for(t in 1:nocc){
     for(i in 1:nind){
       a.al[i,t]  <- equals(z[i,t], 2)
-      m.al[i,t]  <- a.al[i,t] *      m[i]  * (1 - c[i,t])
-      f.al[i,t]  <- a.al[i,t] * (1 - m[i]) * (1 - c[i,t])
+      m.al[i,t]  <- ad.al[i,t] *      m[i]  * (1 - c[i,t])
+      f.al[i,t]  <- ad.al[i,t] * (1 - m[i]) * (1 - c[i,t])
     } #i
     Nm[t] <- sum(m.al[1:nind,t])
     Nf[t] <- sum(f.al[1:nind,t])
@@ -88,4 +88,4 @@ model{
     w[i]     <- 1 - equals(nt.al[i], 0)
   }
   Ns <- sum(w[1:nind])
-}
+})

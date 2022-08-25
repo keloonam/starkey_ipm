@@ -5,13 +5,13 @@ s.f  <- 0.9
 s.m  <- 0.7
 s.c  <- 0.5
 p    <- 0.8
-nocc <- 7
-naug <- 200
+nocc <- 5
+naug <- 300
 
 # Sampler variables
-ni <- 10000
+ni <- 20000
 nt <- 1
-nb <- 5000
+nb <- 10000
 nc <- 1
 na <- 1000
 
@@ -21,12 +21,11 @@ params <- c(
   "sc",
   "pf",
   "pm",
-  "ec",
-  "ea"
-  # "Nf",
-  # "Nm",
-  # "Nc",
-  # "Ns"
+  "ep",
+  "Nf",
+  "Nm",
+  "Nt",
+  "Ns"
 )
 
 alive <- matrix( 0, nrow = n, ncol = nocc)
@@ -62,13 +61,18 @@ for(i in 1:nrow(alive)){
   }
 }
 
+n.total   <- apply(alive, 2, sum)
+n.females <- apply(alive * (1-m), 2, sum)
+n.males   <- apply(alive * m, 2, sum)
+
 y <- y[-drop,]
 c <- c[-drop,]
 m <- m[-drop ]
 
 f <- apply(y, 1, function(x){min(which(x == 1))})
 l <- apply(y, 1, function(x){max(which(x == 1))})
-w <- matrix(0, nrow = nrow(y), ncol = ncol(y))
+w <- matrix(0, nrow = nrow(y), ncol = ncol(y)) # known state alive
+
 for(i in 1:nrow(y)){
   for(j in f[i]:l[i]){
     w[i,j] <- 1
@@ -83,28 +87,27 @@ y <- cbind(rep(0, nrow(y)), y)
 c <- cbind(rep(0, nrow(c)), c)
 w <- cbind(rep(0, nrow(w)), w)
 
-# z:    1 -- not yet alive;    2 -- calf;    3 -- adult;    4 -- dead
+# z:    1 -- not yet alive;    2 -- adult;    2 -- dead
 z <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
 for(i in 1:nrow(z)){
-  z[i,1] <- 1
   for(t in 2:ncol(z)){
-    if(c[i,t] == 1){
-      z[i,t] <- 2
-    }else{if(!is.na(w[i,t])){
+    if(!is.na(w[i,t])){
       if(w[i,t] == 1){
-        z[i,t] <- 3
-      }}
+        z[i,t] <- 2
+      }
     }
   }
 }
 
-y <- rbind(y, matrix(0, nrow = naug, ncol = ncol(y)))
-m <- c(m, rep(NA, naug))
+y <- rbind(y, matrix(0,  nrow = naug, ncol = ncol(y)))
 z <- rbind(z, matrix(NA, nrow = naug, ncol = ncol(z)))
+c <- rbind(c, matrix(0,  nrow = naug, ncol = ncol(c)))
+m <- c(m, rep(NA, naug))
+
 for(i in 1:nrow(z)){
   if(any(!is.na(z[i,]))){
-    if(any(z[i,] == 2)){
-      tmp <- which(z[i,] == 2) - 1
+    if(any(c[i,] == 1)){
+      tmp <- which(c[i,] == 1) - 1
       z[i,1:tmp] <- 1
     }
   }
@@ -115,7 +118,7 @@ z_init[,1] <- 1
 for(i in 1:nrow(z)){
   for(t in 1:ncol(z)){
     if(is.na(z_init[i,t])){
-      z_init[i,t] <- 3
+      z_init[i,t] <- 2
     }
   }
 }
@@ -127,13 +130,13 @@ for(i in 1:nrow(y)){
   }
 }
 h <- matrix(0, nrow = nrow(y), ncol = ncol(y))
-
+z[,1] <- NA
 data <- list(
   y = y,
   m = m,
   z = z,
-  h = h,
-  z_con = matrix(1, nrow = nrow(z), ncol = ncol(z))
+  c = c,
+  h = h
 )
 nocc <- ncol(y)
 constants <- list(
@@ -145,7 +148,8 @@ jags.data <- list(
   y = y,
   m = m,
   h = h,
-  # z = z,
+  z = z,
+  c = c,
   # z_con = matrix(1, nrow = nrow(z), ncol = ncol(z)),
   nocc = ncol(y),
   nind = nrow(y)
@@ -158,16 +162,16 @@ inits <- list(
   sc = runif(nocc-1, 0, 1),
   pf = runif(nocc-1, 0, 1),
   pm = runif(nocc-1, 0, 1),
-  pc = runif(nocc-1, 0, 1),
-  ec = runif(nocc-1, 0, 1),
-  ea[1] = runif(1, 0, 1),
+  # pc = runif(nocc-1, 0, 1),
+  # ec = runif(nocc-1, 0, 1),
+  # ea[1] = runif(1, 0, 1),
   sh = runif(1, 0, 1),
-  ph = runif(1, 0, 1),
-  z  = z_init
+  ph = runif(1, 0, 1)
+  # z  = z_init
 )
 
-# source("models/survival/js_multistate_elk.R")
-
+# source("models/survival/js_multistate_elk_nocalves.R")
+# 
 # rslt <- nimbleMCMC(
 #   code = code,
 #   constants = constants,
@@ -181,14 +185,16 @@ inits <- list(
 #   samplesAsCodaMCMC = T,
 #   summary = F,
 #   check = F
-# )  
+# )
 
 require(rjags)
-jags.model(file = "models//survival//js_multistate_elk_jags.txt",
+model <- jags.model(file = "models//survival//js_multistate_elk_jags.txt",
            data = jags.data,
            inits = inits,
            n.chains = nc,
            n.adapt = na)
+update(model, n.iter = nb)
+rslt <- coda.samples(model, variable.names = params, n.iter = ni)
 
 # save(rslt, file = result_file)
 mcmcplots::mcmcplot(rslt)
