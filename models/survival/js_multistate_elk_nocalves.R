@@ -14,23 +14,25 @@ code <- nimbleCode({
     pc[t] <- 1 # should be no calves during the initial all 0 capture session
     ep[t] ~ dunif(0, 1)
   }
-
+  
   # Fixed effects of non-main study herd (h) on p and s
   sh ~ dunif(0, 1)
   ph ~ dunif(0, 1)
-
+  
   #Probabilities================================================================
   for(t in 1:(nocc-1)){
     for(i in 1:nind){
+      # c is indexed off by one. e.g., if i was a calf at t = 2, c[i,1] is 1
+      # this solves an off-by-one error caused by p[i,t-1] in the likelihood
       s[i,t] <- (1 - h[i,t]) * sm[t] *      m[i]  * (1 - c[i,t]) + 
-                (1 - h[i,t]) * sf[t] * (1 - m[i]) * (1 - c[i,t]) + 
-                (1 - h[i,t]) * sc[t] * c[i,t] +
-                     h[i,t]  * sh
+        (1 - h[i,t]) * sf[t] * (1 - m[i]) * (1 - c[i,t]) + 
+        (1 - h[i,t]) * sc[t] * c[i,t] +
+        h[i,t]  * sh
       
       p[i,t] <- (1 - h[i,t]) * pm[t] *      m[i]  * (1 - c[i,t]) + 
-                (1 - h[i,t]) * pf[t] * (1 - m[i]) * (1 - c[i,t]) + 
-                (1 - h[i,t]) * pc[t] * c[i,t] +
-                     h[i,t]  * ph
+        (1 - h[i,t]) * pf[t] * (1 - m[i]) * (1 - c[i,t]) + 
+        (1 - h[i,t]) * pc[t] * c[i,t] +
+        h[i,t]  * ph
       
       # State transition probabilities. States are:
       # 1 -- does not exist yet
@@ -60,7 +62,7 @@ code <- nimbleCode({
   for(i in 1:nind){
     m[i] ~ dbern(0.5)
     z[i,1] <- 1
-    for(t in 2:nocc){
+    for(t in 2:l[i]){
       # State Process -------- z ~ c(1, 2, 3)
       z[i,t] ~ dcat(ps[ z[i,t-1], i, t-1, 1:3])
       
@@ -74,8 +76,8 @@ code <- nimbleCode({
   for(t in 1:nocc){
     for(i in 1:nind){
       a.al[i,t]  <- equals(z[i,t], 2)
-      m.al[i,t]  <- ad.al[i,t] *      m[i]  * (1 - c[i,t])
-      f.al[i,t]  <- ad.al[i,t] * (1 - m[i]) * (1 - c[i,t])
+      m.al[i,t]  <- a.al[i,t] *      m[i]  * (1 - c[i,t])
+      f.al[i,t]  <- a.al[i,t] * (1 - m[i]) * (1 - c[i,t])
     } #i
     Nm[t] <- sum(m.al[1:nind,t])
     Nf[t] <- sum(f.al[1:nind,t])

@@ -1,4 +1,4 @@
-model{
+code <- nimbleCode({
   # 24-August-2022
   
   #Priors=======================================================================
@@ -11,7 +11,7 @@ model{
     sc[t] ~ dunif(0, 1)
     pf[t] ~ dlogis(0, 1)
     pm[t] ~ dlogis(0, 1)
-    pc[t] <- 4 # should be no calves during the initial all 0 capture session
+    pc[t] <- 10 # should be no calves during the initial all 0 capture session
     ep[t] ~ dunif(0, 1)
     logit(p.f[t]) <- pf[t]
     logit(p.m[t]) <- pm[t]
@@ -22,26 +22,26 @@ model{
   for(i in 1:nind){
     pi[i] ~ dnorm(0, p.tau)
   }
-
+  
   # Fixed effects of non-main study herd (h) on p and s
   sh ~ dunif(0, 1)
   ph ~ dlogis(0, 1)
-
+  
   #Probabilities================================================================
   for(t in 1:(nocc-1)){
     for(i in 1:nind){
       # c is indexed off by one. e.g., if i was a calf at t = 2, c[i,1] is 1
       # this solves an off-by-one error caused by p[i,t-1] in the likelihood
       s[i,t] <- (1 - h[i,t]) * sm[t] *      m[i]  * (1 - c[i,t]) + 
-                (1 - h[i,t]) * sf[t] * (1 - m[i]) * (1 - c[i,t]) + 
-                (1 - h[i,t]) * sc[t] *                   c[i,t]  +
-                     h[i,t]  * sh
+        (1 - h[i,t]) * sf[t] * (1 - m[i]) * (1 - c[i,t]) + 
+        (1 - h[i,t]) * sc[t] *                   c[i,t]  +
+        h[i,t]  * sh
       
       logit(p[i,t]) <- ((1 - h[i,t]) * pm[t] *      m[i]  * (1 - c[i,t]) + 
-                        (1 - h[i,t]) * pf[t] * (1 - m[i]) * (1 - c[i,t]) + 
-                        (1 - h[i,t]) * pc[t] *                   c[i,t]  +
-                        (1 - h[i,t]) * pi[i] *              (1 - c[i,t]) +
-                             h[i,t]  * ph)   * avail[i,t]
+                          (1 - h[i,t]) * pf[t] * (1 - m[i]) * (1 - c[i,t]) + 
+                          (1 - h[i,t]) * pc[t] *                   c[i,t]  +
+                          (1 - h[i,t]) * pi[i] *              (1 - c[i,t]) +
+                          h[i,t]  * ph)   * avail[i,t]
       
       # State transition probabilities. States are:
       # 1 -- does not exist yet
@@ -99,4 +99,4 @@ model{
     w[i]     <- 1 - equals(nt.al[i], 0)
   }
   Ns <- sum(w[1:nind])
-}
+})

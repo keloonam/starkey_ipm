@@ -9,18 +9,18 @@ nocc <- 5
 naug <- 300
 
 # Sampler variables
-ni <- 20000
+ni <- 60000
 nt <- 1
-nb <- 10000
-nc <- 1
+nb <- 30000
+nc <- 3
 na <- 1000
 
 params <- c(
   "sf",
   "sm",
   "sc",
-  "pf",
-  "pm",
+  "p.f",
+  "p.m",
   "ep",
   "Nf",
   "Nm",
@@ -84,8 +84,9 @@ for(i in 1:nrow(y)){
   }
 }
 y <- cbind(rep(0, nrow(y)), y)
-c <- cbind(rep(0, nrow(c)), c)
+ca <- cbind(c, rep(0, nrow(c)))
 w <- cbind(rep(0, nrow(w)), w)
+ca <- ca * y
 
 # z:    1 -- not yet alive;    2 -- adult;    2 -- dead
 z <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
@@ -101,7 +102,7 @@ for(i in 1:nrow(z)){
 
 y <- rbind(y, matrix(0,  nrow = naug, ncol = ncol(y)))
 z <- rbind(z, matrix(NA, nrow = naug, ncol = ncol(z)))
-c <- rbind(c, matrix(0,  nrow = naug, ncol = ncol(c)))
+ca <- rbind(ca, matrix(0,  nrow = naug, ncol = ncol(ca)))
 m <- c(m, rep(NA, naug))
 
 for(i in 1:nrow(z)){
@@ -131,12 +132,22 @@ for(i in 1:nrow(y)){
 }
 h <- matrix(0, nrow = nrow(y), ncol = ncol(y))
 z[,1] <- NA
+avail <- matrix(1, nrow = nrow(ca), ncol = ncol(ca))
+for(i in 1:nrow(ca)){
+  if(any(ca[i,] == 1)){
+    calf_sess <- which(ca[i,] == 1)
+    if(calf_sess > 1){
+      avail[i,1:calf_sess] <- 0
+    }
+  }
+}
 data <- list(
   y = y,
   m = m,
   z = z,
-  c = c,
-  h = h
+  c = ca,
+  h = h,
+  avail = avail
 )
 nocc <- ncol(y)
 constants <- list(
@@ -149,7 +160,8 @@ jags.data <- list(
   m = m,
   h = h,
   z = z,
-  c = c,
+  c = ca,
+  avail = avail,
   # z_con = matrix(1, nrow = nrow(z), ncol = ncol(z)),
   nocc = ncol(y),
   nind = nrow(y)
@@ -170,31 +182,31 @@ inits <- list(
   # z  = z_init
 )
 
-# source("models/survival/js_multistate_elk_nocalves.R")
-# 
-# rslt <- nimbleMCMC(
-#   code = code,
-#   constants = constants,
-#   data = data,
-#   inits = inits,
-#   monitors = params,
-#   niter = ni,
-#   nburnin = nb,
-#   nchains = nc,
-#   progressBar = T,
-#   samplesAsCodaMCMC = T,
-#   summary = F,
-#   check = F
-# )
+source("models/survival/js_multistate_elk_nocalves_irandp.R")
 
-require(rjags)
-model <- jags.model(file = "models//survival//js_multistate_elk_jags.txt",
-           data = jags.data,
-           inits = inits,
-           n.chains = nc,
-           n.adapt = na)
-update(model, n.iter = nb)
-rslt <- coda.samples(model, variable.names = params, n.iter = ni)
+rslt <- nimbleMCMC(
+  code = code,
+  constants = constants,
+  data = data,
+  inits = inits,
+  monitors = params,
+  niter = ni,
+  nburnin = nb,
+  nchains = nc,
+  progressBar = T,
+  samplesAsCodaMCMC = T,
+  summary = F,
+  check = F
+)
+
+# require(rjags)
+# model <- jags.model(file = "models//survival//js_multistate_elk_jags.txt",
+#            data = jags.data,
+#            inits = inits,
+#            n.chains = nc,
+#            n.adapt = na)
+# update(model, n.iter = nb)
+# rslt <- coda.samples(model, variable.names = params, n.iter = ni)
 
 # save(rslt, file = result_file)
 mcmcplots::mcmcplot(rslt)

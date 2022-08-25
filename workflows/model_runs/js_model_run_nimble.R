@@ -11,18 +11,20 @@ end_year <- 2021
 
 # Parameters to track
 params <- c(
-  "survival_af", 
-  "survival_am", 
-  "survival_ca",
-  "detection_f",
-  "detection_m",
-  "N_super",
-  "N",
-  "lambda"
+  "sf", 
+  "sm", 
+  "sc",
+  "pf",
+  "pm",
+  "pc",
+  "Nf",
+  "Nm",
+  "Nt",
+  "Ns"
 )
 
 # File names/paths
-result_file <- "results//survival//js_rslt_28jul2022.Rdata"
+result_file <- "results//survival//js_rslt_25aug2022.Rdata"
 
 # Sampler variables
 ni <- 10000
@@ -44,7 +46,6 @@ y <- elk_data$cap_tib %>%
   arrange(id) %>%
   select(as.character(start_year:end_year)) %>%
   as.matrix()
-
 # f <- apply(y, 1, function(x) min(which(x != 0)))
 
 l <- elk_data$hnt_tib %>%
@@ -114,33 +115,51 @@ w <- w[-gone_elk,]
 male <- male[-gone_elk]
 calf <- calf[-gone_elk,]
 herd <- herd[-gone_elk,]
+calf <- (calf == 1) * 1
+#Switch_to_Multistate_Model_Data================================================
 
-# random_elk <- sample(1:nrow(y), 100)
-# random_yrs <- c(10:14)
-# y <- y[random_elk, random_yrs]
-# l <- l[random_elk]
-# w <- w[random_elk, random_yrs]
-# male <- male[random_elk]
-# calf <- calf[random_elk, random_yrs]
-# herd <- herd[random_elk, random_yrs]
-# z <- z[random_elk, random_yrs]
+y[y == 0] <- 2
+y <- cbind(rep(2, nrow(y)), y)
 
+l <- l + 1
+
+
+
+herd <- cbind(herd, rep(0, nrow(herd)))
+
+z[z == 1] <- 2
+calf_sess <- apply(calf, 1, function(x)min(which(x == 1)))
+calf_sess[calf_sess == Inf] <- NA
+last_sess <- apply(z,    1, function(x) max(which(x==2)))
+last_sess[last_sess == Inf] <- NA
+for(i in 1:nrow(z)){
+  if(!is.na(calf_sess[i])){
+    z[i,1:calf_sess[i]] <- 1
+  }
+  if(!is.na(last_sess[i])){
+    for(j in last_sess[i]:ncol(z)){
+      if(!is.na(z[i,j])){
+        if(z[i,j] == 0){
+          z[i,j] <- 3
+        }
+      }
+    }
+  }
+}
+
+calf <- cbind(calf, rep(0, nrow(calf)))
 
 #Augment========================================================================
 
 n_aug <- nrow(y) * aug
 y <- rbind(y, matrix(0,  nrow = n_aug, ncol = ncol(y)))
 z <- rbind(z, matrix(NA, nrow = n_aug, ncol = ncol(y)))
-l <- c(l, rep(34, n_aug))
+l <- c(l, rep(ncol(y), n_aug))
 male <- c(male, rbinom(n_aug, 1, 0.5))
 herd <- rbind(herd, matrix(0,  nrow = n_aug, ncol = ncol(y)))
 calf <- rbind(calf, matrix(NA, nrow = n_aug, ncol = ncol(y)))
 
 #Fit_model======================================================================
-
-### COMMENT OUT FOR NON-TEST RUNS ###
-# l[l > 5] <- 5
-
 
 js_data <- list(
   y    = y,
@@ -149,7 +168,7 @@ js_data <- list(
   A_P1 = calf[,1] + 1,
   M    = male,
   H    = herd,
-  c    = calf == 1
+  c    = calf
 )
 js_constants <- list(
   L     = l,
