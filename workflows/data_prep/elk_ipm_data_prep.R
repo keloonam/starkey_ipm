@@ -9,6 +9,8 @@ n_yrs <- 34
 cjs_yrs <- c(min_yr = 1, max_yr = 31)
 ratio_yrs <- c(min_yr = 2, max_yr = 34)
 first_year <- 1988
+start_year <- first_year
+end_year <- 2021
 
 cjs_file <- "results//survival//cjs_rslt_cip_08apr2022.Rdata"
 ratio_file <- "results//recruitment_years_2to31.Rdata"
@@ -47,7 +49,8 @@ cjs_removals <- c(
   "af[30]",
   "af[11]",
   "af[13]",
-  "af[14]"
+  "af[14]",
+  "ps[34]"
 )
 
 
@@ -62,6 +65,11 @@ cjs_raw <- cjs_rslt %>%
   map(as_tibble) %>%
   bind_rows() %>%
   select(starts_with("survival_")) %>%
+  select(-contains(cjs_removals))
+cp_raw <- cjs_rslt %>%
+  map(as_tibble) %>%
+  bind_rows() %>%
+  select(starts_with("p0_")) %>%
   select(-contains(cjs_removals))
 rm(cjs_rslt)
 
@@ -79,7 +87,40 @@ cjs_dat[cjs_calfs,2] <- 2
 cjs_dat[cjs_males,3] <- 2
 cjs_dat[,4] <- cjs_means
 cjs_dat[,5] <- 1/(cjs_sd^2)
-# cjs_dat <- cjs_dat[-69,] # ??? low calf survival 
+
+cp_years <- as.numeric(unlist(str_extract_all(names(cp_raw), "[0-9]+")))
+cp_years <- cp_years[-which(cp_years == 0)]
+cp_means <- unlist(map(cp_raw, mean))
+
+fpc_dat <- matrix(nrow = ncol(cp_raw), ncol = 5)
+fpc_dat[,1] <- cp_years
+load("data//elk_data.Rdata")
+y <- elk_data$cap_tib %>%
+  arrange(id) %>%
+  select(as.character(start_year:end_year)) %>%
+  as.matrix()
+male <- elk_data$sex_tib %>%
+  arrange(id) %>%
+  mutate(male = as.numeric(Sex == "M")) %>%
+  pull(male)
+calf <- elk_data$age_tib %>%
+  arrange(id) %>%
+  select(as.character(start_year:end_year)) %>%
+  as.matrix()
+herd <- elk_data$hrd_tib %>%
+  arrange(id) %>%
+  select(as.character(start_year:end_year)) %>%
+  mutate_all(funs(case_when(
+    . == "main" ~ 0,
+    T ~ 1
+  ))) %>%
+  as.matrix()
+rm(elk_data)
+nf.obs <- apply(y * 
+  (1 - male) * 
+  (1 - (calf == 1)) * 
+  (1 - herd), 2, sum, na.rm = T)[-1]
+fpc_dat[,4] <- nf.obs / cp_means
 
 #Ratio_Recruitment==============================================================
 
@@ -278,7 +319,8 @@ ipm_data <- list(
   summer_temp = sum_temp,
   winter_temp = win_temp,
   summer_precip = summer_precip,
-  winter_precip = winter_precip
+  winter_precip = winter_precip,
+  n_f_p_count = fpc_dat
 )
 
-save(ipm_data, file = "data//elk_ipm_data_25apr2022.Rdata")
+save(ipm_data, file = "data//elk_ipm_data_26aug2022.Rdata")

@@ -4,7 +4,7 @@
 
 #Environment====================================================================
 
-load("results//ipm_result_25apr2022.Rdata")
+load("results//ipm_result_26aug2022.Rdata")
 require(tidyverse); require(rjags)
 
 data <- summary(rslt)
@@ -104,3 +104,56 @@ ggplot(data = r_dat, aes(x = year, y = mean)) +
   geom_linerange(aes(ymax = uci, ymin = lci)) +
   theme_light() +
   labs(title = "Recruitment", y = "Calves/Cow", x = "Year")
+
+#Survival=======================================================================
+
+sf_dat <- q[c(grep("survival_af", dimnames(q)[[1]]))[1:34], c(1,3,5)] %>%
+  as_tibble() %>%
+  mutate(year = sort(rep(1988:2021))) %>%
+  group_by(year) %>%
+  summarise(
+    lci = sum(`2.5%`),
+    mean = sum(`50%`),
+    uci = sum(`97.5%`)
+  ) %>%
+  mutate(class = "female_survival")
+
+ggplot(data = sf_dat, aes(x = year, y = mean)) +
+  geom_line() +
+  geom_linerange(aes(ymax = uci, ymin = lci)) +
+  theme_light() +
+  labs(title = "Female Survival", y = "Survival Probability", x = "Year")
+
+sm_dat <- q[c(grep("survival_am", dimnames(q)[[1]]))[1:34], c(1,3,5)] %>%
+  as_tibble() %>%
+  mutate(year = sort(rep(1988:2021))) %>%
+  group_by(year) %>%
+  summarise(
+    lci = sum(`2.5%`),
+    mean = sum(`50%`),
+    uci = sum(`97.5%`)
+  ) %>%
+  mutate(class = "male_survival")
+
+ggplot(data = sm_dat, aes(x = year, y = mean)) +
+  geom_line() +
+  geom_linerange(aes(ymax = uci, ymin = lci)) +
+  theme_light() +
+  labs(title = "Male Survival", y = "Survival Probability", x = "Year")
+
+sc_dat <- q[c(grep("survival_ca", dimnames(q)[[1]]))[1:34], c(1,3,5)] %>%
+  as_tibble() %>%
+  mutate(year = sort(rep(1988:2021))) %>%
+  group_by(year) %>%
+  summarise(
+    lci = sum(`2.5%`),
+    mean = sum(`50%`),
+    uci = sum(`97.5%`)
+  ) %>%
+  mutate(class = "calf_survival")
+
+ggplot(data = sc_dat, aes(x = year, y = mean)) +
+  geom_line() +
+  geom_linerange(aes(ymax = uci, ymin = lci)) +
+  theme_light() +
+  labs(title = "Calf Survival", y = "Survival Probability", x = "Year")

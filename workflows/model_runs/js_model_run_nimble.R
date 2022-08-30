@@ -27,10 +27,10 @@ params <- c(
 result_file <- "results//survival//js_rslt_25aug2022.Rdata"
 
 # Sampler variables
-ni <- 10000
+ni <- 5000
 nt <- 1
-nb <- 5000
-nc <- 3
+nb <- 1000
+nc <- 1
 na <- 1000
 
 
@@ -75,20 +75,20 @@ calf <- elk_data$age_tib %>%
   arrange(id) %>%
   select(as.character(start_year:end_year)) %>%
   as.matrix()
-for(i in 1:nrow(calf)){
-  if(sum(calf[i,], na.rm = T) > 0){
-    calf_sess <- min(which(calf[i,] == 1))
-    calf[i,calf_sess:ncol(calf)] <- 1
-  }
-  if(all(calf[i,] == 0)){
-    calf[i,1] <- 2
-    calf[i,2:ncol(calf)] <- 1
-  }
-  if(any(!is.na(calf[i,]))){
-    start_age <- min(which(!is.na(calf[i])))
-    calf[i,start_age:ncol(calf)] <- cumsum(calf[i,start_age:ncol(calf)])
-  }
-}
+# for(i in 1:nrow(calf)){
+#   if(sum(calf[i,], na.rm = T) > 0){
+#     calf_sess <- min(which(calf[i,] == 1))
+#     calf[i,calf_sess:ncol(calf)] <- 1
+#   }
+#   if(all(calf[i,] == 0)){
+#     calf[i,1] <- 2
+#     calf[i,2:ncol(calf)] <- 1
+#   }
+#   if(any(!is.na(calf[i,]))){
+#     start_age <- min(which(!is.na(calf[i])))
+#     calf[i,start_age:ncol(calf)] <- cumsum(calf[i,start_age:ncol(calf)])
+#   }
+# }
 
 herd <- elk_data$hrd_tib %>%
   # filter(id %in% elk_data$cap_tib$id) %>%
@@ -116,6 +116,7 @@ male <- male[-gone_elk]
 calf <- calf[-gone_elk,]
 herd <- herd[-gone_elk,]
 calf <- (calf == 1) * 1
+calf[is.na(calf)] <- 0
 #Switch_to_Multistate_Model_Data================================================
 
 y[y == 0] <- 2
@@ -131,7 +132,7 @@ z[z == 1] <- 2
 calf_sess <- apply(calf, 1, function(x)min(which(x == 1)))
 calf_sess[calf_sess == Inf] <- NA
 last_sess <- apply(z,    1, function(x) max(which(x==2)))
-last_sess[last_sess == Inf] <- NA
+last_sess[last_sess == Inf | last_sess == -Inf] <- NA
 for(i in 1:nrow(z)){
   if(!is.na(calf_sess[i])){
     z[i,1:calf_sess[i]] <- 1
@@ -146,119 +147,61 @@ for(i in 1:nrow(z)){
     }
   }
 }
-
+z[z == 0] <- NA
+z <- cbind(rep(NA, nrow(z)), z)
 calf <- cbind(calf, rep(0, nrow(calf)))
 
 #Augment========================================================================
 
 n_aug <- nrow(y) * aug
-y <- rbind(y, matrix(0,  nrow = n_aug, ncol = ncol(y)))
+y <- rbind(y, matrix(2,  nrow = n_aug, ncol = ncol(y)))
 z <- rbind(z, matrix(NA, nrow = n_aug, ncol = ncol(y)))
 l <- c(l, rep(ncol(y), n_aug))
-male <- c(male, rbinom(n_aug, 1, 0.5))
-herd <- rbind(herd, matrix(0,  nrow = n_aug, ncol = ncol(y)))
-calf <- rbind(calf, matrix(NA, nrow = n_aug, ncol = ncol(y)))
+male <- c(male, rep(NA, n_aug))
+herd <- rbind(herd, matrix(0, nrow = n_aug, ncol = ncol(y)))
+calf <- rbind(calf, matrix(0, nrow = n_aug, ncol = ncol(y)))
 
 #Fit_model======================================================================
 
-js_data <- list(
-  y    = y,
-  z    = z,
-  AGE  = calf,
-  A_P1 = calf[,1] + 1,
-  M    = male,
-  H    = herd,
-  c    = calf
-)
-js_constants <- list(
-  L     = l,
-  K     = ncol(y),
-  NAUG  = nrow(y),
-  MAX_A = max(calf[,1], na.rm = T),
-  A     = rep(1, max(calf[,1], na.rm = T))
-)
-
-#####FAKE DATA#####
-y <- matrix(0,  nrow = 100, ncol = 6)
-z <- matrix(NA, nrow = 100, ncol = 6)
-f <- sample(1:5, nrow(y), replace = T)
-age <- y
-
-for(i in 1:nrow(y)){
-  z[i,f[i]] <- 1
-  for(j in (f[i] + 1):ncol(y)){
-    z[i,j] <- rbinom(1, 1, z[i,j-1] * 0.8)
-    y[i,j] <- rbinom(1, 1, 0.6)
-    age[i,j] <- sum(z[i,1:(j-1)], na.rm = T)
-  }
-}
-
-male <- rbinom(nrow(y), 1, 0.5)
-herd <- matrix(1, nrow = nrow(y)*3, ncol = ncol(y))
-
-add_n <- nrow(y)*2
-y <- rbind(y, matrix(0, nrow = add_n, ncol = ncol(y)))
-z <- rbind(z, matrix(NA, nrow = add_n, ncol = ncol(y)))
-age <- rbind(age, matrix(NA, nrow = add_n, ncol = ncol(y)))
-male <- c(male, rep(NA, add_n))
-
-
-fake_js_data <- list(
+data <- list(
   y = y,
   z = z,
-  AGE = age,
-  A_P1 = age + 1,
-  M = male,
-  H = herd,
-  c = age ==1
+  m = male,
+  h = herd,
+  c = calf
+)
+constants <- list(
+  l     = l,
+  nocc  = ncol(y),
+  nind  = nrow(y)
 )
 
-fake_js_constants <- list(
-  L     = rep(ncol(y), nrow(y)),
-  K     = ncol(y),
-  NAUG  = nrow(y),
-  MAX_A = 3,
-  A     = rep(1, 2)
+nocc <- ncol(y)
+inits <- list(
+  sf = runif(nocc-1, 0, 1),
+  sm = runif(nocc-1, 0, 1),
+  sc = runif(nocc-1, 0, 1),
+  pf = runif(nocc-1, 0, 1),
+  pm = runif(nocc-1, 0, 1),
+  sh = runif(1, 0, 1),
+  ph = runif(1, 0, 1)
 )
 
-#####END FAKE DATA#####
-
-js_inits <- list(
-  s0   = runif(ncol(y), 0.5, 0.9),
-  p0   = runif(ncol(y), 0, 1),
-  e0   = runif(1, 0, 1),
-  a0   = rep(1/fake_js_constants$MAX_A, fake_js_constants$MAX_A),
-  s.ma = rnorm(ncol(y)),
-  s.ca = rnorm(ncol(y)),
-  s.he = rnorm(ncol(y)),
-  p.ma = rnorm(ncol(y)),
-  p.he = rnorm(ncol(y))
-)
-
-jsnm <- list(
-  constants = js_constants,
-  data = js_data,
-  monitors = params
-)
-
-# save(jsnm, file = "cqls//js//js_nimble_data_cqls.Rdata")
-
-# Load model as js_superpop_model
-source("models/survival/js_model_nimble.R")
+source("models/survival/js_multistate_elk_nocalves.R")
 
 rslt <- nimbleMCMC(
-  code = js_model_code,
-  constants = fake_js_constants,
-  data = fake_js_data,
-  monitors = params,
-  # inits = js_inits,
-  niter = ni,
-  nburnin = nb,
-  nchains = nc,
-  progressBar = T,
+  code              = code,
+  constants         = constants,
+  data              = data,
+  monitors          = params,
+  inits             = inits,
+  niter             = ni,
+  nburnin           = nb,
+  nchains           = nc,
+  progressBar       = T,
   samplesAsCodaMCMC = T,
-  summary = F,
-  check = F
+  summary           = F,
+  check             = T
 )  
 
 # save(rslt, file = result_file)

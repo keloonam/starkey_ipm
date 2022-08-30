@@ -103,6 +103,12 @@ model{
     n_sight_am[i,4] ~ dnorm(N_m[n_sight_am[i,1]], n_sight_am[i,5])T(0,)
   }
   
+  sd_afcount ~ dunif(0,50)
+  tau_afcount <- 1/sd_afcount^2
+  for(i in 1:nn_fc){
+    af_count[i,4] ~ dnorm(N_f[af_count[i,1]], tau_afcount)T(0,)
+  }
+  
   ##### Survival
   # CJS - Feedgrounds
   for(i in 1:ns){
@@ -147,7 +153,7 @@ model{
     climate_R[yr] <- R_st*st[yr] + R_sp*sp[yr] + R_wt*wt[yr] + R_wp*wp[yr]
     n_adj[yr] <- (N_tot[yr] - mean(N_tot[])) / sd(N_tot[])
     
-    logit(R[yr]) <- R_B0 + R_yr[yr] + climate_R[yr] + R_dd*n_adj[yr]
+    logit(R[yr]) <- R_B0 + R_yr[yr] + climate_R[yr]# + R_dd*n_adj[yr]
   } # yr
   
   
@@ -203,18 +209,20 @@ model{
     S_Y_M_yr[yr] ~ dnorm(0, tau_S_Y_M)
     logit(S[3,1,yr]) <- S_Y_F_B0 + S_Y_F_yr[yr]
     logit(S[3,2,yr]) <- S_Y_M_B0 + S_Y_M_yr[yr]
+    S[4,1,yr] <- S[3,1,yr]
+    S[4,2,yr] <- S[3,2,yr]
     
     # Survival from 2.5+ (to age class 4)
-    S_A_F_yr[yr] ~ dnorm(0, tau_S_A_F)
-    S_A_M_yr[yr] ~ dnorm(0, tau_S_A_M)
-    logit(S[4,1,yr]) <- S_A_F_B0 + S_A_F_yr[yr]
-    logit(S[4,2,yr]) <- S_A_M_B0 + S_A_M_yr[yr]
+    # S_A_F_yr[yr] ~ dnorm(0, tau_S_A_F)
+    # S_A_M_yr[yr] ~ dnorm(0, tau_S_A_M)
+    # logit(S[4,1,yr]) <- S_A_F_B0 + S_A_F_yr[yr]
+    # logit(S[4,2,yr]) <- S_A_M_B0 + S_A_M_yr[yr]
     
     # Derived survivals for easy tracking
-    survival_af[yr] <- S[4,1,yr]
-    survival_am[yr] <- S[4,2,yr]
-    survival_yf[yr] <- S[3,1,yr]
-    survival_ym[yr] <- S[3,2,yr]
+    # survival_af[yr] <- S[4,1,yr]
+    # survival_am[yr] <- S[4,2,yr]
+    survival_af[yr] <- S[3,1,yr]
+    survival_am[yr] <- S[3,2,yr]
     survival_ca[yr] <- S[2,1,yr]
   } # yr
   
