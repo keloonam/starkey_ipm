@@ -35,7 +35,7 @@ model{
     # R indexing follows [age,yr]  . . .  males rarely get pregnant
     # Assumes equal sex ratio from birth to age 0.5 years
     
-    n_exp[1,1,yr] <- R[yr] * sum(N[2:4,1,yr]) * 0.5
+    n_exp[1,1,yr] <- R[yr] * sum(N[2:4,1,yr-1])* S[3,1,yr] * 0.5
     N[1,1,yr] ~ dnorm(n_exp[1,1,yr], abs(1/n_exp[1,1,yr]))T(min_ca[yr],)
     N[1,2,yr] <- N[1,1,yr]
     
@@ -153,7 +153,7 @@ model{
     climate_R[yr] <- R_st*st[yr] + R_sp*sp[yr] + R_wt*wt[yr] + R_wp*wp[yr]
     n_adj[yr] <- (N_tot[yr] - mean(N_tot[])) / sd(N_tot[])
     
-    logit(R[yr]) <- R_B0 + R_yr[yr] + climate_R[yr]# + R_dd*n_adj[yr]
+    logit(R[yr]) <- R_B0 + R_yr[yr] + climate_R[yr] + R_dd*n_adj[yr]
   } # yr
   
   

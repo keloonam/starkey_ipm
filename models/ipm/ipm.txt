@@ -1,0 +1,169 @@
+model{
+  # IPM -- Built for the Starkey elk population
+  # Kenneth Loonam
+  # Rewritten September 2022
+  
+  # Parameters to estimate:
+  # R: recruitment
+  # S: survival
+  # N: abundance
+  
+  # indexing follows [age, sex, year] unless otherwise specified
+  # e.g: N[a,s,yr] -- abundance of age class a, sex s, in year yr
+  # ages:
+  #   [1,,]: 0.5 yr -- calf
+  #   [2,,]: 1.5 yr -- yearling
+  #   [3,,]: 2.5 yr -- subadult
+  #   [4,,]: 3.5+yr -- adult
+  # sex:
+  #   [,1,]: female
+  #   [,2,]: male
+  
+  # Estimated parameters are *CAPITALIZED*
+  # Data objects are *lowercase*
+  # Exceptions are intermediate parameters (e.g. random effects)
+  
+  #Process Model================================================================
+  
+  for(t in 2:nyr){ #t (year)
+    ##### Recruitment #####
+    # R indexing follows [age,yr]  . . .  males rarely get pregnant
+    # Assumes equal sex ratio from birth to age 0.5 years
+    
+    # Ne -- n expected, e.g. estimated mean abundance
+    Ne[1,1,t] <- R[t] * Nf[t-1] * Sf[t] * 0.5
+    # Poisson recruitment process, normal approximation, equal sex ratio
+    N[1,1,t] ~  dnorm(Ne[1,1,t], abs(1/Ne[1,1,t]))T(Nc_obs[t], )
+    N[1,2,t] <- N[1,1,t]
+    
+    ##### Survival #####
+    for(x in 1:2){ #x (sex)
+      # Sexes have separate survivals except in 0.5 to 1.5 transition
+      # Ages are divided into calf (0.5 to 1.5) and adult for survival
+      
+      # Estimated proportion of adults in each age class
+      prop[1,x,t] <- 0
+      prop[2,x,t] <- N[1,x,t-1]        / sum(N[1:4,x,t-1])
+      prop[3,x,t] <- N[2,x,t-1]        / sum(N[1:4,x,t-1])
+      prop[4,x,t] <- sum(N[3:4,x,t-1]) / sum(N[1:4,x,t-1])
+      
+      # Minimum known and number moved
+      for(a in 1:4){ #a
+        Nmin[a,x,t] <- Na_obs[x,t] * prop[a,x,t] + Nhar[a,x,t]
+        Nmov[a,x,t] <- Na_mov[x,t] * prop[a,x,t]
+      } #a
+      
+      # Ne -- expected abundances
+      Ne[2,x,t] <- (    N[1,  x,t-1] +        Nc_mov[x,t])  * S[2,x,t]
+      Ne[3,x,t] <- (    N[2,  x,t-1] +      Nmov[2,  x,t])  * S[3,x,t]
+      Ne[4,x,t] <- (sum(N[3:4,x,t-1]) + sum(Nmov[3:4,x,t])) * S[4,x,t]
+      
+      ##### Abundance #####
+      for(a in 2:4){
+        tau_e[a,x,t] <- abs(1 / ((Ne[a,x,t]) * (1 - S[a,x,t])) + 1)
+        Naug[a,x,t]  ~  dnorm(Ne[a,x,t], tau_e[a,x,t])T(Nmin[a,x,t], )
+        N[a,x,t]     <- Naug[a,x,t] - Nhar[a,x,t]
+      } #a
+    } #x
+  } #t
+  
+  #Observation Models===========================================================
+  
+  # Data are indexed by row (i), with one observation per row
+  # The columns for the data follow [year, age, sex, mean, tau]
+    # data[i,1] = year of first row of data
+    # data[i,4] = mean (estimate) of first row of data
+  # For example n_sight[3,4] is the mean sightability for the third observation
+  
+  ##### Abundance #####
+  # Estimates
+  for(i in 1:nn_ca){
+    n_sight_ca[i,4] ~ dnorm(Nc[n_sight_ca[i,1]], n_sight_ca[i,5])T(0,)
+  }
+  for(i in 1:nn_af){
+    n_sight_af[i,4] ~ dnorm(Nf[n_sight_af[i,1]], n_sight_af[i,5])T(0,)
+  }
+  for(i in 1:nn_am){
+    n_sight_am[i,4] ~ dnorm(Nm[n_sight_am[i,1]], n_sight_am[i,5])T(0,)
+  }
+  
+  # Counts
+  sd_afcount ~ dunif(0,50)
+  tau_afcount <- 1/sd_afcount^2
+  for(i in 1:nn_fc){
+    af_count[i,4] ~ dnorm(Nf[af_count[i,1]], tau_afcount)T(0,)
+  }
+  
+  ##### Survival #####
+  # CJS
+  for(i in 1:ns){
+    s_cjs[i,4] ~ dnorm(S[s_cjs[i,2], s_cjs[i,3], s_cjs[i,1]], s_cjs[i,5])T(0,1)
+  }
+  
+  ##### Recruitment #####
+  # Ratio - Feedgrounds
+  for(i in 1:nr){
+    r_ratio[i,4] ~ dnorm(R[r_ratio[i,1]], r_ratio[i,5])T(0,1)
+  }
+  
+  #Priors and GLMs==============================================================
+  
+  ##### Recruitment #####
+  R_tau <- 1 / Rsd^2
+  
+  Rsd ~ dunif(0, 50)
+  Rb0 ~ dnorm(0, 0.0001)
+  Rdd ~ dnorm(0, 0.0001)
+  
+  for(t in 1:nyr){ #t
+    R0[t]     ~  dnorm(Rb0, R_tau)
+    RD[t]     <- Rdd * ((Nt[t] - mean(Nt[1:nyr])) / sd(Nt[1:nyr]))
+    log(R[t]) <- R0[t] + RD[t]
+  }#t
+  
+  ##### Survival #####
+  # Independent calf and adult survival
+  # Sex effect on non-calves, sex survival equal in calves
+  # Separate random effect on each sex/age class
+  
+  Sc0 ~ dlogis(0, 1)
+  Sf0 ~ dlogis(0, 1)
+  Sm0 ~ dlogis(0, 1)
+  
+  Sc_sd ~ dunif(0, 50);   Sc_tau <- 1 / Sc_sd^2
+  Sf_sd ~ dunif(0, 50);   Sf_tau <- 1 / Sf_sd^2
+  Sm_sd ~ dunif(0, 50);   Sm_tau <- 1 / Sm_sd^2
+  
+  for(t in 1:nyr){
+    Sc[t] ~ dnorm(Sc0, Sc_tau)
+    Sf[t] ~ dnorm(Sf0, Sf_tau)
+    Sm[t] ~ dnorm(Sm0, Sm_tau)
+    
+    S[1,1,t] <- 0
+    S[1,2,t] <- 0
+    S[2,1,t] <- Sc[t]
+    S[2,2,t] <- Sc[t]
+    S[3,1,t] <- Sf[t]
+    S[4,1,t] <- Sf[t]
+    S[3,2,t] <- Sm[t]
+    S[4,2,t] <- Sm[t]
+  }
+  
+  ##### Abundance #####
+  # Prior for starting abundance
+  
+  for(x in 1:2){
+    for(a in 1:4){
+      init_N[a,x] ~ dnorm(100, 0.0001)T(1, )
+      N[a,x,1]   <- init_N[a,x] 
+    }
+  }
+  
+  # Derived Values for tracking
+  for(t in 1:nyr){
+    Nc[t] <- sum(N[1,   1:2, t])
+    Nf[t] <- sum(N[2:4, 1,   t])
+    Nm[t] <- sum(N[2:4, 2,   t])
+    Nt[t] <- sum(N[1:4, 1:2, t])
+  }
+}
