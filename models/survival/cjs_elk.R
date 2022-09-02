@@ -1,52 +1,38 @@
-nimble_code <- nimbleCode({
+code <- nimbleCode({
   # cjs code for Starkey elk with js abundance estimate added
   # 18-August-2022
   
   #Priors=======================================================================
-  for(t in 1:(nocc-1)){
+  for(t in 1:(nocc)){
     # time varying effects on
     # detection probability (p), and survival probability (s)
     # including intercepts (0), males (m), and calves (c)
-    p0[t] ~ dlogis(0, 1)
-    pm[t] ~ dlogis(0, 1)
-    s0[t] ~ dlogis(0, 1)
-    sm[t] ~ dlogis(0, 1)
-    sc[t] ~ dlogis(0, 1)
+    pf[t] ~ dunif(0, 1)
+    pm[t] ~ dunif(0, 1)
+    sf[t] ~ dunif(0, 1)
+    sm[t] ~ dunif(0, 1)
+    sc[t] ~ dunif(0, 1)
   }
   
   # Fixed effects of non-main study herd (h) on p and s
-  sh ~ dlogis(0, 1)
-  ph ~ dlogis(0, 1)
-  
-  for(t in f[i]:(nocc - 1)){
-    for(i in 1:nind){
-      # probabilities to actually use
-      logit(s[i,t]) <- 
-        s0[t] + 
-        sc[t] * c[i,t] + 
-        sm[t] * m[i]   * (1 - c[i,t]) + 
-        sh    * h[i,t]
-      
-      logit(p[i,t]) <- 
-        p0[t] + 
-        pm[t] * m[i]   * (1 - c[i,t]) + 
-        ph    * h[i,t]
-    } #i
-    
-    # Tracking values
-    logit(s.m[t]) <- s0[t] + sm[t]
-    logit(p.m[t]) <- p0[t] + pm[t]
-    logit(s.f[t]) <- s0[t]
-    logit(p.f[t]) <- p0[t]
-    logit(s.c[t]) <- s0[t] + sc[t]
-  } #t
+  sh ~ dunif(0, 1)
+  ph ~ dunif(0, 1)
   
   for(i in 1:nind){
-    for(t in 1:nocc){
-      # Constrain z to be a number, not NA
-      z_con[i,t] ~ dconstraint(z[i,t] >= 0)
-    }
-  }
+    for(t in f[i]:l[i]){
+      # probabilities to actually use
+      s[i,t] <- 0 +
+        sf[t] * (1 - m[i]) * (1 - c[i,t]) * (1 - h[i,t]) + 
+        sc[t] *                   c[i,t]  * (1 - h[i,t]) + 
+        sm[t] *      m[i]  * (1 - c[i,t]) * (1 - h[i,t]) + 
+        sh    *                                  h[i,t]
+      
+      p[i,t] <- 0 +
+        pf[t] * (1 - m[i]) * (1 - c[i,t]) * (1 - h[i,t]) + 
+        pm[t] *      m[i]  * (1 - c[i,t]) * (1 - h[i,t]) + 
+        ph    *                                  h[i,t]
+    } #i
+  } #t
   
   #Survival=====================================================================
   for(i in 1:nind){

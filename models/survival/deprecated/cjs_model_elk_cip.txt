@@ -50,5 +50,7 @@ model{
     logit(survival_af[t]) <- s0[t]
     logit(survival_am[t]) <- s0[t] + sm[t]
     logit(survival_ca[t]) <- s0[t] + sc[t]
+    logit(pmale)   <- p0[t] + pm[t]
+    logit(pfemale) <- p0[t]
   }
 }

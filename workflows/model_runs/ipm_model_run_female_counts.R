@@ -22,13 +22,13 @@ n_t <- 100
 
 require(tidyverse); require(rjags); require(mcmcplots)
 # load("data//elk_ipm_data.Rdata")
-load("data//elk_ipm_data_26aug2022.Rdata")
+load("data//elk_ipm_data_02sep2022.Rdata")
 
 #Data_prep======================================================================
 
 jags_data <- list(
   s_cjs = ipm_data$s_cjs,
-  r_ratio = ipm_data$r_ratio,
+  # r_ratio = ipm_data$r_ratio,
   n_sight_ca = ipm_data$n_sight_ca,
   n_sight_am = ipm_data$n_sight_am,
   n_sight_af = ipm_data$n_sight_af,
@@ -39,7 +39,7 @@ jags_data <- list(
   nn_af = nrow(ipm_data$n_sight_af),
   nn_am = nrow(ipm_data$n_sight_am),
   ns = nrow(ipm_data$s_cjs),
-  nr = nrow(ipm_data$r_ratio),
+  # nr = nrow(ipm_data$r_ratio),
   Nhar = ipm_data$n_hnt,
   Na_obs = ipm_data$min_ad,
   Nc_obs = ipm_data$min_ca,
@@ -50,7 +50,9 @@ jags_data <- list(
   # est_mean_n = 450,
   # est_sd_n = 126,
   af_count = ipm_data$n_f_p_count,
-  nn_fc = nrow(ipm_data$n_f_p_count)
+  nn_fc = nrow(ipm_data$n_f_p_count),
+  r_NfNc = ipm_data$ratio_counts,
+  n_rc = nrow(ipm_data$ratio_counts)
 )
 
 inits <- function(){
@@ -59,7 +61,7 @@ inits <- function(){
   N[,] <- 500
   
   # Recruitment
-  Rb0 <- 0.9
+  Rb0 <- 10
   
   # Survival
   Sc0 <- 4

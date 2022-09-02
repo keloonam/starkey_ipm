@@ -176,6 +176,11 @@ n_fg_f <- matrix(NA, nrow = sum(min_dat$name == "fe_ad"), ncol = 4)
 n_fg_f[,1] <- min_dat$year[min_dat$name == "fe_ad"]
 n_fg_f[,4] <- min_dat$value[min_dat$name == "fe_ad"]
 
+ratio_counts <- matrix(NA, nrow = nrow(n_fg_c), ncol = 3)
+ratio_counts[,1] <- n_fg_c[,1]
+ratio_counts[,2] <- n_fg_f[,4]
+ratio_counts[,3] <- n_fg_c[,4]
+
 #Harvested======================================================================
 
 load("data//elk_harvest_data.Rdata")
@@ -320,7 +325,8 @@ ipm_data <- list(
   winter_temp = win_temp,
   summer_precip = summer_precip,
   winter_precip = winter_precip,
-  n_f_p_count = fpc_dat
+  n_f_p_count = fpc_dat,
+  ratio_counts = ratio_counts
 )
 
-save(ipm_data, file = "data//elk_ipm_data_26aug2022.Rdata")
+save(ipm_data, file = "data//elk_ipm_data_02sep2022.Rdata")

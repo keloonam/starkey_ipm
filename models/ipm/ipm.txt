@@ -102,8 +102,8 @@ model{
   
   ##### Recruitment #####
   # Ratio - Feedgrounds
-  for(i in 1:nr){
-    r_ratio[i,4] ~ dnorm(R[r_ratio[i,1]], r_ratio[i,5])T(0,1)
+  for(i in 1:n_rc){
+    r_NfNc[i,3] ~ dpois(R[r_NfNc[i,1]] * r_NfNc[i,2])
   }
   
   #Priors and GLMs==============================================================
@@ -115,9 +115,9 @@ model{
   Rb0 ~ dnorm(0, 0.0001)
   Rdd ~ dnorm(0, 0.0001)
   
-  for(t in 1:nyr){ #t
+  for(t in 2:nyr){ #t
     R0[t]     ~  dnorm(Rb0, R_tau)
-    RD[t]     <- Rdd * ((Nt[t] - mean(Nt[1:nyr])) / sd(Nt[1:nyr]))
+    RD[t]     <- Rdd * (Nt[t-1] - mean(Nt[1:nyr])) / sd(Nt[1:nyr])
     log(R[t]) <- R0[t] + RD[t]
   }#t
   
@@ -134,7 +134,7 @@ model{
   Sf_sd ~ dunif(0, 50);   Sf_tau <- 1 / Sf_sd^2
   Sm_sd ~ dunif(0, 50);   Sm_tau <- 1 / Sm_sd^2
   
-  for(t in 1:nyr){
+  for(t in 2:nyr){
     Sc[t] ~ dnorm(Sc0, Sc_tau)
     Sf[t] ~ dnorm(Sf0, Sf_tau)
     Sm[t] ~ dnorm(Sm0, Sm_tau)

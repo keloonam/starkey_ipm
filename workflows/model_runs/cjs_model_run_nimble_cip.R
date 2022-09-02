@@ -12,18 +12,18 @@ params <- c(
   "survival_af", 
   "survival_am", 
   "survival_ca",
-  "s0_ps",
-  "p0_ps"
+  "pmale",
+  "pfemale"
 )
 
 # File names/paths
-model_file <- "models//survival//cjs_model_elk_cip.txt"
+model_file <- "models//survival//deprecated//cjs_model_elk_cip.txt"
 result_file <- "results//survival//cjs_rslt_cip_08apr2022.Rdata"
 
 # Sampler variables
-n_i <- 75000
+n_i <- 5000
 n_t <- 1
-n_b <- 25000
+n_b <- 2000
 n_c <- 3
 n_a <- 1000
 
