@@ -6,13 +6,13 @@
 
 # User Specified
 n_yrs <- 34
-cjs_yrs <- c(min_yr = 1, max_yr = 31)
+cjs_yrs <- c(min_yr = 1, max_yr = 33)
 ratio_yrs <- c(min_yr = 2, max_yr = 34)
 first_year <- 1988
 start_year <- first_year
 end_year <- 2021
 
-cjs_file <- "results//survival//cjs_rslt_cip_08apr2022.Rdata"
+cjs_file <- "results//survival//cjs_rslt_13sep2022.Rdata"
 ratio_file <- "results//recruitment_years_2to31.Rdata"
 abundance_file <- "data//elk_abundance_ipm_ready.csv"
 
@@ -20,39 +20,19 @@ abundance_file <- "data//elk_abundance_ipm_ready.csv"
 # Parameters either did not converge or 
 # are from years with unrecorded id's removed
 cjs_removals <- c(
-  "af[1]",
-  "af[3]",
-  "af[32]",
-  "af[33]",
-  "am[1]",
-  "am[2]",
-  "am[3]",
-  "am[4]",
-  "am[5]",
-  "am[6]",
-  "am[6]",
-  "am[8]",
-  "am[10]",
-  "am[12]",
-  "am[18]",
-  "am[31]",
-  "am[32]",
-  "am[33]",
-  "am[34]",
-  "ca[1]",
-  "ca[4]",
-  "ca[17]",
-  "ca[32]",
-  "ca[33]",
-  "ca[34]",
-  "af[29]",
-  "af[30]",
-  "af[11]",
-  "af[13]",
-  "af[14]",
-  "ps[34]"
+  "prob_af[34]",
+  "prob_am[34]",
+  "survival_af[34]",
+  "survival_am[34]",
+  "survival_ca[34]",
+  "prob_af[33]",
+  "prob_am[33]",
+  "survival_af[33]",
+  "survival_am[33]",
+  "survival_ca[33]"
 )
-
+cpf_years <- 1:32
+cpm_years <- 1:32
 
 #Environment====================================================================
 
@@ -61,20 +41,20 @@ require(tidyverse)
 #CJS_Survival===================================================================
 
 load(cjs_file)
-cjs_raw <- cjs_rslt %>%
+cjs_raw <- rslt %>%
   map(as_tibble) %>%
   bind_rows() %>%
   select(starts_with("survival_")) %>%
   select(-contains(cjs_removals))
-cp_raw <- cjs_rslt %>%
+cp_raw <- rslt %>%
   map(as_tibble) %>%
   bind_rows() %>%
-  select(starts_with("p0_")) %>%
+  select(starts_with("prob_")) %>%
   select(-contains(cjs_removals))
-rm(cjs_rslt)
+rm(rslt)
 
 # first year is survival to 1989
-cjs_years <- as.numeric(str_extract_all(names(cjs_raw), "[0-9]+"))
+cjs_years <- as.numeric(str_extract_all(names(cjs_raw), "[0-9]+")) + 1
 cjs_males <- grep("am", names(cjs_raw))
 cjs_calfs <- grep("ca", names(cjs_raw))
 cjs_means <- unlist(map(cjs_raw, mean))
@@ -88,12 +68,19 @@ cjs_dat[cjs_males,3] <- 2
 cjs_dat[,4] <- cjs_means
 cjs_dat[,5] <- 1/(cjs_sd^2)
 
-cp_years <- as.numeric(unlist(str_extract_all(names(cp_raw), "[0-9]+")))
-cp_years <- cp_years[-which(cp_years == 0)]
-cp_means <- unlist(map(cp_raw, mean))
+cp_years <- as.numeric(unlist(str_extract_all(names(cp_raw), "[0-9]+"))) + 1
+cp_years_m <- cp_years[max(cpf_years) + cpm_years]
+cp_years_f <- cp_years[cpf_years]
 
-fpc_dat <- matrix(nrow = ncol(cp_raw), ncol = 5)
-fpc_dat[,1] <- cp_years
+cp_means <- unlist(map(cp_raw, mean))
+cpf_means <- cp_means[cpf_years]
+cpm_means <- cp_means[max(cpf_years) + cpm_years]
+
+fpc_dat <- matrix(nrow = length(cpf_means), ncol = 5)
+mpc_dat <- matrix(nrow = length(cpm_means), ncol = 5)
+fpc_dat[,1] <- cp_years_f
+mpc_dat[,1] <- cp_years_m
+
 load("data//elk_data.Rdata")
 y <- elk_data$cap_tib %>%
   arrange(id) %>%
@@ -116,11 +103,18 @@ herd <- elk_data$hrd_tib %>%
   ))) %>%
   as.matrix()
 rm(elk_data)
+
 nf.obs <- apply(y * 
   (1 - male) * 
   (1 - (calf == 1)) * 
-  (1 - herd), 2, sum, na.rm = T)[-1]
-fpc_dat[,4] <- nf.obs / cp_means
+  (1 - herd), 2, sum, na.rm = T)[-c(1,34)]
+fpc_dat[,4] <- nf.obs / cpf_means
+
+nm.obs <- apply(y * 
+  (male) * 
+  (1 - (calf == 1)) * 
+  (1 - herd), 2, sum, na.rm = T)[-c(1,34)]
+mpc_dat[,4] <- nm.obs / cpm_means
 
 #Ratio_Recruitment==============================================================
 
@@ -326,7 +320,9 @@ ipm_data <- list(
   summer_precip = summer_precip,
   winter_precip = winter_precip,
   n_f_p_count = fpc_dat,
+  n_m_p_count = mpc_dat,
   ratio_counts = ratio_counts
 )
 
 save(ipm_data, file = "data//elk_ipm_data_02sep2022.Rdata")
+

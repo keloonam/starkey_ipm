@@ -1,0 +1,8 @@
+=====Project to do list=====
+By 15-sep-2022:
+  #-Counts (of males) into IPM
+  -Detection probability with winter severity
+  -Density dependence using density from null IPM results
+  -Weather covariate(s) in IPM
+  -Cougar covariate in IPM
+  -Write model in math, not code (figure?)

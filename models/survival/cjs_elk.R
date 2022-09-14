@@ -7,36 +7,37 @@ code <- nimbleCode({
     # time varying effects on
     # detection probability (p), and survival probability (s)
     # including intercepts (0), males (m), and calves (c)
-    pf[t] ~ dunif(0, 1)
+    p0[t] ~ dunif(0, 1)
     pm[t] ~ dunif(0, 1)
-    sf[t] ~ dunif(0, 1)
+    s0[t] ~ dunif(0, 1)
     sm[t] ~ dunif(0, 1)
     sc[t] ~ dunif(0, 1)
+    
+    bp0[t] <- logit(p0[t])
+    bpm[t] <- logit(pm[t])
+    bs0[t] <- logit(s0[t])
+    bsm[t] <- logit(sm[t])
+    bsc[t] <- logit(sc[t])
   }
   
   # Fixed effects of non-main study herd (h) on p and s
   sh ~ dunif(0, 1)
   ph ~ dunif(0, 1)
   
+  bsh <- logit(sh)
+  bph <- logit(ph)
+  
   for(i in 1:nind){
     for(t in f[i]:l[i]){
       # probabilities to actually use
-      s[i,t] <- 0 +
-        sf[t] * (1 - m[i]) * (1 - c[i,t]) * (1 - h[i,t]) + 
-        sc[t] *                   c[i,t]  * (1 - h[i,t]) + 
-        sm[t] *      m[i]  * (1 - c[i,t]) * (1 - h[i,t]) + 
-        sh    *                                  h[i,t]
-      
-      p[i,t] <- 0 +
-        pf[t] * (1 - m[i]) * (1 - c[i,t]) * (1 - h[i,t]) + 
-        pm[t] *      m[i]  * (1 - c[i,t]) * (1 - h[i,t]) + 
-        ph    *                                  h[i,t]
+      logit(p[i,t]) <- bp0[t] + bpm[t]*m[i]*(1-c[i,t]) + bph*h[i,t]
+      logit(s[i,t]) <- bs0[t] + bsm[t]*m[i]*(1-c[i,t]) + bsh*h[i,t] + 
+        bsc[t]*c[i,t]
     } #i
   } #t
   
-  #Survival=====================================================================
+  #Process======================================================================
   for(i in 1:nind){
-    z[i,f[i]] <- 1
     for(t in (f[i]+1):l[i]){
       # State Process -------- alive >>> z = 1
       z[i,t] ~ dbern(mu1[i,t])
@@ -47,4 +48,13 @@ code <- nimbleCode({
       mu2[i,t] <- p[i,t-1] * z[i,t]
     } #t
   } #i
+  
+  #Values=======================================================================
+  for(t in 1:nocc){
+    logit(survival_af[t]) <- bs0[t]
+    logit(survival_am[t]) <- bs0[t] + bsm[t]
+    logit(survival_ca[t]) <- bs0[t] + bsc[t]
+    logit(prob_af[t])     <- bp0[t]
+    logit(prob_am[t])     <- bp0[t] + bpm[t]
+  }
 })

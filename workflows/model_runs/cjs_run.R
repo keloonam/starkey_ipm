@@ -8,21 +8,21 @@ end_year <- 2021
 
 # Parameters to track
 params <- c(
-  "sf", 
-  "sm", 
-  "sc",
-  "pf",
-  "pm"
+  "survival_af", 
+  "survival_am", 
+  "survival_ca",
+  "prob_af",
+  "prob_am"
 )
 
 # File names/paths
-result_file <- "results//survival//cjs_rslt_02sep2022.Rdata"
+result_file <- "results//survival//cjs_rslt_13sep2022.Rdata"
 
 # Sampler variables
-ni <- 5000
+ni <- 25000
 nt <- 1
-nb <- 1000
-nc <- 1
+nb <- 10000
+nc <- 3
 na <- 1000
 
 #Environment====================================================================
@@ -60,6 +60,7 @@ calf <- elk_data$age_tib %>%
   arrange(id) %>%
   select(as.character(start_year:end_year)) %>%
   as.matrix()
+# had a replace_na(0) line appended
 
 herd <- elk_data$hrd_tib %>%
   arrange(id) %>%
@@ -70,13 +71,15 @@ herd <- elk_data$hrd_tib %>%
   ))) %>%
   as.matrix()
 
-z <- elk_data$liv_tib %>%
-  arrange(id) %>%
-  select(as.character(start_year:end_year)) %>%
-  as.matrix()
+# z <- elk_data$liv_tib %>%
+#   arrange(id) %>%
+#   select(as.character(start_year:end_year)) %>%
+#   as.matrix()
+# was built manually lower down
 
 # We don't care about elk that were never in main study
 gone_elk <- apply(herd, 1, sum) == ncol(herd)
+# this was set up to not filter anything?
 unseen_elk <- apply(y, 1, sum) == 0
 bad_elk <- which((gone_elk + unseen_elk) != 0)
 
@@ -99,8 +102,12 @@ male <- male[-weird_elk]
 calf <- calf[-weird_elk,]
 herd <- herd[-weird_elk,]
 
-calf <- (calf == 1) * 1
-calf[is.na(calf)] <- 0
+z <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
+l_k <- rep(NA, nrow(y))
+for(i in 1:nrow(y)){
+  l_k[i] <- max(which(y[i,] == 1))
+  z[i, (f[i]):l_k[i]] <- 1
+}
 
 #Fit_model======================================================================
 
@@ -123,8 +130,8 @@ inits <- list(
   sf = runif(nocc, 0, 1),
   sm = runif(nocc, 0, 1),
   sc = runif(nocc, 0, 1),
-  pf = runif(nocc, .9, 1),
-  pm = runif(nocc, .9, 1),
+  pf = runif(nocc, 0, 1),
+  pm = runif(nocc, 0, 1),
   sh = runif(1, 0, 1),
   ph = runif(1, 0, 1)
 )
@@ -141,10 +148,9 @@ rslt <- nimbleMCMC(
   nburnin           = nb,
   nchains           = nc,
   progressBar       = T,
-  samplesAsCodaMCMC = T,
   summary           = F,
-  check             = T
+  check             = F
 )  
 
-# save(rslt, file = result_file)
+save(rslt, file = result_file)
 mcmcplots::mcmcplot(rslt)

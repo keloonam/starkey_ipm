@@ -6,17 +6,17 @@
 
 # Specify the model
 model_file <- "models//ipm//ipm.txt"
-save_file <- "results//ipm_result_01sep2022.Rdata"
+save_file <- "results//ipm_result_14sep2022.Rdata"
 
 # Loop dimension parameters
 n_year <- 34
 
 # JAGS control parameters
-n_i <- 5000
-n_a <- 1000
-n_b <- 5000
+n_i <- 100000
+n_a <- 10000
+n_b <- 50000
 n_c <- 3
-n_t <- 100
+n_t <- 10
 
 #Environment====================================================================
 
@@ -50,7 +50,9 @@ jags_data <- list(
   # est_mean_n = 450,
   # est_sd_n = 126,
   af_count = ipm_data$n_f_p_count,
+  am_count = ipm_data$n_m_p_count,
   nn_fc = nrow(ipm_data$n_f_p_count),
+  nn_mc = nrow(ipm_data$n_m_p_count),
   r_NfNc = ipm_data$ratio_counts,
   n_rc = nrow(ipm_data$ratio_counts)
 )
