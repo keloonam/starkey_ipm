@@ -274,12 +274,12 @@ for(i in 1:nrow(winter_temp)){
 get_precip <- function(climate_df, season_months, n_yrs){
   seasonal_precip <- climate_df %>%
     filter(Month %in% season_months) %>%
-    group_by(Year) %>%
+    group_by(add_year) %>%
     summarise(seasonal_precip = sum(SNOTEL_CL_precipt_mm)) %>%
     mutate(seasonal_precip = scale(seasonal_precip))
   out <- rep(0, n_yrs)
   for(i in 1:nrow(seasonal_precip)){
-    out[seasonal_precip$Year[i] - 1987] <- seasonal_precip$seasonal_precip[i]
+    out[seasonal_precip$add_year[i] - 1987] <- seasonal_precip$seasonal_precip[i]
   }
   return(out)
 }
@@ -289,12 +289,43 @@ summer_precip <- get_precip(
   season_months = c(7, 8, 9),
   n_yrs = n_yrs
 )
+august_precip <- get_precip(
+  climate_df = monthly_temp, 
+  season_months = c(8),
+  n_yrs = n_yrs
+)
 winter_precip <- get_precip(
   climate_df = monthly_temp, 
   season_months = c(1, 2, 12),
   n_yrs = n_yrs
 )
-  
+
+#Cougars========================================================================
+
+cougar_density <- read_csv("data//cougars//cougar_density.csv")
+# stable_density <- mean(cougar_density$density[15:25])
+# cougar_density$density[26:nrow(cougar_density)] <- stable_density
+# cougar_density_scaled <- as.vector(scale(c(cougar_density$density, stable_density)))
+
+y.t <- cougar_density$density[1:25]
+y.ta <- cougar_density$density
+x.t <- cougar_density$year[1:25] - 1987
+x.ta <- c(cougar_density$year - 1987, 34)
+m.cd <- nls(y.t ~ a/(1 + exp(-b * (x.t - c))), start = list(a = 1, 
+                                                            b = 0.5, 
+                                                            c = 1))
+
+params = coef(m.cd)
+y.t2 <- params[1] / (1 + exp(1-params[2] * (x.ta - params[3])))
+plot(y.t2, type = "l")
+points(y.ta)
+cougar_density_scaled <- as.vector(scale(y.t2))
+
+#Density========================================================================
+
+load("results//ipm_null_result_14sep2022.Rdata")
+scaled_density <- as.numeric(scale(summary(rslt)$statistics[103:136,1]))
+rm(rslt)
 
 #Combine========================================================================
 
@@ -318,11 +349,14 @@ ipm_data <- list(
   summer_temp = sum_temp,
   winter_temp = win_temp,
   summer_precip = summer_precip,
+  august_precip = august_precip,
   winter_precip = winter_precip,
   n_f_p_count = fpc_dat,
   n_m_p_count = mpc_dat,
-  ratio_counts = ratio_counts
+  ratio_counts = ratio_counts,
+  cougar_density = cougar_density_scaled,
+  elk_density = scaled_density
 )
 
-save(ipm_data, file = "data//elk_ipm_data_02sep2022.Rdata")
+save(ipm_data, file = "data//elk_ipm_data_03oct2022.Rdata")
 

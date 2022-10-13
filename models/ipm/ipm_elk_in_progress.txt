@@ -142,22 +142,20 @@ model{
   sd_R ~ dunif(0,50)
   tau_R <- 1/sd_R^2
   
-  R_B0 ~ dlogis(1, 1)
-  #R_sp_rs ~ dunif(0, 2)
-  #R_dd_rs ~ dunif(0, 2)
-  #R_cg_rs ~ dunif(0, 2)
-  #R_B0 <- logit(R_B0_rs)
-  #R_sp <- log(R_sp_rs)
-  #R_dd <- log(R_dd_rs)
-  #R_cg <- log(R_cg_rs)
+  R_B0 ~ dlogis(0, 1)
+  R_sp ~ dlogis(0, 1)
+  R_cg ~ dlogis(0, 1)
+  R_dd ~ dlogis(0, 1)
+  R_ddsp ~ dlogis(0, 1)
   
   for(yr in 2:n_year){ # yr
     R_yr[yr] ~ dnorm(0, tau_R)
     logit(R[yr]) <- R_B0 + 
-                  R_yr[yr] #+ 
-                  #R_sp * sprec[yr-1] + 
-                  #R_dd * n_adj[yr-1] + 
-                  #R_cg * cdens[yr]
+                  R_sp * sprec[yr-1] + 
+                  R_dd * n_adj[yr-1] + 
+                  R_cg * cdens[yr] +
+                  R_ddsp * n_adj[yr] * sprec[yr-1] +
+                  R_yr[yr]
   } # yr
   
   

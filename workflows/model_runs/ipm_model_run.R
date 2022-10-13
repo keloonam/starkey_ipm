@@ -5,16 +5,16 @@
 #Variables======================================================================
 
 # Specify the model
-model_file <- "models//ipm//ipm_elk_null_in_progress.txt"
-save_file <- "results//ipm_result_09may2022.Rdata"
+model_file <- "models//ipm//ipm_elk_in_progress.txt"
+save_file <- "results//ipm_result_11oct2022_R_cgspddinteraction.Rdata"
 
 # Loop dimension parameters
 n_year <- 34
 
 # JAGS control parameters
 n_i <- 500000
-n_a <- 10000
-n_b <- 500000
+n_a <- 50000
+n_b <- 100000
 n_c <- 3
 n_t <- 100
 
@@ -22,7 +22,7 @@ n_t <- 100
 
 require(tidyverse); require(rjags); require(mcmcplots)
 # load("data//elk_ipm_data.Rdata")
-load("data//elk_ipm_data_25apr2022.Rdata")
+load("data//elk_ipm_data_03oct2022.Rdata")
 
 #Data_prep======================================================================
 
@@ -43,12 +43,13 @@ jags_data <- list(
   n_har = ipm_data$n_hnt,
   min_ad = ipm_data$min_ad,
   min_ca = ipm_data$min_ca,
-  st = ipm_data$summer_temp,
-  wt = ipm_data$winter_temp,
-  sp = ipm_data$summer_precip,
-  wp = ipm_data$winter_precip,
-  est_mean_n = 450,
-  est_sd_n = 126
+  sprec = ipm_data$august_precip,
+  af_count = ipm_data$n_f_p_count,
+  nn_fc = nrow(ipm_data$n_f_p_count),
+  am_count = ipm_data$n_m_p_count,
+  nn_mc = nrow(ipm_data$n_m_p_count),
+  cdens = ipm_data$cougar_density,
+  n_adj = ipm_data$elk_density
 )
 
 inits <- function(){
@@ -94,25 +95,17 @@ params = c(
   "N_tot",
   "survival_ca",
   "survival_af",
-  "survival_yf",
   "survival_am",
-  "survival_ym",
   "R",
   "N_f",
   "N_c",
-  "N_yf",
   "N_m",
-  "N_ym",
-  "R_st",
-  "R_wt",
   "R_sp",
-  "R_wp",
-  "R_st_ps",
-  "R_wt_ps",
-  "R_sp_ps",
-  "R_wp_ps",
-  "R_dd_ps",
-  "R_dd"
+  "R_dd",
+  "R_cg",
+  "R_ddsp",
+  "lambda",
+  "test_ps"
 )
 
 #Model==========================================================================
@@ -146,3 +139,4 @@ mcmcplots::mcmcplot(rslt)
 
 
 save(rslt, file = save_file)
+

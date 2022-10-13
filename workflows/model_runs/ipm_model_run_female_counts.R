@@ -5,56 +5,51 @@
 #Variables======================================================================
 
 # Specify the model
-model_file <- "models//ipm//ipm.txt"
-save_file <- "results//ipm_result_14sep2022.Rdata"
+model_file <- "models//ipm//ipm_elk_null_in_progress.txt"
+save_file <- "results//ipm_result_10oct2022.Rdata"
 
 # Loop dimension parameters
 n_year <- 34
 
 # JAGS control parameters
-n_i <- 100000
-n_a <- 10000
-n_b <- 50000
-n_c <- 3
-n_t <- 10
+n_i <- 500000
+n_a <- 50000
+n_b <- 100000
+n_c <- 7
+n_t <- 100
 
 #Environment====================================================================
 
 require(tidyverse); require(rjags); require(mcmcplots)
 # load("data//elk_ipm_data.Rdata")
-load("data//elk_ipm_data_02sep2022.Rdata")
+load("data//elk_ipm_data_03oct2022.Rdata")
 
 #Data_prep======================================================================
 
 jags_data <- list(
   s_cjs = ipm_data$s_cjs,
-  # r_ratio = ipm_data$r_ratio,
+  r_ratio = ipm_data$r_ratio,
   n_sight_ca = ipm_data$n_sight_ca,
   n_sight_am = ipm_data$n_sight_am,
   n_sight_af = ipm_data$n_sight_af,
-  Na_mov = ipm_data$n_ad_add - abs(ipm_data$n_ad_rem),
-  Nc_mov = ipm_data$n_ca_add - abs(ipm_data$n_ca_rem),
-  nyr = n_year,
+  n_a_mov = ipm_data$n_ad_add - abs(ipm_data$n_ad_rem),
+  n_c_mov = ipm_data$n_ca_add - abs(ipm_data$n_ca_rem),
+  n_year = n_year,
   nn_ca = nrow(ipm_data$n_sight_ca),
   nn_af = nrow(ipm_data$n_sight_af),
   nn_am = nrow(ipm_data$n_sight_am),
   ns = nrow(ipm_data$s_cjs),
-  # nr = nrow(ipm_data$r_ratio),
-  Nhar = ipm_data$n_hnt,
-  Na_obs = ipm_data$min_ad,
-  Nc_obs = ipm_data$min_ca,
-  # st = ipm_data$summer_temp,
-  # wt = ipm_data$winter_temp,
-  # sp = ipm_data$summer_precip,
-  # wp = ipm_data$winter_precip,
-  # est_mean_n = 450,
-  # est_sd_n = 126,
+  nr = nrow(ipm_data$r_ratio),
+  n_har = ipm_data$n_hnt,
+  min_ad = ipm_data$min_ad,
+  min_ca = ipm_data$min_ca,
+  sprec = ipm_data$august_precip,
   af_count = ipm_data$n_f_p_count,
-  am_count = ipm_data$n_m_p_count,
   nn_fc = nrow(ipm_data$n_f_p_count),
+  am_count = ipm_data$n_m_p_count,
   nn_mc = nrow(ipm_data$n_m_p_count),
-  r_NfNc = ipm_data$ratio_counts,
-  n_rc = nrow(ipm_data$ratio_counts)
+  cdens = ipm_data$cougar_density,
+  n_adj = ipm_data$elk_density
 )
 
 inits <- function(){
@@ -63,19 +58,33 @@ inits <- function(){
   N[,] <- 500
   
   # Recruitment
-  Rb0 <- 10
+  R <- 0.9
+  
+  # # Harvest
+  # p_har <- array(data = 0, dim = c(3,2,33))
+  # p_har[,,1] <- NA
+  
+  # # Removals
+  # p_rem <- array(data = 0.01, dim = c(2,2,33))
+  # p_rem[,,1] <- NA
   
   # Survival
-  Sc0 <- 4
-  Sf0 <- 4
-  Sm0 <- 4
+  S_C_B0_ps <- 0.99
+  S_Y_F_B0_ps <- 0.99
+  S_Y_M_B0_ps <- 0.99
+  S_A_F_B0_ps <- 0.99
+  S_A_M_B0_ps <- 0.99
   
   out <- list(
     init_N = N,
-    Rb0    = Rb0,
-    Sc0    = Sc0,
-    Sf0    = Sf0,
-    Sm0    = Sm0
+    R_B0_ps = R,
+    S_C_B0_ps = S_C_B0_ps,
+    S_Y_F_B0_ps = S_Y_F_B0_ps,
+    S_Y_M_B0_ps = S_Y_M_B0_ps,
+    S_A_F_B0_ps = S_A_F_B0_ps,
+    S_A_M_B0_ps = S_A_M_B0_ps
+    # p_har = p_har,
+    # p_rem = p_rem
   )
   return(out)
 }
@@ -83,25 +92,29 @@ inits <- function(){
 initial_values <- inits()
 
 params = c(
-  "Nt",
-  "Nf",
-  "Nm",
-  "Nc",
-  "Sf",
-  "Sc",
-  "Sm",
+  "N_tot",
+  "survival_ca",
+  "survival_af",
+  "survival_am",
   "R",
-  "Rdd"
+  "N_f",
+  "N_c",
+  "N_m",
+  "R_sp",
+  "R_dd",
+  "R_cg",
+  "lambda",
+  "test_ps"
 )
 
 #Model==========================================================================
 
 jgs_mdl <- jags.model(
-  file     = model_file,
-  data     = jags_data,
-  inits    = inits,
+  file = model_file,
+  data = jags_data,
+  inits = inits,
   n.chains = n_c,
-  n.adapt  = n_a
+  n.adapt = n_a
 )
 
 update(jgs_mdl, n.iter = n_b)
@@ -125,3 +138,6 @@ mcmcplots::mcmcplot(rslt)
 
 
 save(rslt, file = save_file)
+x <- rslt %>%
+  map(., as_tibble) %>%
+  bind_rows()

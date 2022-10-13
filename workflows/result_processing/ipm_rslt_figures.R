@@ -4,7 +4,7 @@
 
 #Environment====================================================================
 
-load("results//ipm_result_26aug2022.Rdata")
+load("results//ipm_result_11oct2022_R_cgspddinteraction.Rdata")
 require(tidyverse); require(rjags)
 
 data <- summary(rslt)

@@ -54,8 +54,8 @@ model{
       } #a
       
       # Ne -- expected abundances
-      Ne[2,x,t] <- (    N[1,  x,t-1]  +       Nc_mov[x,t])  * S[2,x,t]
-      Ne[3,x,t] <- (    N[2,  x,t-1]  +     Nmov[2,  x,t])  * S[3,x,t]
+      Ne[2,x,t] <- (    N[1,  x,t-1] +        Nc_mov[x,t])  * S[2,x,t]
+      Ne[3,x,t] <- (    N[2,  x,t-1] +      Nmov[2,  x,t])  * S[3,x,t]
       Ne[4,x,t] <- (sum(N[3:4,x,t-1]) + sum(Nmov[3:4,x,t])) * S[4,x,t]
       
       ##### Abundance #####
@@ -94,12 +94,6 @@ model{
     af_count[i,4] ~ dnorm(Nf[af_count[i,1]], tau_afcount)T(0,)
   }
   
-  #sd_amcount ~ dunif(0, 50)
-  #tau_amcount <- 1 / sd_amcount^2
-  #for(i in 1:nn_mc){
-  #  am_count[i,4] ~ dnorm(Nm[am_count[i,1]], tau_amcount)T(0,)
-  #}
-  
   ##### Survival #####
   # CJS
   for(i in 1:ns){
@@ -121,10 +115,10 @@ model{
   Rb0 ~ dnorm(0, 0.0001)
   Rdd ~ dnorm(0, 0.0001)
   
-  for(t in 2:nyr){ #t
+  for(t in 1:nyr){ #t
     R0[t]     ~  dnorm(Rb0, R_tau)
-    RD[t]     <- Rdd * (Nt[t-1] - mean(Nt[1:nyr])) / sd(Nt[1:nyr])
-    logit(R[t]) <- R0[t] #+ RD[t]
+    RD[t]     <- Rdd * ((Nt[t] - mean(Nt[1:nyr])) / sd(Nt[1:nyr]))
+    log(R[t]) <- R0[t] #+ RD[t]
   }#t
   
   ##### Survival #####
@@ -140,14 +134,10 @@ model{
   Sf_sd ~ dunif(0, 50);   Sf_tau <- 1 / Sf_sd^2
   Sm_sd ~ dunif(0, 50);   Sm_tau <- 1 / Sm_sd^2
   
-  for(t in 2:nyr){
-    Sc_ls[t] ~ dnorm(Sc0, Sc_tau)
-    Sf_ls[t] ~ dnorm(Sf0, Sf_tau)    
-    Sm_ls[t] ~ dnorm(Sm0, Sm_tau)
-    
-    logit(Sc[t]) <- Sc_ls[t]
-    logit(Sf[t]) <- Sf_ls[t]
-    logit(Sm[t]) <- Sm_ls[t]
+  for(t in 1:nyr){
+    Sc[t] ~ dnorm(Sc0, Sc_tau)
+    Sf[t] ~ dnorm(Sf0, Sf_tau)
+    Sm[t] ~ dnorm(Sm0, Sm_tau)
     
     S[1,1,t] <- 0
     S[1,2,t] <- 0
