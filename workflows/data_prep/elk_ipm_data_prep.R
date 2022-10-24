@@ -321,6 +321,15 @@ plot(y.t2, type = "l")
 points(y.ta)
 cougar_density_scaled <- as.vector(scale(y.t2))
 
+# n_cougars <- c( 926, 1058, 1187, 1301, 1393, 1436, 1502, 1590, 1570, 1570, 1592,
+#                 1646, 1640, 1599, 1592, 1596, 1578, 1541, 1532, 1640, 1703, 1724,
+#                 1748, 1760, 1800, 1807, 1849, 1910)
+# year <- 1994:2021
+
+plot(cougar_density_scaled, type = "l", xlim = c(0, 35), ylim = c(-2,1.5))
+points(scale(y.ta), col = "blue")
+points(scale(c(rep(NA, 7), n_cougars)), col = "red")
+
 #Density========================================================================
 
 load("results//ipm_null_result_14sep2022.Rdata")

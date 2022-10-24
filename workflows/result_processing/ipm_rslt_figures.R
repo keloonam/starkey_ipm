@@ -88,9 +88,9 @@ ggplot(data = n_ca, aes(x = year, y = mean)) +
 
 #Recruitment====================================================================
 
-r_dat <- q[c(grep("R", dimnames(q)[[1]]))[1:34], c(1,3,5)] %>%
+r_dat <- q[c(grep("R", dimnames(q)[[1]]))[1:33], c(1,3,5)] %>%
   as_tibble() %>%
-  mutate(year = sort(rep(1988:2021))) %>%
+  mutate(year = sort(rep(1989:2021))) %>%
   group_by(year) %>%
   summarise(
     lci = sum(`2.5%`),
