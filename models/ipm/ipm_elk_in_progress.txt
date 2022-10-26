@@ -143,19 +143,20 @@ model{
   tau_R <- 1/sd_R^2
   
   R_B0 ~ dlogis(0, 1)
-  R_sp ~ dlogis(0, 1)
+  R_pt ~ dlogis(0, 1)
+  R_pm ~ dlogis(0, 1)
   R_cg ~ dlogis(0, 1)
   R_dd ~ dlogis(0, 1)
-  R_ddsp ~ dlogis(0, 1)
+  R_dddt ~ dlogis(0, 1)
   
   for(yr in 2:n_year){ # yr
     R_yr[yr] ~ dnorm(0, tau_R)
     logit(R[yr]) <- R_B0 + 
-                  R_sp * sprec[yr-1] + 
-                  R_dd * n_adj[yr-1] + 
-                  R_cg * cdens[yr] +
-                  R_ddsp * n_adj[yr] * sprec[yr-1] +
-                  R_yr[yr]
+                    R_pt * pdsi[yr] + 
+                    R_pm * pdsi[yr-1] + 
+                    R_dd * n_adj[yr-1] + 
+                    R_cg * cdens[yr] +
+                    R_yr[yr]
   } # yr
   
   

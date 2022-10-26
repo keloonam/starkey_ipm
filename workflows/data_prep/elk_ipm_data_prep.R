@@ -332,9 +332,23 @@ points(scale(c(rep(NA, 7), n_cougars)), col = "red")
 
 #Density========================================================================
 
-load("results//ipm_null_result_14sep2022.Rdata")
+load("results//ipm_result_11oct2022_R_null.Rdata")
 scaled_density <- as.numeric(scale(summary(rslt)$statistics[103:136,1]))
 rm(rslt)
+
+#Palmer_Drought_Index===========================================================
+
+pdi_full <- read_csv("data//climate//pdi_3508_ne_or.csv") %>%
+  filter(year >= 1988) %>%
+  pivot_longer(2:13, names_to = "month")
+
+pdi <- pdi_full %>%
+  filter(month %in% c("september")) %>%
+  select(value) %>%
+  scale() %>%
+  as.vector()
+
+pdi <- pdi[-35]
 
 #Combine========================================================================
 
@@ -364,8 +378,9 @@ ipm_data <- list(
   n_m_p_count = mpc_dat,
   ratio_counts = ratio_counts,
   cougar_density = cougar_density_scaled,
-  elk_density = scaled_density
+  elk_density = scaled_density,
+  palmer_index = pdi
 )
 
-save(ipm_data, file = "data//elk_ipm_data_03oct2022.Rdata")
+save(ipm_data, file = "data//elk_ipm_data_26oct2022.Rdata")
 

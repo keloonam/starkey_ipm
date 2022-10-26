@@ -6,7 +6,7 @@
 
 # Specify the model
 model_file <- "models//ipm//ipm_elk_in_progress.txt"
-save_file <- "results//ipm_result_11oct2022_R_cgspddinteraction.Rdata"
+save_file <- "results//ipm_result_11oct2022_R_cgptpmdd.Rdata"
 
 # Loop dimension parameters
 n_year <- 34
@@ -22,7 +22,7 @@ n_t <- 100
 
 require(tidyverse); require(rjags); require(mcmcplots)
 # load("data//elk_ipm_data.Rdata")
-load("data//elk_ipm_data_03oct2022.Rdata")
+load("data//elk_ipm_data_26oct2022.Rdata")
 
 #Data_prep======================================================================
 
