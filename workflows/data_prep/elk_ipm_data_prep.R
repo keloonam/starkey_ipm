@@ -321,14 +321,52 @@ plot(y.t2, type = "l")
 points(y.ta)
 cougar_density_scaled <- as.vector(scale(y.t2))
 
-# n_cougars <- c( 926, 1058, 1187, 1301, 1393, 1436, 1502, 1590, 1570, 1570, 1592,
-#                 1646, 1640, 1599, 1592, 1596, 1578, 1541, 1532, 1640, 1703, 1724,
-#                 1748, 1760, 1800, 1807, 1849, 1910)
-# year <- 1994:2021
+blue_mtns <- tibble(
+  year = 1994:2021,
+  n = c(926,  1058, 1187, 1301, 1393, 1436, 1502, 1590, 1570, 1570, 1592,
+        1646, 1640, 1599, 1592, 1596, 1578, 1541, 1532, 1640, 1703, 1724,
+        1748, 1760, 1800, 1807, 1849, 1910),
+  Source = "Blue Mountain Estimate"
+  ) %>%
+  mutate(n = scale(n))
 
-plot(cougar_density_scaled, type = "l", xlim = c(0, 35), ylim = c(-2,1.5))
-points(scale(y.ta), col = "blue")
-points(scale(c(rep(NA, 7), n_cougars)), col = "red")
+mortalities <- tibble(
+  year = 1987:2019,
+  n = c(76,   64,  72,  85,  81,  98,  86,  96,  36,  46,  64,  91, 140, 136, 
+        125, 142, 149, 168, 140, 165, 177, 171, 158, 162, 169, 164, 135,  94, 
+        110, 113, 141, 
+        113, 125),
+  Source = "Starkey WMU Mortalities"
+  ) %>%
+  mutate(n = scale(n))
+
+logistic <- tibble(
+  year = 1988:2021,
+  n = scale(y.t2),
+  Source = "Logistic Growth Model"
+  )
+
+reconstruction <- tibble(
+  year = 1988:2020,
+  n = scale(y.ta),
+  Source = "Starkey WMU Reconstruction"
+)
+
+cougar_tibble <- bind_rows(blue_mtns, mortalities, logistic, reconstruction)
+require(ggsci)
+ggplot(data = cougar_tibble, aes(x = year, y = n, color = Source, shape = Source, pattern = Source)) +
+  geom_line() +
+  geom_point() +
+  theme_classic() +
+  labs(x = "Year", y = "N Cougars (scaled)", title = "Figure ##") +
+  scale_color_jco() +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 2, byrow = T))
+ggsave("cougar_density_plot.png", width = 5, height = 3, units = "in", dpi = 300)
+
+# plot(cougar_density_scaled, type = "l", xlim = c(0, 35), ylim = c(-2,1.5))
+# points(scale(y.ta), col = "blue")
+# points(scale(c(rep(NA, 7), n_cougars)), col = "red")
 
 #Density========================================================================
 

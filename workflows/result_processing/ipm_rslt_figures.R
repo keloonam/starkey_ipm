@@ -4,7 +4,7 @@
 
 #Environment====================================================================
 
-load("results//ipm_result_11oct2022_R_cgspddinteraction.Rdata")
+load("results//ipm_result_26oct2022_R_cgptpmdd.Rdata")
 require(tidyverse); require(rjags)
 
 data <- summary(rslt)
@@ -66,7 +66,8 @@ ggplot(data = n_tot, aes(x = year, y = mean)) +
   geom_linerange(aes(ymax = uci, ymin = lci)) +
   theme_light() +
   labs(title = "Total Elk", y = "Abundance", x = "Year") +
-  ylim(0,1100)
+  ylim(0,700)
+ggsave("elk_abundance_plot.png", width = 5, height = 3, units = "in", dpi = 300)
 ggplot(data = n_af, aes(x = year, y = mean)) +
   geom_line() +
   geom_linerange(aes(ymax = uci, ymin = lci)) +
@@ -104,6 +105,8 @@ ggplot(data = r_dat, aes(x = year, y = mean)) +
   geom_linerange(aes(ymax = uci, ymin = lci)) +
   theme_light() +
   labs(title = "Recruitment", y = "Calves/Cow", x = "Year")
+ggsave("elk_recruitment_plot.png", width = 5, height = 3, units = "in", dpi = 300)
+
 
 #Survival=======================================================================
 
@@ -157,3 +160,62 @@ ggplot(data = sc_dat, aes(x = year, y = mean)) +
   geom_linerange(aes(ymax = uci, ymin = lci)) +
   theme_light() +
   labs(title = "Calf Survival", y = "Survival Probability", x = "Year")
+ggsave("calf_survival_plot.png", width = 5, height = 3, units = "in", dpi = 300)
+
+#Posteriors=====================================================================
+
+posteriors <- rslt %>%
+  map(as_tibble) %>%
+  bind_rows() %>%
+  pivot_longer(1:ncol(.), names_to = "parameter") %>%
+  filter(parameter %in% c("R_cg", "R_dd", "R_pm", "R_pt")) %>%
+  mutate(Covariate = case_when(
+    parameter == "R_cg" ~ "Cougar Density",
+    parameter == "R_dd" ~ "Density Dependence",
+    parameter == "R_pm" ~ "PDI Lag",
+    parameter == "R_pt" ~ "PDI"
+  ))
+
+ggplot(posteriors, aes(x = value, color = Covariate)) +
+  geom_density() +
+  geom_vline(xintercept = 0) +
+  theme_classic() +
+  labs(x = "Value", y = "Density", title = "Recruitment Covariate Posteriors") +
+  scale_color_jco() +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 2, byrow = T))
+ggsave("R_covariate_plot.png", width = 5, height = 3, units = "in", dpi = 300)
+
+#Real_scale_effect==============================================================
+
+posteriors <- rslt %>%
+  map(as_tibble) %>%
+  bind_rows() %>%
+  pivot_longer(1:ncol(.), names_to = "parameter") %>%
+  filter(parameter %in% c("R_cg", "R_B0")) %>%
+  mutate(id = sort(rep(1:(nrow(.)/2), 2))) %>%
+  pivot_wider(id_cols = id, names_from = parameter)
+
+expit <- function(x){
+  1/(1+exp(-x))
+}
+
+high_cg <- expit(posteriors$R_B0 + 0.81*posteriors$R_cg)
+low_cg <- expit(posteriors$R_B0 - 1.6*posteriors$R_cg)
+mean_cg <- expit(posteriors$R_B0)
+cg_recruit <- tibble(
+  Cougars = c(rep("High Density", length(high_cg)), 
+              rep("Low Density", length(low_cg)),
+              rep("Mean Density", length(mean_cg))
+              ),
+  Recruitment = c(high_cg, low_cg, mean_cg)
+)
+
+ggplot(cg_recruit, aes(x = Recruitment, color = Cougars)) +
+  geom_density() +
+  theme_classic() +
+  labs(x = "Calves/Cow", y = "Density", title = "Recruitment Posteriors by Cougar Density") +
+  scale_color_jco() +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 2, byrow = T))
+ggsave("R_cougar_posteriors_plot.png", width = 5, height = 3, units = "in", dpi = 300)

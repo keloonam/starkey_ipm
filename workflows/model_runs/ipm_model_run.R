@@ -6,7 +6,7 @@
 
 # Specify the model
 model_file <- "models//ipm//ipm_elk_in_progress.txt"
-save_file <- "results//ipm_result_11oct2022_R_cgptpmdd.Rdata"
+save_file <- "results//ipm_result_26oct2022_R_cgptpmdd.Rdata"
 
 # Loop dimension parameters
 n_year <- 34
@@ -49,7 +49,8 @@ jags_data <- list(
   am_count = ipm_data$n_m_p_count,
   nn_mc = nrow(ipm_data$n_m_p_count),
   cdens = ipm_data$cougar_density,
-  n_adj = ipm_data$elk_density
+  n_adj = ipm_data$elk_density,
+  pdsi = ipm_data$palmer_index
 )
 
 inits <- function(){
@@ -100,12 +101,13 @@ params = c(
   "N_f",
   "N_c",
   "N_m",
-  "R_sp",
+  "R_B0",
+  "R_pt",
+  "R_pm",
   "R_dd",
   "R_cg",
   "R_ddsp",
-  "lambda",
-  "test_ps"
+  "lambda"
 )
 
 #Model==========================================================================
