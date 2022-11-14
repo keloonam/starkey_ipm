@@ -358,7 +358,7 @@ ggplot(data = cougar_tibble, aes(x = year, y = n, color = Source, shape = Source
   geom_line() +
   geom_point() +
   theme_classic() +
-  labs(x = "Year", y = "N Cougars (scaled)", title = "Figure ##") +
+  labs(x = "Year", y = "N Cougars (scaled)", title = "Cougar Abundance") +
   scale_color_jco() +
   theme(legend.position = "bottom") +
   guides(color = guide_legend(nrow = 2, byrow = T))

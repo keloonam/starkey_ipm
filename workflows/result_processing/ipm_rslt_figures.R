@@ -219,3 +219,24 @@ ggplot(cg_recruit, aes(x = Recruitment, color = Cougars)) +
   theme(legend.position = "bottom") +
   guides(color = guide_legend(nrow = 2, byrow = T))
 ggsave("R_cougar_posteriors_plot.png", width = 5, height = 3, units = "in", dpi = 300)
+
+#lambda=========================================================================
+
+lam_dat <- q[c(grep("lambda", dimnames(q)[[1]]))[2:34], c(1,3,5)] %>%
+  as_tibble() %>%
+  mutate(year = sort(rep(1989:2021))) %>%
+  group_by(year) %>%
+  summarise(
+    lci = sum(`2.5%`),
+    mean = sum(`50%`),
+    uci = sum(`97.5%`)
+  ) %>%
+  mutate(class = "lambda")
+
+ggplot(data = lam_dat, aes(x = year, y = mean)) +
+  geom_line() +
+  geom_linerange(aes(ymax = uci, ymin = lci)) +
+  theme_light() +
+  labs(title = "Calf Survival", y = "Survival Probability", x = "Year")
+ggsave("calf_survival_plot.png", width = 5, height = 3, units = "in", dpi = 300)
+
