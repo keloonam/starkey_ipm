@@ -1,4 +1,0 @@
-=====Project to do list=====
--Harvest in lambda checking
-
-  
