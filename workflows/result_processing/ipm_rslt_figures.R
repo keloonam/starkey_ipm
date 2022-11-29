@@ -210,7 +210,7 @@ cg_recruit <- tibble(
               ),
   Recruitment = c(high_cg, low_cg, mean_cg)
 )
-
+require(ggsci)
 ggplot(cg_recruit, aes(x = Recruitment, color = Cougars)) +
   geom_density() +
   theme_classic() +
@@ -219,6 +219,10 @@ ggplot(cg_recruit, aes(x = Recruitment, color = Cougars)) +
   theme(legend.position = "bottom") +
   guides(color = guide_legend(nrow = 2, byrow = T))
 ggsave("R_cougar_posteriors_plot.png", width = 5, height = 3, units = "in", dpi = 300)
+
+cg_recruit %>%
+  group_by(Cougars) %>%
+  summarise(r_mean = mean(Recruitment))
 
 #lambda=========================================================================
 
