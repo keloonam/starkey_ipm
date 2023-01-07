@@ -82,9 +82,7 @@ model{
     N_f[yr]    <- N[3,1,yr] + N[4,1,yr] + N[2,1,yr]
     N_m[yr]    <- N[3,2,yr] + N[4,2,yr] + N[2,2,yr]
     N_tot[yr]  <- sum(N[,,yr])
-    N_lam[yr]  <- N_c[yr] + sum(N[1,1:2,yr-1]) * S[2,1,yr] + 
-                            sum(N[2:4,1,yr-1]) * S[3,1,yr] +
-                            sum(N[2:4,2,yr-1]) * S[3,2,yr]
+    N_lam[yr]  <- N_c[yr] + sum(n_exp[2:4,1:2,yr])
     lambda[yr] <- N_lam[yr] / N_tot[yr-1]
   } # yr
   
@@ -152,8 +150,8 @@ model{
   for(yr in 2:n_year){ # yr
     R_yr[yr] ~ dnorm(0, tau_R)
     logit(R[yr]) <- R_B0 + 
-                    R_pt * pdsi[yr] + 
-                    R_pm * pdsi[yr-1] + 
+                    R_wt * clim[yr] + 
+                    R_wm * clim[yr-1] + 
                     R_dd * n_adj[yr-1] + 
                     R_cg * cdens[yr] +
                     R_yr[yr]

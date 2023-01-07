@@ -372,6 +372,7 @@ ggsave("cougar_density_plot.png", width = 5, height = 3, units = "in", dpi = 300
 
 load("results//ipm_result_11oct2022_R_null.Rdata")
 scaled_density <- as.numeric(scale(summary(rslt)$statistics[103:136,1]))
+scaled_N_AF <- as.numeric(scale(summary(rslt)$statistics[35:68,1]))
 rm(rslt)
 
 #Palmer_Drought_Index===========================================================
@@ -387,6 +388,65 @@ pdi <- pdi_full %>%
   as.vector()
 
 pdi <- pdi[-35]
+
+#NDVI===========================================================================
+
+avhrr <- read_csv("data//climate//ndvi_avhrr.csv") %>%
+  mutate(source = "avhrr") %>%
+  group_by(mn, yr) %>%
+  summarise(ndvi = mean(NDVI)) %>%
+  filter(yr < 2015)
+
+modis <- read_csv("data//climate//ndvi_modis.csv") %>%
+  mutate(source = "modis") %>%
+  filter(SummaryQA <= 1) %>%
+  group_by(mn, yr) %>%
+  summarise(ndvi = mean(NDVI))
+
+combo <- inner_join(avhrr, modis, by = c("mn", "yr"), suffix = c("_a", "_m")) %>%
+  arrange(yr, mn) %>%
+  filter(yr < 2015) %>%
+  filter(mn > 4, mn < 10)
+
+m1 <- with(combo, lm(ndvi_m ~ ndvi_a))
+avhrr_m1 <- avhrr %>%
+  mutate(
+    ndvi = ndvi*m1$coefficients[2] + m1$coefficients[1]
+  ) %>%
+  group_by(mn, yr) %>%
+  summarise(ndvi = mean(ndvi))
+ndvi_modis <- full_join(avhrr_m1, modis, by = c("mn", "yr"), suffix = c("_a", "_m")) %>%
+  mutate(ndvi = case_when(
+    !is.na(ndvi_m) ~ ndvi_m,
+    T ~ ndvi_a
+  )) %>%
+  filter(mn > 4, mn < 10) %>%
+  group_by(yr) %>%
+  summarise(summer_ndvi = mean(ndvi)) %>%
+  filter(yr %in% 1988:2021) %>%
+  select(value) %>%
+  scale() %>%
+  as.vector()
+
+m2 <- with(combo, lm(ndvi_a ~ ndvi_m))
+modis_m2 <- modis %>%
+  mutate(
+    ndvi = ndvi*m2$coefficients[2] + m2$coefficients[1]
+  ) %>%
+  group_by(mn, yr) %>%
+  summarise(ndvi = mean(ndvi))
+ndvi_avhrr <- full_join(modis_m2, avhrr, by = c("mn", "yr"), suffix = c("_m", "_a")) %>%
+  mutate(ndvi = case_when(
+    !is.na(ndvi_a) ~ ndvi_a,
+    T ~ ndvi_m
+  )) %>%
+  filter(mn > 4, mn < 10) %>%
+  group_by(yr) %>%
+  summarise(summer_ndvi = mean(ndvi)) %>%
+  filter(yr %in% 1988:2021) %>%
+  select(value) %>%
+  scale() %>%
+  as.vector()
 
 #Combine========================================================================
 
@@ -417,8 +477,11 @@ ipm_data <- list(
   ratio_counts = ratio_counts,
   cougar_density = cougar_density_scaled,
   elk_density = scaled_density,
-  palmer_index = pdi
+  af_density = scaled_N_AF,
+  palmer_index = pdi,
+  ndvi_avhrr = ndvi_avhrr,
+  ndvi_modis = ndvi_modis
 )
 
-save(ipm_data, file = "data//elk_ipm_data_26oct2022.Rdata")
+save(ipm_data, file = "data//elk_ipm_data_05jan2023.Rdata")
 
