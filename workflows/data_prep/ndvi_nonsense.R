@@ -32,7 +32,7 @@ ndvi_modis <- full_join(avhrr_m1, modis, by = c("mn", "yr"), suffix = c("_a", "_
   group_by(yr) %>%
   summarise(summer_ndvi = mean(ndvi)) %>%
   filter(yr %in% 1988:2021) %>%
-  select(value) %>%
+  select(summer_ndvi) %>%
   scale() %>%
   as.vector()
 
@@ -52,7 +52,7 @@ ndvi_avhrr <- full_join(modis_m2, avhrr, by = c("mn", "yr"), suffix = c("_m", "_
   group_by(yr) %>%
   summarise(summer_ndvi = mean(ndvi)) %>%
   filter(yr %in% 1988:2021) %>%
-  select(value) %>%
+  select(summer_ndvi) %>%
   scale() %>%
   as.vector()
 

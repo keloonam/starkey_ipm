@@ -141,8 +141,8 @@ model{
   tau_R <- 1/sd_R^2
   
   R_B0 ~ dlogis(0, 1)
-  R_pt ~ dlogis(0, 1)
-  R_pm ~ dlogis(0, 1)
+  R_wt ~ dlogis(0, 1)
+  R_wm ~ dlogis(0, 1)
   R_cg ~ dlogis(0, 1)
   R_dd ~ dlogis(0, 1)
   R_dddt ~ dlogis(0, 1)

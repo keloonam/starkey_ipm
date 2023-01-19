@@ -6,7 +6,7 @@
 
 # Specify the model
 model_file <- "models//ipm//ipm_elk_in_progress.txt"
-save_file <- "results//ipm_result_05jan2023_R_pdsi.Rdata"
+save_file <- "results//ipm_result_05jan2023_R_avhrr.Rdata"
 
 # Loop dimension parameters
 n_year <- 34
@@ -22,7 +22,7 @@ n_t <- 100
 
 require(tidyverse); require(rjags); require(mcmcplots)
 # load("data//elk_ipm_data.Rdata")
-load("data//elk_ipm_data_03jan2023.Rdata")
+load("data//elk_ipm_data_05jan2023.Rdata")
 
 #Data_prep======================================================================
 
@@ -50,7 +50,7 @@ jags_data <- list(
   nn_mc = nrow(ipm_data$n_m_p_count),
   cdens = ipm_data$cougar_density,
   n_adj = ipm_data$af_density,
-  clim = ipm_data$palmer_index
+  clim = ipm_data$ndvi_avhrr
 )
 
 inits <- function(){

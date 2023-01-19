@@ -4,8 +4,8 @@
 
 #Environment====================================================================
 
-load("results//ipm_result_26oct2022_R_cgptpmdd.Rdata")
-require(tidyverse); require(rjags)
+load("results//ipm_result_05jan2023_R_pdis.Rdata")
+require(tidyverse); require(rjags); require(ggsci)
 
 data <- summary(rslt)
 
@@ -168,23 +168,27 @@ posteriors <- rslt %>%
   map(as_tibble) %>%
   bind_rows() %>%
   pivot_longer(1:ncol(.), names_to = "parameter") %>%
-  filter(parameter %in% c("R_cg", "R_dd", "R_pm", "R_pt")) %>%
+  filter(parameter %in% c("R_cg", "R_dd", "R_wm", "R_wt")) %>%
   mutate(Covariate = case_when(
     parameter == "R_cg" ~ "Cougar Density",
     parameter == "R_dd" ~ "Density Dependence",
-    parameter == "R_pm" ~ "PDI Lag",
-    parameter == "R_pt" ~ "PDI"
+    parameter == "R_wm" ~ "Climate Lag",
+    parameter == "R_wt" ~ "Climate"
   ))
 
 ggplot(posteriors, aes(x = value, color = Covariate)) +
   geom_density() +
   geom_vline(xintercept = 0) +
   theme_classic() +
-  labs(x = "Value", y = "Density", title = "Recruitment Covariate Posteriors") +
+  labs(x = "Value", y = "Density", title = "Recruitment Covariate Posteriors - pdsi") +
   scale_color_jco() +
   theme(legend.position = "bottom") +
   guides(color = guide_legend(nrow = 2, byrow = T))
 ggsave("R_covariate_plot.png", width = 5, height = 3, units = "in", dpi = 300)
+
+posteriors %>%
+  filter(Covariate == "Climate Lag") %>%
+  summarise(out = mean(value > 0))
 
 #Real_scale_effect==============================================================
 

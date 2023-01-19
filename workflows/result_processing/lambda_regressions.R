@@ -1,6 +1,6 @@
 require(tidyverse)
-load("results//ipm_result_11oct2022_R_null.Rdata")
-load("data//elk_ipm_data_26oct2022.Rdata")
+load("results//ipm_result_05jan2023_R_pdis.Rdata")
+load("data//elk_ipm_data_05jan2023.Rdata")
 
 lambda_df <- rslt %>%
   map(., as_tibble) %>%
@@ -39,7 +39,7 @@ summary(m1)
 m1_res <- tibble(
   Covariate = c("Cougar density", "PDI", "PDI lag", "Clk density"),
   Estimate = m1$coefficients[2:5],
-  std_err = c(0.0343046, 0.0313621, .0323915, .1670)
+  std_err = c(0.04346, 0.03974, .041, .04199)
 ) %>%
   mutate(LCI = Estimate - std_err * 1.96) %>%
   mutate(UCI = Estimate + std_err * 1.96)
