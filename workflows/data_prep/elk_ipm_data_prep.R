@@ -29,7 +29,10 @@ cjs_removals <- c(
   "prob_am[33]",
   "survival_af[33]",
   "survival_am[33]",
-  "survival_ca[33]"
+  "survival_ca[33]",
+  "survival_af[32]",
+  "survival_am[32]",
+  "survival_ca[32]"
 )
 cpf_years <- 1:32
 cpm_years <- 1:32
