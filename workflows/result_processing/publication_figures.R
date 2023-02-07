@@ -3,15 +3,6 @@
 # January 2023
 # Figures to support IPM publication
 
-#To Do List=====================================================================
-
-# IPM explanation figure
-# Demographic rates through time, multi-panel figure
-# Posterior Distributions
-# Lambda regression confidence intervals
-# Convergence plots
-# Study Area figure
-
 #Environment====================================================================
 # Packages
 require(dplyr); require(ggplot2); require(ggsci); require(rjags)
@@ -118,6 +109,18 @@ sc_dat <- q[c(grep("survival_ca", dimnames(q)[[1]]))[1:34], c(1,3,5)] %>%
   mutate(class = "Calf Survival") %>%
   filter(year != 1988)
 
+lam_dat <- q[c(grep("lambda", dimnames(q)[[1]]))[1:34], c(1,3,5)] %>%
+  as_tibble() %>%
+  mutate(year = sort(rep(1988:2021))) %>%
+  group_by(year) %>%
+  summarise(
+    lci = sum(`2.5%`),
+    mean = sum(`50%`),
+    uci = sum(`97.5%`)
+  ) %>%
+  mutate(class = "lambda") %>%
+  filter(year != 1988, year != 2021)
+
 dem_dat <- bind_rows(r_dat, sc_dat, sm_dat, sf_dat)
 
 # Covariates
@@ -168,6 +171,11 @@ cg_recruit <- tibble(
   ),
   Recruitment = c(high_cg, low_cg, mean_cg)
 )
+
+cov_post %>%
+  mutate(eff = value > 0) %>%
+  group_by(Covariate) %>%
+  summarise(prob = mean(eff))
 
 #Figures========================================================================
 dem_fig_text_size <- 5.5
