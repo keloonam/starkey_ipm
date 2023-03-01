@@ -262,3 +262,15 @@ ggplot(cg_recruit, aes(x = Recruitment, color = Cougars)) +
   # guides(color = guide_legend(nrow = 2, byrow = T)) +
   theme(text = element_text(size = post_fig_text_size))
 ggsave("real_post_figure.png", width = 3.5, height = 1.5, units = "in", dpi = 300)
+
+#Scratch_work===================================================================
+cg <- cov_dat %>%
+  filter(covariate == "Cougar Index")
+r_coug <- cbind(r_dat, cg[-1,])
+plot(r_coug$value, r_coug$mean)
+
+
+cg <- cov_dat %>%
+  filter(covariate == "PDSI")
+r_pdsi <- cbind(r_dat, cg[-34,])
+plot(r_pdsi$value, r_pdsi$mean)

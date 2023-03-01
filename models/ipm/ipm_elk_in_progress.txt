@@ -60,9 +60,15 @@ model{
         n_ad_mov[a,x,yr] <-  n_a_mov[x,yr] * prop_ad[a,x,yr]
       } # a (age)
       
+      # Expected number to survive to hunting season
       n_exp[2,x,yr] <- (N[1,x,yr-1] + n_c_mov[x,yr])    * S[2,x,yr]
       n_exp[3,x,yr] <- (N[2,x,yr-1] + n_ad_mov[2,x,yr]) * S[3,x,yr]
       n_exp[4,x,yr] <- (sum(N[3:4,x,yr-1])+sum(n_ad_mov[3:4,x,yr])) * S[4,x,yr]
+      
+      # Expected to survive ignoring management (for calculating lambda)
+      n_x_l[2,x,yr] <- N[1,x,yr-1]        * S[2,x,yr]
+      n_x_l[3,x,yr] <- N[2,x,yr-1]        * S[3,x,yr]
+      n_x_l[4,x,yr] <- sum(N[3:4,x,yr-1]) * S[4,x,yr]
       
       for(a in 2:4){
         tau_exp[a,x,yr] <- abs(1 / ((n_exp[a,x,yr]) * (1 - S[a,x,yr])+1))
@@ -82,7 +88,9 @@ model{
     N_f[yr]    <- N[3,1,yr] + N[4,1,yr] + N[2,1,yr]
     N_m[yr]    <- N[3,2,yr] + N[4,2,yr] + N[2,2,yr]
     N_tot[yr]  <- sum(N[,,yr])
-    N_lam[yr]  <- N_c[yr] + sum(n_exp[2:4,1:2,yr])
+    
+    N_lam[yr]  <- N_c[yr] + sum(n_x_l[2:4,1:2,yr])
+    
     lambda[yr] <- N_lam[yr] / N_tot[yr-1]
   } # yr
   
@@ -232,4 +240,10 @@ model{
   N_f[1]   = N[3,1,1] + N[4,1,1] + N[2,1,1]
   N_m[1]   = N[3,2,1] + N[4,2,1] + N[2,2,1]
   N_tot[1] = sum(N[1:4,1:2,1])
+  
+  logit(R_mean)   = R_B0
+  logit(S_F_mean) = S_Y_F_B0 
+  logit(S_M_mean) = S_Y_M_B0
+  logit(S_C_mean) = S_C_B0
+  LAMBDA_mean     = mean(lambda[2:n_year])
 }
