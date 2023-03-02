@@ -142,21 +142,20 @@ model{
   #Priors and GLMs==============================================================
   
   ##### Recruitment #####
-  # subadults do not breed
   # random effect on year
   
-  sd_R ~ dunif(0,50)
+  sd_R ~ dunif(0,50) # SD and precision for random effect by year
   tau_R <- 1/sd_R^2
   
-  R_B0 ~ dlogis(0, 1)
-  R_wt ~ dlogis(0, 1)
-  R_wm ~ dlogis(0, 1)
-  R_cg ~ dlogis(0, 1)
-  R_dd ~ dlogis(0, 1)
-  R_dddt ~ dlogis(0, 1)
+  R_B0 ~ dlogis(0, 1) # Covariates on recruitment for:
+  R_wt ~ dlogis(0, 1) # weather in year t (PDSI, NDVI, rainfall, temperature)
+  R_wm ~ dlogis(0, 1) # weather in year t - 1
+  R_cg ~ dlogis(0, 1) # cougar index
+  R_dd ~ dlogis(0, 1) # female elk density in year t - 1
   
   for(yr in 2:n_year){ # yr
-    R_yr[yr] ~ dnorm(0, tau_R)
+    R_yr[yr] ~ dnorm(0, tau_R) # random effect by year
+    # GLM for annual recruitment (R[yr])
     logit(R[yr]) <- R_B0 + 
                     R_wt * clim[yr] + 
                     R_wm * clim[yr-1] + 
