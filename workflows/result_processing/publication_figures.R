@@ -222,7 +222,12 @@ r_cov_dat <- cov_dat %>%
   mutate(PDSI_lag = lag(PDSI), 'Female Density' = lag(`Female Density`)) %>%
   filter(!is.na(PDSI)) %>%
   full_join(r_dat)
-
+#####
+"Start here!!! We are remaking the demographics plot as a multipanel that uses
+geom_ribbon to nicely visualize parameters and variance on compact plots.
+After that, we are on to the residual plots. Please for the love of god write a 
+function for the residuals. No more of this copy pasting bullshit, Kenneth. 
+You are better than that."
 #Figures========================================================================
 dem_fig_text_size <- 5.5
 dem_fig_grph_size <- .3
@@ -399,7 +404,7 @@ plot_grid(
   ncol = 2,
   label_size = 2)
 ggsave(
-  "marginal_plots_fig.png", 
+  "figures//recruitment_marginal_plots_fig.png", 
   width = 4, 
   height = 4, 
   units = "in", 
