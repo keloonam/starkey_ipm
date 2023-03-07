@@ -228,40 +228,109 @@ geom_ribbon to nicely visualize parameters and variance on compact plots.
 After that, we are on to the residual plots. Please for the love of god write a 
 function for the residuals. No more of this copy pasting bullshit, Kenneth. 
 You are better than that."
-#Figures========================================================================
+#Demographic Figures============================================================
 dem_fig_text_size <- 5.5
 dem_fig_grph_size <- .3
 
-dem_abund <- ggplot(
-  data = abundance, 
-  aes(x = year, y = mean, color = class, shape = class)) +
-  geom_line(size = dem_fig_grph_size) +
-  geom_point(size = dem_fig_grph_size * 2) +
-  geom_linerange(aes(ymax = uci, ymin = lci), size = dem_fig_grph_size) +
+dem_abund <- abundance %>% filter(class == "Total") %>% 
+  ggplot(
+    data = ., 
+    aes(x = year, y = mean)) +
+    geom_ribbon(
+      aes(ymax = uci, ymin = lci), 
+      size = dem_fig_grph_size, 
+      fill = "#99FFFF") +
+    geom_line(size = dem_fig_grph_size, aes(group = 1), colour = "#66CCCC") +
+    # geom_point(size = dem_fig_grph_size * 2) +
+    theme_classic() +
+    labs(title = "A - Elk abundance", y = "N individuals", x = "") +
+    ylim(NA,700) +
+    scale_color_jco() +
+    theme(
+      legend.title = element_blank(), 
+      axis.text.x = element_blank(),
+      axis.title.x = element_blank(),
+      text = element_text(size = dem_fig_text_size))
+
+dem_recruit <- dem_dat %>% filter(class %in% c("Recruitment")) %>%
+  ggplot(data = ., aes(x = year, y = mean)) +
+  geom_ribbon(
+    aes(ymax = uci, ymin = lci), 
+    size = dem_fig_grph_size,
+    fill = "#FF9966") +
+  geom_line(size = dem_fig_grph_size, aes(group = 1), colour = "#CC6666") +
   theme_classic() +
-  labs(title = "Elk abundance", y = "N individuals", x = "") +
-  ylim(NA,700) +
+  labs(title = "B - Recruitment", y = "Calves / female", x = "") +
+  xlim(1988,NA) +
   scale_color_jco() +
+  geom_vline(xintercept = 1999, linetype = "dashed", size = dem_fig_grph_size) +
   theme(
     legend.title = element_blank(), 
     axis.text.x = element_blank(),
     axis.title.x = element_blank(),
     text = element_text(size = dem_fig_text_size))
 
-dem_calf <- dem_dat %>% filter(class %in% c("Calf Survival", "Recruitment")) %>%
-ggplot(data = ., aes(x = year, y = mean, color = class, shape = class)) +
-  geom_line(size = dem_fig_grph_size) +
-  geom_point(size = dem_fig_grph_size * 2) +
-  geom_linerange(aes(ymax = uci, ymin = lci), size = dem_fig_grph_size) +
+dem_ca_surv <- dem_dat %>% filter(class %in% c("Calf Survival")) %>%
+  ggplot(data = ., aes(x = year, y = mean)) +
+  geom_ribbon(
+    aes(ymax = uci, ymin = lci), 
+    size = dem_fig_grph_size,
+    fill = "#99DDCC") +
+  geom_line(size = dem_fig_grph_size, aes(group = 1), colour = "336600") +
   theme_classic() +
-  labs(title = "Calf demographics", y = "Ratio/Probability", x = "") +
+  labs(title = "D - Calf survival", y = "Survival probability", x = "Year") +
   xlim(1988,NA) +
   scale_color_jco() +
+  geom_vline(xintercept = 1999, linetype = "dashed", size = dem_fig_grph_size) +
   theme(
     legend.title = element_blank(), 
-    axis.text.x = element_blank(),
-    axis.title.x = element_blank(),
+    # axis.text.x = element_blank(),
+    # axis.title.x = element_blank(),
     text = element_text(size = dem_fig_text_size))
+
+#This doesn't use the current results. Do full run with lambda recalculated
+lambda_df <- rslt %>%
+  map(., as_tibble) %>%
+  bind_rows() %>%
+  select(contains("lambda")) %>%
+  select(-1)
+
+lam_quant <- lambda_df %>%
+  map(quantile, probs = c(0.025, 0.5, 0.975)) %>%
+  bind_rows() %>%
+  mutate(
+    year = 2:34 + 1987)
+
+lambda <- ggplot(data = lam_quant, aes(x = year, y = `50%`)) +
+  geom_ribbon(
+    aes(ymax = `2.5%`, ymin = `97.5%`), 
+    size = dem_fig_grph_size,
+    fill = "#FF99CC") +
+  geom_line(size = dem_fig_grph_size, aes(group = 1), colour = "#AA99AA") +
+  theme_classic() +
+  labs(title = "C - Population growth", y = "Lambda", x = "Year") +
+  xlim(1988,NA) +
+  scale_color_jco() +
+  geom_hline(yintercept = 1, linetype = "dashed", size = dem_fig_grph_size) +
+  theme(
+    legend.title = element_blank(), 
+    # axis.text.x = element_blank(),
+    # axis.title.x = element_blank(),
+    text = element_text(size = dem_fig_text_size))
+
+
+
+plot_grid(
+  dem_abund, dem_recruit, lambda, dem_ca_surv, 
+  align = "v", 
+  ncol = 2,
+  label_size = 2)
+ggsave(
+  "figures//demographics_fig.png", 
+  width = 6, 
+  height = 3, 
+  units = "in", 
+  dpi = 300)
 
 dem_cov <- ggplot(
   data = cov_dat, 
@@ -276,17 +345,25 @@ dem_cov <- ggplot(
     legend.title = element_blank(),
     text = element_text(size = dem_fig_text_size))
 
-plot_grid(
-  dem_abund, dem_calf, dem_cov, 
-  align = "v", 
-  ncol = 1,
-  label_size = 2)
-ggsave(
-  "demographics_fig.png", 
-  width = 4, 
-  height = 4, 
-  units = "in", 
-  dpi = 300)
+#Covariate Figures==============================================================
+
+cov_fig_text_size <- 4.5
+cov_fig_grph_size <- .2
+
+ggplot(
+  data = cov_dat, 
+  aes(x = year, y = value, color = covariate, shape = covariate)) +
+  geom_line(size = cov_fig_grph_size) +
+  geom_point(size = cov_fig_grph_size * 2) +
+  theme_classic() +
+  labs(title = "Covariate values", y = "Centered and scaled value", x = "Year") +
+  xlim(1988, NA) +
+  scale_color_jco() +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    text = element_text(size = cov_fig_text_size))
+ggsave("figures//covariate_values_fig.png", width = 2.5, height = 2.5, units = "in", dpi = 300)
 
 #Posteriors=====================================================================
 
@@ -358,7 +435,7 @@ pdilag_marg_plot <- ggplot(data = r_pm_line, aes(x = val, y = mci)) +
   theme(text = element_text(size = marg_fig_text_size)) +
   xlim(-1.5, 2)
 
-# PDI Lag
+# PDI
 pdi_marg_plot <- ggplot(data = r_pt_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
   geom_line() +
@@ -376,7 +453,7 @@ pdi_marg_plot <- ggplot(data = r_pt_line, aes(x = val, y = mci)) +
     title = "C - PDI current year") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  xlim(-1.5, 2)
+  xlim(-2, 2.1)
 
 # Elk Density Lag
 ed_marg_plot <- ggplot(data = r_ed_line, aes(x = val, y = mci)) +
@@ -396,7 +473,7 @@ ed_marg_plot <- ggplot(data = r_ed_line, aes(x = val, y = mci)) +
     title = "D - Elk density") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  xlim(-2, 2)
+  xlim(-2.5, 2)
 
 plot_grid(
   cougar_marg_plot, pdilag_marg_plot, pdi_marg_plot, ed_marg_plot, 
@@ -405,6 +482,108 @@ plot_grid(
   label_size = 2)
 ggsave(
   "figures//recruitment_marginal_plots_fig.png", 
+  width = 4, 
+  height = 4, 
+  units = "in", 
+  dpi = 300)
+
+#Residual plots recruitment=====================================================
+
+expit <- function(x){
+  1/(1+exp(-x))
+}
+
+eff_post
+
+r_true_post <- rslt %>%
+  map(as_tibble) %>%
+  bind_rows() %>%
+  select(grep("R", names(.))) %>%
+  select(!grep("R_", names(.))) %>%
+  as.matrix()
+
+eff_post
+r_cov_dat
+r_pred_post <- matrix(NA, nrow = nrow(r_true_post), ncol = ncol(r_true_post))
+r_residual_post <- matrix(NA, nrow = nrow(r_true_post), ncol = ncol(r_true_post))
+for(i in 1:nrow(eff_post)){
+  for(j in 2:nrow(r_cov_dat)){
+    r_pred_post[i,j-1] <- expit(
+      eff_post$R_B0[i] + 
+      eff_post$R_cg[i] *  r_cov_dat$`Cougar Index`[j] +
+      eff_post$R_dd[i] *  r_cov_dat$`Female Density`[j] +
+      eff_post$R_wm[i] *  r_cov_dat$`PDSI_lag`[j] +
+      eff_post$R_wt[i] *  r_cov_dat$`PDSI`[j])
+    r_residual_post[i,j-1] <- r_true_post[i,j-1] - r_pred_post[i,j-1]
+  }
+}
+
+full_r_dat <- r_residual_post %>%
+  as_tibble() %>%
+  map(quantile, probs = c(0.025, 0.5, 0.975)) %>%
+  bind_rows() %>%
+  mutate(
+    resid_lci = `2.5%`,
+    resid_mci = `50%`,
+    resid_uci = `97.5%`
+  ) %>%
+  select(resid_lci, resid_mci, resid_uci) %>%
+  bind_cols(r_cov_dat[-1,], .)
+  
+resid_fig_text_size <- 4
+resid_fig_elem_size <- 0.15
+
+resid_r_cg <- ggplot(data = full_r_dat, aes(x = `Cougar Index`, y = resid_mci)) +
+  geom_pointrange(
+    aes(ymin = resid_lci, ymax = resid_uci), 
+    size = resid_fig_elem_size) +
+  theme_classic() +
+  labs(
+    x = "Cougar density index", 
+    y = "Recruitment residual", 
+    title = "A - Cougar index residuals") +
+  theme(text = element_text(size = resid_fig_text_size))
+
+resid_r_ed <- ggplot(data = full_r_dat, aes(x = `Female Density`, y = resid_mci)) +
+  geom_pointrange(
+    aes(ymin = resid_lci, ymax = resid_uci), 
+    size = resid_fig_elem_size) +
+  theme_classic() +
+  labs(
+    x = "Female abundance", 
+    y = "Recruitment residual", 
+    title = "B - Density dependence residuals") +
+  theme(text = element_text(size = resid_fig_text_size))
+
+resid_r_wt <- ggplot(data = full_r_dat, aes(x = PDSI, y = resid_mci)) +
+  geom_pointrange(
+    aes(ymin = resid_lci, ymax = resid_uci), 
+    size = resid_fig_elem_size) +
+  theme_classic() +
+  labs(
+    x = "PDSI (year t)", 
+    y = "Recruitment residual", 
+    title = "C - PDSI residuals") +
+  theme(text = element_text(size = resid_fig_text_size))
+
+resid_r_wm <- ggplot(data = full_r_dat, aes(x = `PDSI_lag`, y = resid_mci)) +
+  geom_pointrange(
+    aes(ymin = resid_lci, ymax = resid_uci), 
+    size = resid_fig_elem_size) +
+  theme_classic() +
+  labs(
+    x = "PDSI (year - 1)", 
+    y = "Recruitment residual", 
+    title = "D - PDSI (year - 1) residuals") +
+  theme(text = element_text(size = resid_fig_text_size))
+
+plot_grid(
+  resid_r_cg, resid_r_ed, resid_r_wt, resid_r_wm, 
+  align = "v", 
+  ncol = 2,
+  label_size = 2)
+ggsave(
+  "figures//recruitment_residuals_plots_fig.png", 
   width = 4, 
   height = 4, 
   units = "in", 

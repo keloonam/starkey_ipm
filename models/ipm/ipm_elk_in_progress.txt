@@ -56,8 +56,8 @@ model{
       for(a in 1:4){
         # minimum adults and adults moved broken down by age classes 
         # assumed proportional to corresponding age classes in yr-1
-        min_ad_app[a,x,yr] <- min_ad[x,yr] * prop_ad[a,x,yr] + n_har[a,x,yr]
-        n_ad_mov[a,x,yr] <-  n_a_mov[x,yr] * prop_ad[a,x,yr]
+        min_ad_app[a,x,yr] <- min_ad[x,yr]  * prop_ad[a,x,yr] + n_har[a,x,yr]
+        n_ad_mov[a,x,yr]   <- n_a_mov[x,yr] * prop_ad[a,x,yr]
       } # a (age)
       
       # Expected number to survive to hunting season

@@ -355,17 +355,22 @@ reconstruction <- tibble(
   Source = "Starkey WMU Reconstruction"
 )
 
+post_fig_text_size <- 4.5
+post_fig_grph_size <- 0.3
+
 cougar_tibble <- bind_rows(blue_mtns, mortalities, logistic, reconstruction)
 require(ggsci)
-ggplot(data = cougar_tibble, aes(x = year, y = n, color = Source, shape = Source, pattern = Source)) +
-  geom_line() +
-  geom_point() +
+ggplot(data = cougar_tibble, aes(x = year, y = n, color = Source)) +
+  geom_line(size = post_fig_grph_size) +
+  # geom_point() +
   theme_classic() +
-  labs(x = "Year", y = "N Cougars (scaled)", title = "Cougar Abundance") +
+  labs(x = "Year", y = "N cougars (scaled)", title = "Cougar density index") +
   scale_color_jco() +
-  theme(legend.position = "bottom") +
+  theme(
+    legend.position = "bottom",
+    text = element_text(size = post_fig_text_size)) +
   guides(color = guide_legend(nrow = 2, byrow = T))
-ggsave("cougar_density_plot.png", width = 5, height = 3, units = "in", dpi = 300)
+ggsave("figures//cougar_density_plot.png", width = 3, height = 3, units = "in", dpi = 300)
 
 # plot(cougar_density_scaled, type = "l", xlim = c(0, 35), ylim = c(-2,1.5))
 # points(scale(y.ta), col = "blue")

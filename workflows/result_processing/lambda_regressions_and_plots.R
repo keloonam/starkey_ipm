@@ -252,3 +252,64 @@ ggsave(
   height = 4, 
   units = "in", 
   dpi = 300)
+
+#residual plots=================================================================
+
+lam_residuals <- tibble(
+  cd = cd,
+  ed = ed,
+  wt = pdi,
+  wm = pdi_lag,
+  residual = glm1$residuals
+)
+
+resid_fig_text_size <- 4
+resid_fig_elem_size <- 0.15
+
+resid_lam_cg <- ggplot(data = lam_residuals, aes(x = cd, y = residual)) +
+  geom_point(size = resid_fig_elem_size) +
+  theme_classic() +
+  labs(
+    x = "Cougar density index", 
+    y = "Lambda residual", 
+    title = "A - Cougar index residuals") +
+  theme(text = element_text(size = resid_fig_text_size))
+
+resid_lam_ed <- ggplot(data = lam_residuals, aes(x = ed, y = residual)) +
+  geom_point(size = resid_fig_elem_size) +
+  theme_classic() +
+  labs(
+    x = "Female abundance", 
+    y = "Lambda residual", 
+    title = "B - Density dependence residuals") +
+  theme(text = element_text(size = resid_fig_text_size))
+
+resid_lam_wt <- ggplot(data = lam_residuals, aes(x = wt, y = residual)) +
+  geom_point(size = resid_fig_elem_size) +
+  theme_classic() +
+  labs(
+    x = "PDI (year t)", 
+    y = "Lambda residual", 
+    title = "C - PDSI residuals") +
+  theme(text = element_text(size = resid_fig_text_size))
+
+resid_lam_wm <- ggplot(data = lam_residuals, aes(x = wm, y = residual)) +
+  geom_point(size = resid_fig_elem_size) +
+  theme_classic() +
+  labs(
+    x = "PDSI (year - 1)", 
+    y = "Lambda residual", 
+    title = "D - PDSI (year - 1) residuals") +
+  theme(text = element_text(size = resid_fig_text_size))
+
+plot_grid(
+  resid_lam_cg, resid_lam_ed, resid_lam_wt, resid_lam_wm, 
+  align = "v", 
+  ncol = 2,
+  label_size = 2)
+ggsave(
+  "figures//lambda_residuals_plots_fig.png", 
+  width = 4, 
+  height = 4, 
+  units = "in", 
+  dpi = 300)
