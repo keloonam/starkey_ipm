@@ -226,6 +226,10 @@ n_ca_add <- n_add[1,,]
 
 load("data//elk_minimum_count_data.Rdata")
 
+min_counts$af[1] <- 278
+min_counts$am[1] <- 32
+min_counts$ca[1] <- 166
+
 min_ad <- matrix(0, nrow = 2, ncol = n_yrs)
 min_ca <- rep(0, n_yrs)
 for(i in 1:nrow(min_counts)){
@@ -320,8 +324,8 @@ m.cd <- nls(y.t ~ a/(1 + exp(-b * (x.t - c))), start = list(a = 1,
 
 params = coef(m.cd)
 y.t2 <- params[1] / (1 + exp(1-params[2] * (x.ta - params[3])))
-plot(y.t2, type = "l")
-points(y.ta)
+# plot(y.t2, type = "l")
+# points(y.ta)
 cougar_density_scaled <- as.vector(scale(y.t2))
 
 blue_mtns <- tibble(
@@ -359,18 +363,18 @@ post_fig_text_size <- 4.5
 post_fig_grph_size <- 0.3
 
 cougar_tibble <- bind_rows(blue_mtns, mortalities, logistic, reconstruction)
-require(ggsci)
-ggplot(data = cougar_tibble, aes(x = year, y = n, color = Source)) +
-  geom_line(size = post_fig_grph_size) +
-  # geom_point() +
-  theme_classic() +
-  labs(x = "Year", y = "N cougars (scaled)", title = "Cougar density index") +
-  scale_color_jco() +
-  theme(
-    legend.position = "bottom",
-    text = element_text(size = post_fig_text_size)) +
-  guides(color = guide_legend(nrow = 2, byrow = T))
-ggsave("figures//cougar_density_plot.png", width = 3, height = 3, units = "in", dpi = 300)
+# require(ggsci)
+# ggplot(data = cougar_tibble, aes(x = year, y = n, color = Source)) +
+#   geom_line(size = post_fig_grph_size) +
+#   # geom_point() +
+#   theme_classic() +
+#   labs(x = "Year", y = "N cougars (scaled)", title = "Cougar density index") +
+#   scale_color_jco() +
+#   theme(
+#     legend.position = "bottom",
+#     text = element_text(size = post_fig_text_size)) +
+#   guides(color = guide_legend(nrow = 2, byrow = T))
+# ggsave("figures//cougar_density_plot.png", width = 3, height = 3, units = "in", dpi = 300)
 
 # plot(cougar_density_scaled, type = "l", xlim = c(0, 35), ylim = c(-2,1.5))
 # points(scale(y.ta), col = "blue")
@@ -378,7 +382,7 @@ ggsave("figures//cougar_density_plot.png", width = 3, height = 3, units = "in", 
 
 #Density========================================================================
 
-load("results//ipm_result_11oct2022_R_null.Rdata")
+load("results//ipm_result_14mar2023_R_null.Rdata")
 scaled_density <- as.numeric(scale(summary(rslt)$statistics[103:136,1]))
 scaled_N_AF <- as.numeric(scale(summary(rslt)$statistics[35:68,1]))
 rm(rslt)
@@ -458,6 +462,31 @@ ndvi_avhrr <- full_join(modis_m2, avhrr, by = c("mn", "yr"), suffix = c("_m", "_
 
 #Combine========================================================================
 
+min_n1 <- matrix(0, nrow = 4, ncol = 2)
+est_n1 <- matrix(0, nrow = 4, ncol = 2)
+
+min_n1[1,1] <- min_ca[1] / 2
+min_n1[1,2] <- min_ca[1] / 2
+
+min_n1[2,1] <- min_ad[1,1] / 3
+min_n1[3,1] <- min_ad[1,1] / 3
+min_n1[4,1] <- min_ad[1,1] / 3
+
+min_n1[2,2] <- min_ad[2,1] / 3
+min_n1[3,2] <- min_ad[2,1] / 3
+min_n1[4,2] <- min_ad[2,1] / 3
+
+est_n1[1,1] <- 168 / 2
+est_n1[1,2] <- 168 / 2
+
+est_n1[2,1] <- 404 / 3
+est_n1[3,1] <- 404 / 3
+est_n1[4,1] <- 404 / 3
+
+est_n1[2,2] <- 55 / 3
+est_n1[3,2] <- 55 / 3
+est_n1[4,2] <- 55 / 3
+
 ipm_data <- list(
   s_cjs = cjs_dat,
   r_ratio = r_ratio,
@@ -488,8 +517,10 @@ ipm_data <- list(
   af_density = scaled_N_AF,
   palmer_index = pdi,
   ndvi_avhrr = ndvi_avhrr,
-  ndvi_modis = ndvi_modis
+  ndvi_modis = ndvi_modis,
+  min_n1 = min_n1,
+  est_n1 = est_n1
 )
 
-save(ipm_data, file = "data//elk_ipm_data_05jan2023.Rdata")
+save(ipm_data, file = "data//elk_ipm_data_14mar2023.Rdata")
 

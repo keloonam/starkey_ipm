@@ -2,6 +2,8 @@
 # Kenneth Loonam
 # February 2023
 
+"https://upgo.lab.mcgill.ca/2019/12/13/making-beautiful-maps/"
+
 #Environment====================================================================
 
 require(ggplot2); require(rnaturalearth); require(maps); require(elevatr)

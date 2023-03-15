@@ -4,7 +4,7 @@
 
 #Environment====================================================================
 
-load("results//ipm_result_05jan2023_R_pdis.Rdata")
+load("results//ipm_result_14mar2023_R_null.Rdata")
 require(tidyverse); require(rjags); require(ggsci)
 
 data <- summary(rslt)
