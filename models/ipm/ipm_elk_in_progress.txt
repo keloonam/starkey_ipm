@@ -1,11 +1,6 @@
 model{
 # IPM -- Built for the Starkey elk population
-  # Adapted from: 
-    # Caribou IPM in Moeller et al 2021
-    # Wild boar IPM in Gamelon et al 2021
-    # Schaub and Kery 2021
   # Kenneth Loonam
-  # March 2021
   
   # Parameters to estimate:
   # R: recruitment
@@ -13,7 +8,7 @@ model{
   # N: abundance
   
   # indexing follows [age, sex, year] unless otherwise specified
-  # e.g: N[a,s,yr] -- abundance of age class a, sex s, in year yr
+  # e.g: N[a,x,yr] -- abundance of age class a, sex x, in year yr
   # ages:
   #   [1,,]: 0.5 yr -- calf
   #   [2,,]: 1.5 yr -- subadult

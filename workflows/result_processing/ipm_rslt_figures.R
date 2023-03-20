@@ -4,13 +4,16 @@
 
 #Environment====================================================================
 
-load("results//ipm_result_05jan2023_R_pdis.Rdata")
+load("results//ipm_result_05jan2023_R_avhrr.Rdata")
 require(tidyverse); require(rjags); require(ggsci)
 
 data <- summary(rslt)
 
 q <- data$quantiles
+s <- data$statistics
 
+# write.csv(q, file = "results//avhrr_quantiles.csv")
+# write.csv(s, file = "results//avhrr_statistic.csv")
 #Abundance_plots================================================================
 
 n_tot_clean <- q[grep("N_tot", dimnames(q)[[1]]), c(1,3,5)] %>%
