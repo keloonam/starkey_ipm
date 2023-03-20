@@ -522,5 +522,5 @@ ipm_data <- list(
   est_n1 = est_n1
 )
 
-save(ipm_data, file = "data//elk_ipm_data_14mar2023.Rdata")
+save(ipm_data, file = "data//elk_ipm_data_15mar2023.Rdata")
 

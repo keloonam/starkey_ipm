@@ -5,14 +5,14 @@
 #Variables======================================================================
 
 # Specify the model
-model_file <- "models//ipm//ipm_elk_R_null.txt"
-save_file <- "results//ipm_result_14mar2023_R_null.Rdata"
+model_file <- "models//ipm//ipm_elk_in_progress.txt"
+save_file <- "results//ipm_result_15mar2023_R_pdsi.Rdata"
 
 # Loop dimension parameters
 n_year <- 34
 
 # JAGS control parameters
-n_i <- 250000
+n_i <- 500000
 n_a <- 50000
 n_b <- 100000
 n_c <- 3
@@ -22,7 +22,7 @@ n_t <- 100
 
 require(tidyverse); require(rjags); require(mcmcplots)
 # load("data//elk_ipm_data.Rdata")
-load("data//elk_ipm_data_14mar2023.Rdata")
+load("data//elk_ipm_data_15mar2023.Rdata")
 
 #Data_prep======================================================================
 
