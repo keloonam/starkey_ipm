@@ -179,6 +179,10 @@ posteriors <- rslt %>%
     parameter == "R_wt" ~ "Climate"
   ))
 
+posteriors %>%
+  group_by(Covariate) %>%
+  summarise(p = mean(value > 0))
+
 ggplot(posteriors, aes(x = value, color = Covariate)) +
   geom_density() +
   geom_vline(xintercept = 0) +

@@ -9,8 +9,8 @@ require(dplyr); require(ggplot2); require(ggsci); require(rjags)
 require(cowplot); require(tidyr); require(purrr)
 
 # Results to load
-load("results//ipm_result_05jan2023_R_pdis.Rdata")
-load("data//elk_ipm_data_05jan2023.Rdata")
+load("results//ipm_result_15mar2023_R_pdsi.Rdata")
+load("data//elk_ipm_data_15mar2023.Rdata")
 
 # Derived result summaries
 data <- summary(rslt)
@@ -244,7 +244,7 @@ dem_abund <- abundance %>% filter(class == "Total") %>%
     # geom_point(size = dem_fig_grph_size * 2) +
     theme_classic() +
     labs(title = "A - Elk abundance", y = "N individuals", x = "") +
-    ylim(NA,700) +
+    ylim(NA,800) +
     scale_color_jco() +
     theme(
       legend.title = element_blank(), 

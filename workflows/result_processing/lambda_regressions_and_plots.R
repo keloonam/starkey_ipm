@@ -5,8 +5,8 @@
 #Environment====================================================================
 require(dplyr); require(ggplot2); require(ggsci); require(rjags)
 require(cowplot); require(tidyr); require(purrr)
-load("results//ipm_result_28feb2023_R_pdsi.Rdata")
-load("data//elk_ipm_data_05jan2023.Rdata")
+load("results//ipm_result_15mar2023_R_pdsi.Rdata")
+load("data//elk_ipm_data_15mar2023.Rdata")
 
 #Data Prep======================================================================
 lambda_df <- rslt %>%
@@ -19,6 +19,7 @@ ed_df <- rslt %>%
   bind_rows() %>%
   select(contains("N_tot")) %>%
   select(-34)
+ed <- ipm_data$elk_density[-34]
 cd <- ipm_data$cougar_density[-1]
 pdi <- ipm_data$palmer_index[-1]
 pdi_lag <- ipm_data$palmer_index[-34]
@@ -59,7 +60,7 @@ glm1_res <- tibble(
 
 ### Calf Survival ###
 sca_mean <- unlist(map(sca_df, mean))
-m2 <- lm(sca_mean[-1] ~ cd + pdi + pdi_lag + scale(ed_mean))
+# m2 <- lm(sca_mean[-1] ~ cd + pdi + pdi_lag + scale(ed_mean))
 glm2 <- glm(sca_mean[-1] ~ cd + pdi + pdi_lag + scale(ed_mean), family = gaussian(link = "logit"))
 summary(glm2)
 
@@ -159,7 +160,7 @@ ggplot(glm1_res, aes(x = Covariate, y = Estimate)) +
   ylim(-.2, .2) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   labs(x = "", title = "Effects on lambda")
-ggsave("lambda_covariate_plot.png", width = 5, height = 3, units = "in", dpi = 300)
+# ggsave("lambda_covariate_plot.png", width = 5, height = 3, units = "in", dpi = 300)
 #####
 
 # Lambda marginal plots
