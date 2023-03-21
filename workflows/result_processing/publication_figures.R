@@ -221,7 +221,7 @@ r_cov_dat <- cov_dat %>%
   pivot_wider(names_from = covariate) %>%
   mutate(PDSI_lag = lag(PDSI), 'Female Density' = lag(`Female Density`)) %>%
   filter(!is.na(PDSI)) %>%
-  full_join(r_dat)
+  full_join(r_dat) 
 #####
 "Start here!!! We are remaking the demographics plot as a multipanel that uses
 geom_ribbon to nicely visualize parameters and variance on compact plots.
@@ -350,46 +350,46 @@ dem_cov <- ggplot(
 cov_fig_text_size <- 4.5
 cov_fig_grph_size <- .2
 
-ggplot(
-  data = cov_dat, 
-  aes(x = year, y = value, color = covariate, shape = covariate)) +
-  geom_line(size = cov_fig_grph_size) +
-  geom_point(size = cov_fig_grph_size * 2) +
-  theme_classic() +
-  labs(title = "Covariate values", y = "Centered and scaled value", x = "Year") +
-  xlim(1988, NA) +
-  scale_color_jco() +
-  theme(
-    legend.position = "bottom",
-    legend.title = element_blank(),
-    text = element_text(size = cov_fig_text_size))
-ggsave("figures//covariate_values_fig.png", width = 2.5, height = 2.5, units = "in", dpi = 300)
+# ggplot(
+#   data = cov_dat, 
+#   aes(x = year, y = value, color = covariate, shape = covariate)) +
+#   geom_line(size = cov_fig_grph_size) +
+#   geom_point(size = cov_fig_grph_size * 2) +
+#   theme_classic() +
+#   labs(title = "Covariate values", y = "Centered and scaled value", x = "Year") +
+#   xlim(1988, NA) +
+#   scale_color_jco() +
+#   theme(
+#     legend.position = "bottom",
+#     legend.title = element_blank(),
+#     text = element_text(size = cov_fig_text_size))
+# ggsave("figures//covariate_values_fig.png", width = 2.5, height = 2.5, units = "in", dpi = 300)
 
 #Posteriors=====================================================================
 
-post_fig_text_size <- 5.5
-post_fig_grph_size <- 0.3
+# post_fig_text_size <- 5.5
+# post_fig_grph_size <- 0.3
+# 
+# ggplot(cov_post, aes(x = value, color = Covariate)) +
+#   geom_density(size = post_fig_grph_size) +
+#   geom_vline(xintercept = 0, size = post_fig_grph_size, linetype = "dashed") +
+#   theme_classic() +
+#   labs(x = "Value", y = "Density", title = "Recruitment covariate posterior distributions") +
+#   scale_color_jco() +
+#   # theme(legend.position = "bottom") +
+#   # guides(color = guide_legend(nrow = 2, byrow = T)) +
+#   theme(text = element_text(size = post_fig_text_size))
+# ggsave("covariate_fig.png", width = 3.5, height = 1.5, units = "in", dpi = 300)
 
-ggplot(cov_post, aes(x = value, color = Covariate)) +
-  geom_density(size = post_fig_grph_size) +
-  geom_vline(xintercept = 0, size = post_fig_grph_size, linetype = "dashed") +
-  theme_classic() +
-  labs(x = "Value", y = "Density", title = "Recruitment covariate posterior distributions") +
-  scale_color_jco() +
-  # theme(legend.position = "bottom") +
-  # guides(color = guide_legend(nrow = 2, byrow = T)) +
-  theme(text = element_text(size = post_fig_text_size))
-ggsave("covariate_fig.png", width = 3.5, height = 1.5, units = "in", dpi = 300)
-
-ggplot(cg_recruit, aes(x = Recruitment, color = Cougars)) +
-  geom_density(size = post_fig_grph_size) +
-  theme_classic() +
-  labs(x = "Calves/Cow", y = "Density", title = "Mean recruitment by cougar density") +
-  scale_color_jco() +
-  # theme(legend.position = "bottom") +
-  # guides(color = guide_legend(nrow = 2, byrow = T)) +
-  theme(text = element_text(size = post_fig_text_size))
-ggsave("real_post_figure.png", width = 3.5, height = 1.5, units = "in", dpi = 300)
+# ggplot(cg_recruit, aes(x = Recruitment, color = Cougars)) +
+#   geom_density(size = post_fig_grph_size) +
+#   theme_classic() +
+#   labs(x = "Calves/Cow", y = "Density", title = "Mean recruitment by cougar density") +
+#   scale_color_jco() +
+#   # theme(legend.position = "bottom") +
+#   # guides(color = guide_legend(nrow = 2, byrow = T)) +
+#   theme(text = element_text(size = post_fig_text_size))
+# ggsave("real_post_figure.png", width = 3.5, height = 1.5, units = "in", dpi = 300)
 
 #Marginal Plots=================================================================
 
@@ -430,7 +430,7 @@ pdilag_marg_plot <- ggplot(data = r_pm_line, aes(x = val, y = mci)) +
   labs(
     x = "Palmer drought index (t-1)", 
     y = "Calves/Female", 
-    title = "B - PDI prior year") +
+    title = "D - PDSI prior year") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   xlim(-1.5, 2)
@@ -450,7 +450,7 @@ pdi_marg_plot <- ggplot(data = r_pt_line, aes(x = val, y = mci)) +
   labs(
     x = "Palmer drought index (year t)", 
     y = "Calves/Female", 
-    title = "C - PDI current year") +
+    title = "C - PDSI current year") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   xlim(-2, 2.1)
@@ -470,13 +470,13 @@ ed_marg_plot <- ggplot(data = r_ed_line, aes(x = val, y = mci)) +
   labs(
     x = "Female elk density (t-1)", 
     y = "Calves/Female", 
-    title = "D - Elk density") +
+    title = "B - Elk density") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   xlim(-2.5, 2)
 
 plot_grid(
-  cougar_marg_plot, pdilag_marg_plot, pdi_marg_plot, ed_marg_plot, 
+  cougar_marg_plot, ed_marg_plot, pdi_marg_plot, pdilag_marg_plot,
   align = "v", 
   ncol = 2,
   label_size = 2)
@@ -502,8 +502,8 @@ r_true_post <- rslt %>%
   select(!grep("R_", names(.))) %>%
   as.matrix()
 
-eff_post
-r_cov_dat
+# eff_post
+# r_cov_dat
 r_pred_post <- matrix(NA, nrow = nrow(r_true_post), ncol = ncol(r_true_post))
 r_residual_post <- matrix(NA, nrow = nrow(r_true_post), ncol = ncol(r_true_post))
 for(i in 1:nrow(eff_post)){

@@ -383,8 +383,8 @@ cougar_tibble <- bind_rows(blue_mtns, mortalities, logistic, reconstruction)
 #Density========================================================================
 
 load("results//ipm_result_14mar2023_R_null.Rdata")
-scaled_density <- as.numeric(scale(summary(rslt)$statistics[103:136,1]))
-scaled_N_AF <- as.numeric(scale(summary(rslt)$statistics[35:68,1]))
+scaled_density <- as.numeric(scale(summary(rslt)$statistics[104:137,1]))
+scaled_N_AF <- as.numeric(scale(summary(rslt)$statistics[36:69,1]))
 rm(rslt)
 
 #Palmer_Drought_Index===========================================================

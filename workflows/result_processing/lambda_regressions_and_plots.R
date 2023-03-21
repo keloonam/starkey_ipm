@@ -151,15 +151,15 @@ lam_ed_line <- as_tibble(predict(glm1, n_ed_dat, se.fit = T)[1:2]) %>%
 #Figures========================================================================
 
 ##### rsf style presentation plot
-# Lambda rsf style point range plot
-ggplot(glm1_res, aes(x = Covariate, y = Estimate)) +
-  geom_point() +
-  geom_linerange(ymin = glm1_res$LCI, ymax = glm1_res$UCI) +
-  coord_flip() +
-  theme_classic() + 
-  ylim(-.2, .2) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(x = "", title = "Effects on lambda")
+# # Lambda rsf style point range plot
+# ggplot(glm1_res, aes(x = Covariate, y = Estimate)) +
+#   geom_point() +
+#   geom_linerange(ymin = glm1_res$LCI, ymax = glm1_res$UCI) +
+#   coord_flip() +
+#   theme_classic() + 
+#   ylim(-.2, .2) +
+#   geom_hline(yintercept = 0, linetype = "dashed") +
+#   labs(x = "", title = "Effects on lambda")
 # ggsave("lambda_covariate_plot.png", width = 5, height = 3, units = "in", dpi = 300)
 #####
 
@@ -199,7 +199,7 @@ pdilag_marg_plot <- ggplot(data = lam_pdilag_line, aes(x = val, y = mci)) +
   labs(
     x = "Palmer drought index (t - 1)", 
     y = "Lambda", 
-    title = "B - PDI prior year") + 
+    title = "D - PDSI prior year") + 
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   xlim(-1.5, 2)
@@ -218,7 +218,7 @@ pdi_marg_plot <- ggplot(data = lam_pdi_line, aes(x = val, y = mci)) +
   labs(
     x = "Palmer drought index (year t)", 
     y = "Lambda", 
-    title = "C - Summer PDI") + 
+    title = "C - Summer PDSI") + 
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   xlim(-2, 2)
@@ -235,15 +235,15 @@ ed_marg_plot <- ggplot(data = lam_ed_line, aes(x = val, y = mci)) +
   ) +
   theme_classic() +
   labs(
-    x = "Elk Density (t - 1)", 
+    x = "Female elk Density (t - 1)", 
     y = "Lambda", 
-    title = "D - Density dependence") + 
+    title = "B - Elk Density") + 
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   xlim(-2.1, 2)
 
 plot_grid(
-  cougar_marg_plot, pdilag_marg_plot, pdi_marg_plot, ed_marg_plot, 
+  cougar_marg_plot, ed_marg_plot, pdi_marg_plot,pdilag_marg_plot,
   align = "v", 
   ncol = 2,
   label_size = 2)
@@ -282,7 +282,7 @@ resid_lam_ed <- ggplot(data = lam_residuals, aes(x = ed, y = residual)) +
   labs(
     x = "Female abundance", 
     y = "Lambda residual", 
-    title = "B - Density dependence residuals") +
+    title = "B - Elk density residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
 resid_lam_wt <- ggplot(data = lam_residuals, aes(x = wt, y = residual)) +
