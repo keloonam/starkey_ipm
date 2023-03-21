@@ -6,23 +6,23 @@
 
 # Specify the model
 model_file <- "models//ipm//ipm_elk_in_progress.txt"
-save_file <- "results//ipm_result_28feb2023_R_pdsi.Rdata"
+save_file <- "results//ipm_result_15mar2023_R_pdsi.Rdata"
 
 # Loop dimension parameters
 n_year <- 34
 
 # JAGS control parameters
-n_i <- 250000
+n_i <- 500000
 n_a <- 50000
 n_b <- 100000
-n_c <- 2
+n_c <- 3
 n_t <- 100
 
 #Environment====================================================================
 
 require(tidyverse); require(rjags); require(mcmcplots)
 # load("data//elk_ipm_data.Rdata")
-load("data//elk_ipm_data_05jan2023.Rdata")
+load("data//elk_ipm_data_15mar2023.Rdata")
 
 #Data_prep======================================================================
 
@@ -50,6 +50,8 @@ jags_data <- list(
   nn_mc = nrow(ipm_data$n_m_p_count),
   cdens = ipm_data$cougar_density,
   n_adj = ipm_data$af_density,
+  min_n1 = ipm_data$min_n1,
+  est_n1 = ipm_data$est_n1,
   clim = ipm_data$palmer_index
 )
 
@@ -106,7 +108,6 @@ params = c(
   "R_wm",
   "R_dd",
   "R_cg",
-  "R_ddsp",
   "lambda",
   "LAMBDA_mean",
   "R_mean",
