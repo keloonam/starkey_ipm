@@ -4,7 +4,8 @@
 
 #Environment====================================================================
 
-load("results//ipm_result_05jan2023_R_avhrr.Rdata")
+load("results//ipm_result_15mar2023_R_pdsi.Rdata")
+# load("data//elk_ipm_data_15mar2023.Rdata")
 require(tidyverse); require(rjags); require(ggsci)
 
 data <- summary(rslt)
@@ -158,7 +159,7 @@ sc_dat <- q[c(grep("survival_ca", dimnames(q)[[1]]))[1:34], c(1,3,5)] %>%
   ) %>%
   mutate(class = "calf_survival")
 
-ggplot(data = sc_dat, aes(x = year, y = mean)) +
+ggplot(data = sc_dat[-1,], aes(x = year, y = mean)) +
   geom_line() +
   geom_linerange(aes(ymax = uci, ymin = lci)) +
   theme_light() +

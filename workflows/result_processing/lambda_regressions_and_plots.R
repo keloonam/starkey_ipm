@@ -151,12 +151,12 @@ lam_ed_line <- as_tibble(predict(glm1, n_ed_dat, se.fit = T)[1:2]) %>%
 #Figures========================================================================
 
 ##### rsf style presentation plot
-# # Lambda rsf style point range plot
+# Lambda rsf style point range plot
 # ggplot(glm1_res, aes(x = Covariate, y = Estimate)) +
 #   geom_point() +
 #   geom_linerange(ymin = glm1_res$LCI, ymax = glm1_res$UCI) +
 #   coord_flip() +
-#   theme_classic() + 
+#   theme_classic() +
 #   ylim(-.2, .2) +
 #   geom_hline(yintercept = 0, linetype = "dashed") +
 #   labs(x = "", title = "Effects on lambda")
