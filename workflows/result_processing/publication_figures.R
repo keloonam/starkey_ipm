@@ -222,14 +222,9 @@ r_cov_dat <- cov_dat %>%
   mutate(PDSI_lag = lag(PDSI), 'Female Density' = lag(`Female Density`)) %>%
   filter(!is.na(PDSI)) %>%
   full_join(r_dat) 
-#####
-"Start here!!! We are remaking the demographics plot as a multipanel that uses
-geom_ribbon to nicely visualize parameters and variance on compact plots.
-After that, we are on to the residual plots. Please for the love of god write a 
-function for the residuals. No more of this copy pasting bullshit, Kenneth. 
-You are better than that."
+
 #Demographic Figures============================================================
-dem_fig_text_size <- 5.5
+dem_fig_text_size <- 11.5
 dem_fig_grph_size <- .3
 
 dem_abund <- abundance %>% filter(class == "Total") %>% 
@@ -278,7 +273,7 @@ dem_ca_surv <- dem_dat %>% filter(class %in% c("Calf Survival")) %>%
     fill = "#99DDCC") +
   geom_line(size = dem_fig_grph_size, aes(group = 1), colour = "336600") +
   theme_classic() +
-  labs(title = "D - Calf survival", y = "Survival probability", x = "Year") +
+  labs(title = "D - Calf survival", y = "Probability", x = "Year") +
   xlim(1988,NA) +
   scale_color_jco() +
   geom_vline(xintercept = 1999, linetype = "dashed", size = dem_fig_grph_size) +
@@ -327,10 +322,10 @@ plot_grid(
   label_size = 2)
 ggsave(
   "figures//demographics_fig.png", 
-  width = 6, 
-  height = 3, 
+  width = 6.5, 
+  height = 4, 
   units = "in", 
-  dpi = 300)
+  dpi = 600)
 
 dem_cov <- ggplot(
   data = cov_dat, 
@@ -350,20 +345,53 @@ dem_cov <- ggplot(
 cov_fig_text_size <- 4.5
 cov_fig_grph_size <- .2
 
-# ggplot(
-#   data = cov_dat, 
-#   aes(x = year, y = value, color = covariate, shape = covariate)) +
-#   geom_line(size = cov_fig_grph_size) +
-#   geom_point(size = cov_fig_grph_size * 2) +
-#   theme_classic() +
-#   labs(title = "Covariate values", y = "Centered and scaled value", x = "Year") +
-#   xlim(1988, NA) +
-#   scale_color_jco() +
-#   theme(
-#     legend.position = "bottom",
-#     legend.title = element_blank(),
-#     text = element_text(size = cov_fig_text_size))
-# ggsave("figures//covariate_values_fig.png", width = 2.5, height = 2.5, units = "in", dpi = 300)
+cougar_density <-  c(0.01488078, 0.02357929, 0.03727105, 0.05868712, 0.09185758,
+                     0.14245975, 0.21789379, 0.32656447, 0.47564394, 0.66700050,
+                     0.89270325, 1.13381699, 1.36561612, 1.56693693, 1.72693078,
+                     1.84534320, 1.92844249, 1.98460714, 2.02160885, 2.04557683,
+                     2.06093241, 2.07070110, 2.07688772, 2.08079464, 2.08325745,
+                     2.08480819, 2.08578392, 2.08639759, 2.08678343, 2.08702598,
+                     2.08717844, 2.08727427, 2.08733449, 2.08737234)
+starkey_area_km2 <- 77.382817
+pdi_real_scale <- c(
+  -3.12,  0.04, -1.84, -1.07, -2.44, -0.38, -2.89,  2.19,  1.06,  0.01,  1.88, 
+  -2.03, -2.10, -3.49, -3.08, -2.90,  1.12, -1.07, -0.85, -3.56, -0.60, -0.82,
+   2.29, -1.16, -1.19,  1.61, -1.26, -2.85, -3.56, -2.00, -2.30, -0.46, -0.76,
+  -4.53)
+summer_temp_93on <- c(
+  13.11333, 16.76333, 15.39333, 15.71333, 15.55000, 17.74000, 15.72667, 
+  15.18667, 16.34000, 16.13667, 17.58667, 15.92000, 16.05000, 16.41667,
+  16.76000, 15.51000, 17.63000, 17.35333, 15.77333, 16.56333, 17.66333,
+  17.26000, 16.87333, 15.64333, 18.24667, 16.44000, 15.87000, 17.20333,
+  17.59000
+)
+wjune <- c(
+  211,  87, 168,  56,  99, 106,  84,  88,  66, 71,  57, 170,  51, 148, 96, 109, 
+  125, 137,  56, 180, 186, 165, 106, 109,  87, 69,  86,  87,  51
+)
+summer_precip <- c(
+  132, 39,  56,  26,  71,  73,  38,  58,  30,  38,  54, 132,  10,  79,  53,  43,  
+   61, 51,   5, 122, 125,  81,  76,  71,  51,  11,  53,  36,  46
+)  
+
+pdi_subset <- pdi_real_scale[(length(pdi_real_scale) - length(summer_temp_93on) + 1):length(pdi_real_scale)]
+plot(pdi_subset ~ summer_precip)
+plot(pdi_subset ~ summer_temp_93on)
+
+ggplot(
+  data = cov_dat,
+  aes(x = year, y = value, color = covariate, shape = covariate)) +
+  geom_line(size = cov_fig_grph_size) +
+  geom_point(size = cov_fig_grph_size * 2) +
+  theme_classic() +
+  labs(title = "Covariate values", y = "Centered and scaled value", x = "Year") +
+  xlim(1988, NA) +
+  scale_color_jco() +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    text = element_text(size = cov_fig_text_size))
+ggsave("figures//covariate_values_fig.png", width = 2.5, height = 2.5, units = "in", dpi = 300)
 
 #Posteriors=====================================================================
 
