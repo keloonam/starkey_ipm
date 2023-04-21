@@ -5,8 +5,8 @@
 #Variables======================================================================
 
 # Specify the model
-model_file <- "models//ipm//ipm_elk_in_progress.txt"
-save_file <- "results//ipm_result_15mar2023_R_pdsi.Rdata"
+model_file <- "models//ipm//ipm_elk_temp_precip.txt"
+save_file <- "results//ipm_result_20apr2023_R&S_temp_precip.Rdata"
 
 # Loop dimension parameters
 n_year <- 34
@@ -22,7 +22,7 @@ n_t <- 100
 
 require(tidyverse); require(rjags); require(mcmcplots)
 # load("data//elk_ipm_data.Rdata")
-load("data//elk_ipm_data_15mar2023.Rdata")
+load("data//elk_ipm_data_20apr2023.Rdata")
 
 #Data_prep======================================================================
 
@@ -43,7 +43,8 @@ jags_data <- list(
   n_har = ipm_data$n_hnt,
   min_ad = ipm_data$min_ad,
   min_ca = ipm_data$min_ca,
-  sprec = ipm_data$august_precip,
+  prcp = ipm_data$summer_precip,
+  temp = ipm_data$summer_temp,
   af_count = ipm_data$n_f_p_count,
   nn_fc = nrow(ipm_data$n_f_p_count),
   am_count = ipm_data$n_m_p_count,
@@ -103,13 +104,21 @@ params = c(
   "N_f",
   "N_c",
   "N_m",
+  "N_lam",
   "R_B0",
-  "R_wt",
-  "R_wm",
+  "R_st",
+  "R_sp",
   "R_dd",
   "R_cg",
+  "S_C_0",
+  "S_st",
+  "S_sp",
+  "S_dd",
+  "S_cg",
   "lambda",
   "LAMBDA_mean",
+  "pop_r",
+  "mean_pop_r",
   "R_mean",
   "S_F_mean",
   "S_M_mean",

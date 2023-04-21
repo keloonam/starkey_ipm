@@ -460,6 +460,24 @@ ndvi_avhrr <- full_join(modis_m2, avhrr, by = c("mn", "yr"), suffix = c("_m", "_
   scale() %>%
   as.vector()
 
+#PRISM_data=====================================================================
+
+prism <- read_csv("data/climate/prism_data_starkey.csv", skip = 10) %>%
+  data.table::setnames(
+    old = names(.),  
+    new = c("date", "ppt_inches", "tmin_f", "tmean_f", "tmax_f", "vpdmin", 
+            "vpdmax")) %>%
+  mutate(precip = ppt_inches * 25.4) %>%
+  mutate(temp = (tmean_f - 32) / 1.8) %>%
+  separate(date, into = c("year", "month"), sep = "-") %>%
+  mutate(year = as.numeric(year)) %>%
+  mutate(month = as.numeric(month)) %>%
+  select(year, month, precip, temp) %>%
+  filter(year > 1987 & year < 2022) %>%
+  filter(month %in% c(7, 8, 9)) %>%
+  group_by(year) %>%
+  summarise(summer_precip = sum(precip), summer_temp = mean(temp))
+
 #Combine========================================================================
 
 min_n1 <- matrix(0, nrow = 4, ncol = 2)
@@ -504,9 +522,9 @@ ipm_data <- list(
   min_ca = min_ca,
   min_ad = min_ad,
   annual_temp = ann_temp,
-  summer_temp = sum_temp,
+  summer_temp = prism$summer_temp,
   winter_temp = win_temp,
-  summer_precip = summer_precip,
+  summer_precip = prism$summer_precip,
   august_precip = august_precip,
   winter_precip = winter_precip,
   n_f_p_count = fpc_dat,
@@ -522,5 +540,5 @@ ipm_data <- list(
   est_n1 = est_n1
 )
 
-save(ipm_data, file = "data//elk_ipm_data_15mar2023.Rdata")
+save(ipm_data, file = "data//elk_ipm_data_20apr2023.Rdata")
 
