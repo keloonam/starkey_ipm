@@ -179,6 +179,11 @@ model{
   S_Y_F_B0 <- logit(S_Y_F_B0_ps)
   S_Y_M_B0 <- logit(S_Y_M_B0_ps)
  
+  S_wt ~ dlogis(0, 1) # weather in year t (PDSI, NDVI, rainfall, temperature)
+  S_wm ~ dlogis(0, 1) # weather in year t - 1
+  S_cg ~ dlogis(0, 1) # cougar index
+  S_dd ~ dlogis(0, 1) # female elk density in year t - 1 
+ 
   sd_S_C   ~ dunif(0,50)
   sd_S_Y_F ~ dunif(0,50)
   sd_S_Y_M ~ dunif(0,50)
@@ -187,7 +192,7 @@ model{
   tau_S_Y_F <- 1/sd_S_Y_F^2
   tau_S_Y_M <- 1/sd_S_Y_M^2
   
-  for(yr in 1:n_year){ # yr
+  for(yr in 2:n_year){ # yr
     # Survival for age class 1 is not used in the process model
     # The probabilities read as p(surviving to age class ____)
     # p(surviving to 0.5 yr) is absorbed in the recruitment term
@@ -197,7 +202,12 @@ model{
     # Survival from 0.5 to 1.5 years (to age class 2)
     # Random effect on year, male/female equal
     S_C_yr[yr] ~ dnorm(0, tau_S_C)
-    logit(S[2,1,yr]) <- S_C_B0 + S_C_yr[yr]
+    logit(S[2,1,yr]) <- S_C_B0 + 
+                        S_wt * clim[yr] + 
+                        S_wm * clim[yr-1] + 
+                        S_dd * n_adj[yr-1] + 
+                        S_cg * cdens[yr] +
+                        S_C_yr[yr]
     S[2,2,yr] <- S[2,1,yr]
     
     # Survival from 1.5 to 2.5 years (to age class 3)

@@ -32,7 +32,8 @@ cjs_removals <- c(
   "survival_ca[33]",
   "survival_af[32]",
   "survival_am[32]",
-  "survival_ca[32]"
+  "survival_ca[32]",
+  "survival_af[29]"
 )
 cpf_years <- 1:32
 cpm_years <- 1:32
@@ -40,7 +41,7 @@ cpm_years <- 1:32
 #Environment====================================================================
 
 require(tidyverse)
-
+hist(cjs_raw$`survival_af[29]`)
 #CJS_Survival===================================================================
 
 load(cjs_file)
@@ -540,5 +541,5 @@ ipm_data <- list(
   est_n1 = est_n1
 )
 
-save(ipm_data, file = "data//elk_ipm_data_20apr2023.Rdata")
+save(ipm_data, file = "data//elk_ipm_data_21apr2023.Rdata")
 
