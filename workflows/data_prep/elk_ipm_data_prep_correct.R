@@ -41,7 +41,7 @@ cpm_years <- 1:32
 #Environment====================================================================
 
 require(tidyverse)
-hist(cjs_raw$`survival_af[29]`)
+# hist(cjs_raw$`survival_af[29]`)
 #CJS_Survival===================================================================
 
 load(cjs_file)
@@ -350,7 +350,7 @@ mortalities <- tibble(
 
 logistic <- tibble(
   year = 1988:2021,
-  n = scale(y.t2),
+  n = (y.t2 - mean(y.ta)) / sd(y.ta),
   Source = "Logistic Growth Model"
   )
 
@@ -360,22 +360,23 @@ reconstruction <- tibble(
   Source = "Starkey WMU Reconstruction"
 )
 
-post_fig_text_size <- 4.5
-post_fig_grph_size <- 0.3
-
-cougar_tibble <- bind_rows(blue_mtns, mortalities, logistic, reconstruction)
+# post_fig_text_size <- 8
+# post_fig_grph_size <- 0.3
+# 
+# cougar_tibble <- bind_rows(blue_mtns, mortalities, logistic, reconstruction)
 # require(ggsci)
-# ggplot(data = cougar_tibble, aes(x = year, y = n, color = Source)) +
+# ggplot(data = cougar_tibble, aes(x = year, y = n, color = Source, shape = Source)) +
 #   geom_line(size = post_fig_grph_size) +
-#   # geom_point() +
+#   geom_point(size = 0.5) +
 #   theme_classic() +
-#   labs(x = "Year", y = "N cougars (scaled)", title = "Cougar density index") +
+#   labs(x = "Year", y = "N cougars (scaled)", title = "Cougar density measures") +
 #   scale_color_jco() +
 #   theme(
 #     legend.position = "bottom",
 #     text = element_text(size = post_fig_text_size)) +
+#   geom_vline(xintercept = 1994, linetype = "dashed") + 
 #   guides(color = guide_legend(nrow = 2, byrow = T))
-# ggsave("figures//cougar_density_plot.png", width = 3, height = 3, units = "in", dpi = 300)
+# ggsave("figures//cougar_density_plot.png", width = 4, height = 3, units = "in", dpi = 300)
 
 # plot(cougar_density_scaled, type = "l", xlim = c(0, 35), ylim = c(-2,1.5))
 # points(scale(y.ta), col = "blue")
