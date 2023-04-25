@@ -12,7 +12,7 @@ save_file <- "results//ipm_result_21apr2023_R&S_pdi.Rdata"
 n_year <- 34
 
 # JAGS control parameters
-n_i <- 100000
+n_i <- 500000
 n_a <- 50000
 n_b <- 100000
 n_c <- 3
@@ -27,34 +27,36 @@ load("data//elk_ipm_data_21apr2023.Rdata")
 #Data_prep======================================================================
 
 jags_data <- list(
-  s_cjs = ipm_data$s_cjs,
-  r_ratio = ipm_data$r_ratio,
+  s_cjs      = ipm_data$s_cjs,
+  r_ratio    = ipm_data$r_ratio,
   n_sight_ca = ipm_data$n_sight_ca,
   n_sight_am = ipm_data$n_sight_am,
   n_sight_af = ipm_data$n_sight_af,
-  n_a_mov = ipm_data$n_ad_add - abs(ipm_data$n_ad_rem),
-  n_c_mov = ipm_data$n_ca_add - abs(ipm_data$n_ca_rem),
-  n_year = n_year,
-  nn_ca = nrow(ipm_data$n_sight_ca),
-  nn_af = nrow(ipm_data$n_sight_af),
-  nn_am = nrow(ipm_data$n_sight_am),
-  ns = nrow(ipm_data$s_cjs),
-  nr = nrow(ipm_data$r_ratio),
-  n_har = ipm_data$n_hnt,
-  min_ad = ipm_data$min_ad,
-  min_ca = ipm_data$min_ca,
-  prcp = ipm_data$summer_precip,
-  temp = ipm_data$summer_temp,
-  af_count = ipm_data$n_f_p_count,
-  nn_fc = nrow(ipm_data$n_f_p_count),
-  am_count = ipm_data$n_m_p_count,
-  nn_mc = nrow(ipm_data$n_m_p_count),
-  cdens = ipm_data$cougar_density,
-  n_adj = ipm_data$af_density,
-  min_n1 = ipm_data$min_n1,
-  est_n1 = ipm_data$est_n1,
-  clim = ipm_data$palmer_index
+  n_a_mov    = ipm_data$n_ad_add - abs(ipm_data$n_ad_rem),
+  n_c_mov    = ipm_data$n_ca_add - abs(ipm_data$n_ca_rem),
+  n_year     = n_year,
+  nn_ca      = nrow(ipm_data$n_sight_ca),
+  nn_af      = nrow(ipm_data$n_sight_af),
+  nn_am      = nrow(ipm_data$n_sight_am),
+  ns         = nrow(ipm_data$s_cjs),
+  nr         = nrow(ipm_data$r_ratio),
+  n_har      = ipm_data$n_hnt,
+  min_ad     = ipm_data$min_ad,
+  min_ca     = ipm_data$min_ca,
+  prcp       = ipm_data$summer_precip,
+  temp       = ipm_data$summer_temp,
+  af_count   = ipm_data$n_f_p_count,
+  nn_fc      = nrow(ipm_data$n_f_p_count),
+  am_count   = ipm_data$n_m_p_count,
+  nn_mc      = nrow(ipm_data$n_m_p_count),
+  cdens      = ipm_data$cougar_density,
+  n_adj      = ipm_data$af_density,
+  min_n1     = ipm_data$min_n1,
+  est_n1     = ipm_data$est_n1,
+  clim       = ipm_data$palmer_index
 )
+
+
 
 inits <- function(){
   # Starting abundance
