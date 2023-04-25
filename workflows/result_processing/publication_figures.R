@@ -520,7 +520,7 @@ ed_marg_plot <- ggplot(data = r_ed_ln, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
-  xlim(1, 4.7)
+  xlim(1, 4.8)
 
 plot_grid(
   cougar_marg_plot, ed_marg_plot, pdi_marg_plot, pdilag_marg_plot,
@@ -825,7 +825,7 @@ s_ed_marg_plot <- ggplot(data = s_ed_line, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
-  xlim(1, 4.7)
+  xlim(1, 4.8)
 
 plot_grid(
   s_cougar_marg_plot, s_ed_marg_plot, s_pdi_marg_plot, s_pdilag_marg_plot,

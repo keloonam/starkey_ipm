@@ -5,8 +5,8 @@
 #Environment====================================================================
 require(dplyr); require(ggplot2); require(ggsci); require(rjags)
 require(cowplot); require(tidyr); require(purrr)
-load("results//ipm_result_19apr2023_R_pdi.Rdata")
-load("data//elk_ipm_data_15mar2023.Rdata")
+load("results//ipm_result_21apr2023_R&S_pdi.Rdata")
+load("data//elk_ipm_data_21apr2023.Rdata")
 
 #Data Prep======================================================================
 
