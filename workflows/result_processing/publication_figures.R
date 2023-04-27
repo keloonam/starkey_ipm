@@ -15,6 +15,8 @@ load("data//elk_ipm_data_21apr2023.Rdata")
 # Derived result summaries
 data <- summary(rslt)
 q    <- data$quantiles
+which(dimnames(q)[[1]] %in% c("R_mean", "S_C_mean", "S_F_mean", "S_M_mean","LAMBDA_mean"))
+q[which(dimnames(q)[[1]] %in% c("R_mean", "S_C_mean", "S_F_mean", "S_M_mean","LAMBDA_mean")),]
 
 #Data Building==================================================================
 # Abundance
