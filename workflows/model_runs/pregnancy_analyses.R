@@ -272,3 +272,39 @@ for(i in 1:length(x)){
 p_ed_line <- as_tibble(p_ed_line)
 names(p_ed_line) <- c("val", "lci", "mci", "uci")
 p_ed_line$val <- p_ed_line$val * 0.9238554 + 2.993542
+=======
+ggplot(cov_dat, aes(x = covariate, y = med, color = age, shape = lactating)) +
+  geom_pointrange(aes(ymin = lci, ymax = uci), position = position_dodge(width = .5)) +
+  theme(legend.title = element_blank()) +
+  labs(x = "", y = "Covariate value", title = "Effects on pregnancy rates") +
+  theme_classic() +
+  geom_hline(yintercept = 0, linetype = "dotted")
+  
+source("https://raw.githubusercontent.com/datavizpyr/data/master/half_flat_violinplot.R")
+
+ggplot(prg_dat, aes(x = `Age/lactation class`, y = val, color = `Age/lactation class`, fill = `Age/lactation class`)) +
+  geom_flat_violin() +
+  theme_classic() +
+  theme(legend.position = "none") +
+  labs(x = "", y = "Posterior distribution", title = "Mean pregnancy rates") +
+  coord_flip()
+
+samp_size <- rd %>%
+  mutate(ratio = paste0(
+    " ",
+    round(pregnancy_rate * n_observations),
+    "/",
+    n_observations
+    )) %>%
+  mutate(class = case_when(
+    age_class == "old" & lactating == TRUE ~ "Old - lactating",
+    age_class == "old" & lactating == FALSE ~ "Old",
+    age_class == "prime" & lactating == TRUE ~ "Prime - lactating",
+    age_class == "prime" & lactating == FALSE ~ "Prime",
+    age_class == "young" & lactating == FALSE ~ "Young",
+    age_class == "young" & lactating == TRUE ~ "Young - lactating"
+  )) %>%
+  select(yr, ratio, class) %>%
+  pivot_wider(names_from = class, values_from = ratio) %>%
+  write.csv("data//pregnancy_sample_sizes.csv")
+>>>>>>> feb88c34c81cdeab6ec750076a3db47fb72c99ac
