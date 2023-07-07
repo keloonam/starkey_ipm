@@ -4,13 +4,13 @@
 
 #Variables======================================================================
 
-<<<<<<< HEAD
+
 niter <- 500000
 nburn <- 100000
-=======
+
 niter <- 100000
 nburn <- 50000
->>>>>>> feb88c34c81cdeab6ec750076a3db47fb72c99ac
+
 chain <- 3
 save_file <- "results//pregnancy_analysis_7jul2023.rds"
 
@@ -103,12 +103,9 @@ nimble_monitors <- c(
   "bden_lac_old",
   "bpdi_lac_prm",
   "bpdi_lac_yng",
-<<<<<<< HEAD
   "bpdi_lac_old",
-  "p"
-=======
+  "p",
   "bpdi_lac_old"
->>>>>>> feb88c34c81cdeab6ec750076a3db47fb72c99ac
 )
 
 #Run model======================================================================
@@ -126,9 +123,8 @@ nimble_results <- nimble::nimbleMCMC(
   
 mcmcplots::mcmcplot(nimble_results)
 
-<<<<<<< HEAD
 saveRDS(nimble_results, file = save_file)
-
+nimble_results <- readRDS(save_file)
 #Clean results==================================================================
 
 row_names <- dimnames(nimble_results[[1]])[[2]]
@@ -157,11 +153,9 @@ p_point_dat <- nimble_results %>%
   filter(keep == T) %>%
   bind_cols(point_data)
 
-=======
 #Clean results==================================================================
 
 row_names <- dimnames(nimble_results[[1]])[[2]]
->>>>>>> feb88c34c81cdeab6ec750076a3db47fb72c99ac
 
 cov_dat <- nimble_results %>%
   map(as_tibble) %>%
@@ -211,7 +205,6 @@ prg_dat <- nimble_results %>%
 
 #Plot results===================================================================
 
-<<<<<<< HEAD
 # ggplot(cov_dat, aes(x = covariate, y = med, color = age, shape = lactating)) +
 #   geom_pointrange(aes(ymin = lci, ymax = uci), position = position_dodge(width = .5)) +
 #   theme(legend.title = element_blank()) +
@@ -288,7 +281,7 @@ for(i in 1:length(x)){
 p_ed_line <- as_tibble(p_ed_line)
 names(p_ed_line) <- c("val", "lci", "mci", "uci")
 p_ed_line$val <- p_ed_line$val * 0.9238554 + 2.993542
-=======
+
 ggplot(cov_dat, aes(x = covariate, y = med, color = age, shape = lactating)) +
   geom_pointrange(aes(ymin = lci, ymax = uci), position = position_dodge(width = .5)) +
   theme(legend.title = element_blank()) +
@@ -323,4 +316,4 @@ samp_size <- rd %>%
   select(yr, ratio, class) %>%
   pivot_wider(names_from = class, values_from = ratio) %>%
   write.csv("data//pregnancy_sample_sizes.csv")
->>>>>>> feb88c34c81cdeab6ec750076a3db47fb72c99ac
+
