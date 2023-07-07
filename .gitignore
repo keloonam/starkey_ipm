@@ -29,3 +29,6 @@ vignettes/*.pdf
 # Data Files
 *.csv
 *.Rdata
+*.rds
+*.png
+*.pdf
