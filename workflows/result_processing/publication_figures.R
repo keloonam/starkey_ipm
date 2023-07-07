@@ -11,6 +11,7 @@ require(cowplot); require(tidyr); require(purrr)
 # Results to load
 load("results//ipm_result_21apr2023_R&S_pdi.Rdata")
 load("data//elk_ipm_data_21apr2023.Rdata")
+preg <- readRDS("results//pregnancy_analysis_7jul2023.rds")
 
 # Derived result summaries
 data <- summary(rslt)
@@ -401,7 +402,7 @@ pdi_plot <- ggplot(
   geom_line(size = cov_fig_grph_size, color = cbbPalette[8]) +
   geom_point(size = cov_fig_grph_size * 2) +
   theme_classic() +
-  labs(title = "D - Drought index", y = "PDI", x = "Year") +
+  labs(title = "D - Palmer index", y = "PDI", x = "Year") +
   xlim(1988, NA) +
   scale_color_jco()
 
@@ -476,7 +477,7 @@ pdilag_marg_plot <- ggplot(data = r_pm_ln, aes(x = val, y = mci)) +
   labs(
     x = "PDI (t-1)", 
     y = NULL, 
-    title = "D - PDI prior year") +
+    title = bquote(D - PDI[t-1])) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
@@ -497,7 +498,7 @@ pdi_marg_plot <- ggplot(data = r_pt_ln, aes(x = val, y = mci)) +
   labs(
     x = "PDI (t)", 
     y = "Calves/Female", 
-    title = "C - PDI current year") +
+    title = bquote(C - PDI[t])) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
@@ -524,17 +525,17 @@ ed_marg_plot <- ggplot(data = r_ed_ln, aes(x = val, y = mci)) +
   theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
   xlim(1, 4.8)
 
-plot_grid(
-  cougar_marg_plot, ed_marg_plot, pdi_marg_plot, pdilag_marg_plot,
-  align = "v", 
-  ncol = 2,
-  label_size = 2)
-ggsave(
-  "figures//recruitment_marginal_plots_fig.png", 
-  width = 4, 
-  height = 4, 
-  units = "in", 
-  dpi = 300)
+# plot_grid(
+#   cougar_marg_plot, ed_marg_plot, pdi_marg_plot, pdilag_marg_plot,
+#   align = "v", 
+#   ncol = 2,
+#   label_size = 2)
+# ggsave(
+#   "figures//recruitment_marginal_plots_fig.png", 
+#   width = 4, 
+#   height = 4, 
+#   units = "in", 
+#   dpi = 300)
 
 #Residual plots recruitment=====================================================
 
@@ -624,17 +625,17 @@ resid_r_wm <- ggplot(data = full_r_dat, aes(x = `PDSI_lag`, y = resid_mci)) +
     title = "D - PDI (t-1) residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
-plot_grid(
-  resid_r_cg, resid_r_ed, resid_r_wt, resid_r_wm, 
-  align = "v", 
-  ncol = 2,
-  label_size = 2)
-ggsave(
-  "figures//recruitment_residuals_plots_fig.png", 
-  width = 4, 
-  height = 4, 
-  units = "in", 
-  dpi = 300)
+# plot_grid(
+#   resid_r_cg, resid_r_ed, resid_r_wt, resid_r_wm, 
+#   align = "v", 
+#   ncol = 2,
+#   label_size = 2)
+# ggsave(
+#   "figures//recruitment_residuals_plots_fig.png", 
+#   width = 4, 
+#   height = 4, 
+#   units = "in", 
+#   dpi = 300)
 
 #Survival_data==================================================================
 s_cov_post <- rslt %>%
@@ -829,17 +830,17 @@ s_ed_marg_plot <- ggplot(data = s_ed_line, aes(x = val, y = mci)) +
   theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
   xlim(1, 4.8)
 
-plot_grid(
-  s_cougar_marg_plot, s_ed_marg_plot, s_pdi_marg_plot, s_pdilag_marg_plot,
-  align = "v", 
-  ncol = 2,
-  label_size = 2)
-ggsave(
-  "figures//survival_marginal_plots_fig.png", 
-  width = 4, 
-  height = 4, 
-  units = "in", 
-  dpi = 300)
+# plot_grid(
+#   s_cougar_marg_plot, s_ed_marg_plot, s_pdi_marg_plot, s_pdilag_marg_plot,
+#   align = "v", 
+#   ncol = 2,
+#   label_size = 2)
+# ggsave(
+#   "figures//survival_marginal_plots_fig.png", 
+#   width = 4, 
+#   height = 4, 
+#   units = "in", 
+#   dpi = 300)
 
 #Residual_plots_survival========================================================
 s_true_post <- rslt %>%
@@ -926,14 +927,353 @@ resid_s_wm <- ggplot(data = full_s_dat, aes(x = `PDI_lag`, y = resid_mci)) +
     title = "D - PDI (t-1) residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
+# plot_grid(
+#   resid_s_cg, resid_s_ed, resid_s_wt, resid_s_wm, 
+#   align = "v", 
+#   ncol = 2,
+#   label_size = 2)
+# ggsave(
+#   "figures//survival_residuals_plots_fig.png", 
+#   width = 4, 
+#   height = 4, 
+#   units = "in", 
+#   dpi = 300)
+
+#Plot Assembly==================================================================
+##### Recruitment #####
+# Cougars
+r_cougar_marg_plot <- ggplot(data = r_cg_ln, aes(x = val, y = mci)) +
+  geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
+  geom_line() +
+  # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
+  geom_pointrange(
+    data = r_cov_dat,
+    aes(x = `Cougar Index`, y = mean, ymin = lci, ymax = uci),
+    size = marg_fig_grph_size
+  ) +
+  theme_classic() +
+  labs(
+    x = NULL, 
+    y = NULL, 
+    title = bquote("A4 - Puma density")) +
+  scale_color_jco() +
+  theme(text = element_text(size = marg_fig_text_size)) +
+  # theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
+  xlim(0, 2.12)
+
+# PDI Lag
+r_pdilag_marg_plot <- ggplot(data = r_pm_ln, aes(x = val, y = mci)) +
+  geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
+  geom_line() +
+  # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
+  geom_pointrange(
+    data = r_cov_dat,
+    aes(x = PDSI_lag, y = mean, ymin = lci, ymax = uci),
+    size = marg_fig_grph_size
+    # position = position_jitter(width = .2)
+  ) +
+  theme_classic() +
+  labs(
+    x = NULL, 
+    y = NULL, 
+    title = bquote("A3 - PDI"[t-1])) +
+  scale_color_jco() +
+  theme(text = element_text(size = marg_fig_text_size)) +
+  # theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
+  xlim(-3.7, 2.3)
+
+# PDI
+r_pdi_marg_plot <- ggplot(data = r_pt_ln, aes(x = val, y = mci)) +
+  geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
+  geom_line() +
+  # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
+  geom_pointrange(
+    data = r_cov_dat,
+    aes(x = PDSI, y = mean, ymin = lci, ymax = uci),
+    size = marg_fig_grph_size
+    # position = position_jitter(width = .2)
+  ) +
+  theme_classic() +
+  labs(
+    x = NULL, 
+    y = NULL, 
+    title = bquote("A2 - PDI"[t])) +
+  scale_color_jco() +
+  theme(text = element_text(size = marg_fig_text_size)) +
+  # theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
+  xlim(-4.65, 2.3)
+
+# Elk Density Lag
+r_ed_marg_plot <- ggplot(data = r_ed_ln, aes(x = val, y = mci)) +
+  geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
+  geom_line() +
+  # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
+  geom_pointrange(
+    data = r_cov_dat,
+    aes(x = `Female Density`, y = mean, ymin = lci, ymax = uci),
+    size = marg_fig_grph_size
+    # position = position_jitter(width = .2)
+  ) +
+  theme_classic() +
+  labs(
+    x = NULL, 
+    y = "Calves/Female", 
+    title = "A1 - Elk density") +
+  scale_color_jco() +
+  theme(text = element_text(size = marg_fig_text_size)) +
+  # theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
+  xlim(1, 4.8)
+
+##### Survival #####
+# Cougars
+s_cougar_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
+  geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
+  geom_line() +
+  # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
+  geom_pointrange(
+    data = s_cov_dat,
+    aes(x = `Cougar Index`, y = mean, ymin = lci, ymax = uci),
+    size = marg_fig_grph_size
+  ) +
+  theme_classic() +
+  labs(
+    x = NULL, 
+    y = NULL, 
+    title = "B4") +
+  scale_color_jco() +
+  theme(text = element_text(size = marg_fig_text_size)) +
+  # theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
+  xlim(0, 2.12)
+
+# PDI Lag
+s_pdilag_marg_plot <- ggplot(data = s_pm_line, aes(x = val, y = mci)) +
+  geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
+  geom_line() +
+  # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
+  geom_pointrange(
+    data = s_cov_dat,
+    aes(x = PDI_lag, y = mean, ymin = lci, ymax = uci),
+    size = marg_fig_grph_size
+    # position = position_jitter(width = .2)
+  ) +
+  theme_classic() +
+  labs(
+    x = NULL, 
+    y = NULL, 
+    title = bquote("B3")) +
+  scale_color_jco() +
+  theme(text = element_text(size = marg_fig_text_size)) +
+  # theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
+  xlim(-3.7, 2.3)
+
+# PDI
+s_pdi_marg_plot <- ggplot(data = s_pt_line, aes(x = val, y = mci)) +
+  geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
+  geom_line() +
+  # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
+  geom_pointrange(
+    data = s_cov_dat,
+    aes(x = PDSI, y = mean, ymin = lci, ymax = uci),
+    size = marg_fig_grph_size
+    # position = position_jitter(width = .2)
+  ) +
+  theme_classic() +
+  labs(
+    x = NULL, 
+    y = NULL, 
+    title = bquote("B2")) +
+  scale_color_jco() +
+  theme(text = element_text(size = marg_fig_text_size)) +
+  # theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
+  xlim(-4.65, 2.3)
+
+# Elk Density Lag
+s_ed_marg_plot <- ggplot(data = s_ed_line, aes(x = val, y = mci)) +
+  geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
+  geom_line() +
+  # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
+  geom_pointrange(
+    data = s_cov_dat,
+    aes(x = `Female Density`, y = mean, ymin = lci, ymax = uci),
+    size = marg_fig_grph_size
+    # position = position_jitter(width = .2)
+  ) +
+  theme_classic() +
+  labs(
+    x = NULL, 
+    y = "Calf survival", 
+    title = "B1") +
+  scale_color_jco() +
+  theme(text = element_text(size = marg_fig_text_size)) +
+  # theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
+  xlim(1, 4.8)
+
+##### Lambda #####
+# You'll need to run analyses from 
+# "workflows\results_processing\lambda_regressions_and_plots.R
+# Cougars
+l_cougar_marg_plot <- ggplot(data = lam_cg_line, aes(x = val, y = mci)) +
+  geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
+  geom_line() +
+  # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
+  geom_pointrange(
+    data = lam_quant,
+    aes(x = cd * cg_sd + cg_mn, y = `50%`, ymin = `2.5%`, ymax = `97.5%`),
+    size = marg_fig_grph_size
+  ) +
+  theme_classic() +
+  labs(
+    x = NULL, 
+    y = NULL, 
+    title = "C4") +
+  scale_color_jco() +
+  theme(text = element_text(size = marg_fig_text_size)) +
+  xlim(0, 2.12)
+
+# PDI lag
+l_pdilag_marg_plot <- ggplot(data = lam_pdilag_line, aes(x = val, y = mci)) +
+  geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
+  geom_line() +
+  # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
+  geom_pointrange(
+    data = lam_quant,
+    aes(x = pdi_lag * pdi_sd + pdi_mn, 
+        y = `50%`, 
+        ymin = `2.5%`, 
+        ymax = `97.5%`),
+    size = marg_fig_grph_size
+  ) +
+  theme_classic() +
+  labs(
+    x = NULL, 
+    y = NULL, 
+    title = bquote("C3")) + 
+  scale_color_jco() +
+  theme(text = element_text(size = marg_fig_text_size)) +
+  xlim(-3.7, 2.3)
+
+# PDI
+l_pdi_marg_plot <- ggplot(data = lam_pdi_line, aes(x = val, y = mci)) +
+  geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
+  geom_line() +
+  # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
+  geom_pointrange(
+    data = lam_quant,
+    aes(x = pdi * pdi_sd + pdi_mn, y = `50%`, ymin = `2.5%`, ymax = `97.5%`),
+    size = marg_fig_grph_size
+  ) +
+  theme_classic() +
+  labs(
+    x = NULL, 
+    y = NULL, 
+    title = bquote("C2")) + 
+  scale_color_jco() +
+  theme(text = element_text(size = marg_fig_text_size)) +
+  xlim(-4.65, 2.3)
+
+# ED
+l_ed_marg_plot <- ggplot(data = lam_ed_line, aes(x = val, y = mci)) +
+  geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
+  geom_line() +
+  # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
+  geom_pointrange(
+    data = lam_quant,
+    aes(x = ed * ed_sd + ed_mn, y = `50%`, ymin = `2.5%`, ymax = `97.5%`),
+    size = marg_fig_grph_size
+  ) +
+  theme_classic() +
+  labs(
+    x = NULL, 
+    y = "Lambda", 
+    title = "C1") + 
+  scale_color_jco() +
+  theme(text = element_text(size = marg_fig_text_size)) +
+  xlim(1, 4.8)
+
+##### Pregnancy #####
+# PDI
+p_pdi_marg_plot <- ggplot(data = p_pt_line, aes(x = val, y = mci)) +
+  geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
+  geom_line() +
+  # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
+  geom_pointrange(
+    data = p_point_dat,
+    aes(x = pdi, y = `50%`, ymin = `2.5%`, ymax = `97.5%`),
+    size = marg_fig_grph_size
+  ) +
+  theme_classic() +
+  labs(
+    x = bquote(PDI[t]), 
+    y = NULL, 
+    title = bquote("D2")) + 
+  scale_color_jco() +
+  theme(text = element_text(size = marg_fig_text_size)) +
+  xlim(-4.65, 2.3)
+
+# ED
+p_ed_marg_plot <- ggplot(data = p_ed_line, aes(x = val, y = mci)) +
+  geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
+  geom_line() +
+  # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
+  geom_pointrange(
+    data = p_point_dat,
+    aes(x = elk, y = `50%`, ymin = `2.5%`, ymax = `97.5%`),
+    size = marg_fig_grph_size
+  ) +
+  theme_classic() +
+  labs(
+    x = bquote({"Females km"^-2}[t]), 
+    y = "Pregnancy rate", 
+    title = bquote("D1")) + 
+  scale_color_jco() +
+  theme(text = element_text(size = marg_fig_text_size)) +
+  xlim(1, 4.8)
+
+p_cougar_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
+  # geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
+  # geom_line() +
+  # # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
+  # geom_pointrange(
+  #   data = s_cov_dat,
+  #   aes(x = `Cougar Index`, y = mean, ymin = lci, ymax = uci),
+  #   size = marg_fig_grph_size
+  # ) +
+  theme_classic() +
+  labs(
+    x = bquote({"Puma 100 km"^-2}[t]), 
+    y = NULL, 
+    title = "D4") +
+  scale_color_jco() +
+  theme(text = element_text(size = marg_fig_text_size)) +
+  # theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
+  xlim(0, 2.12)
+
+# PDI Lag
+p_pdilag_marg_plot <- ggplot(data = s_pm_line, aes(x = val, y = mci)) +
+  # geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
+  # geom_line() +
+  # # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
+  # geom_pointrange(
+  #   data = s_cov_dat,
+  #   aes(x = PDI_lag, y = mean, ymin = lci, ymax = uci),
+  #   size = marg_fig_grph_size
+  #   # position = position_jitter(width = .2)
+  # ) +
+  theme_classic() +
+  labs(
+    x = bquote(PDI[t-1]), 
+    y = NULL, 
+    title = bquote("D3")) +
+  scale_color_jco() +
+  theme(text = element_text(size = marg_fig_text_size)) +
+  # theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
+  xlim(-3.7, 2.3)
+
 plot_grid(
-  resid_s_cg, resid_s_ed, resid_s_wt, resid_s_wm, 
-  align = "v", 
-  ncol = 2,
+  r_ed_marg_plot, r_pdi_marg_plot, r_pdilag_marg_plot, r_cougar_marg_plot,
+  s_ed_marg_plot, s_pdi_marg_plot, s_pdilag_marg_plot, s_cougar_marg_plot,
+  l_ed_marg_plot, l_pdi_marg_plot, l_pdilag_marg_plot, l_cougar_marg_plot,
+  p_ed_marg_plot, p_pdi_marg_plot, p_pdilag_marg_plot, p_cougar_marg_plot,
+  align = "v",
+  ncol = 4,
   label_size = 2)
-ggsave(
-  "figures//survival_residuals_plots_fig.png", 
-  width = 4, 
-  height = 4, 
-  units = "in", 
-  dpi = 300)

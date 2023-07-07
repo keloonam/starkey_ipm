@@ -17,19 +17,20 @@ rd <- read_csv(file_name, guess_max = 100000) %>%
   filter(Sex == "F") %>%
   filter(!is.na(EventDate)) %>%
   mutate(e_date = mdy(EventDate)) %>%
-  filter(month(e_date) %in% c(3:12)) %>%
-  filter(WinterFeedgroundDir == "Incoming") %>%
-  filter(!is.na(CalculatedAge)) %>%
+  filter(month(e_date) %in% c(10:12)) %>%
+  # filter(WinterFeedgroundDir == "Incoming") %>%
+  # filter(!is.na(CalculatedAge)) %>%
   mutate(age_class = case_when(
     CalculatedAge < 3 ~ "young",
     CalculatedAge > 13 ~ "old",
+    is.na(CalculatedAge) ~ "prime",
     T ~ "prime"
   )) %>%
   # filter(Lactating %in% c("T", "F")) %>%
   filter(!is.na(Pregnant)) %>%
   filter(Herd == "MAINS")
 
-preg_rates <- rd %>% group_by(HandlingYr, Lactating) %>%
+preg_rates <- rd %>% group_by(HandlingYr, Lactating, age_class) %>%
   summarise(
     pregnancy_rate = mean(Pregnant, na.rm = T),
     pregnancy_sd = sd(Pregnant, na.rm = T),
@@ -38,8 +39,10 @@ preg_rates <- rd %>% group_by(HandlingYr, Lactating) %>%
   filter(Lactating == "F" | Lactating == "T") %>%
   mutate(lactating = Lactating == "T") %>%
   ungroup() %>%
-  separate(HandlingYr, c("year", "yr2")) %>%
+  separate(HandlingYr, c("yr", "yr2")) %>%
   mutate(id = 1:nrow(.)) %>%
-  select(id, year, lactating, pregnancy_rate, pregnancy_sd, n_observations) 
+  select(
+    id, yr, lactating, pregnancy_rate, pregnancy_sd, n_observations, age_class
+    ) 
 
 write.csv(preg_rates, "data//pregnancy_rates.csv")
