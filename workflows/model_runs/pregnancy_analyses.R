@@ -243,15 +243,27 @@ prg_dat <- nimble_results %>%
 
 preg <- readRDS(save_file)
 
-p_eff_post <- preg %>%
+p_eff_post <- nimble_results %>%
   map(as_tibble) %>%
   bind_rows() %>%
   pivot_longer(1:ncol(.), names_to = "parameter") %>%
   filter(parameter %in% c(
-    "b0_mean", "b_lac_prm_mean", "bden_lac_prm", "bpdi_lac_prm"
+    "b0_mean", 
+    "b_lac_prm_mean", "bden_lac_prm", "bpdi_lac_prm",
+    "b_dry_prm_mean", "bden_dry_prm", "bpdi_dry_prm",
+    "b_lac_old_mean", "bden_lac_old", "bpdi_lac_old",
+    "b_dry_old_mean", "bden_dry_old", "bpdi_dry_old",
+    "b_dry_yng_mean", "bden_dry_yng", "bpdi_dry_yng"
     )) %>%
   mutate(id = sort(rep(1:(nrow(.)/4), 4))) %>%
-  pivot_wider(id_cols = id, names_from = parameter)
+  group_by(parameter) %>%
+  summarise(
+    lci = quantile(value, .025),
+    mci = quantile(value, .5),
+    uci = quantile(value, .975),
+    pod = mean(value > 0)
+  )
+
 
 expit <- function(x){
   1/(1+exp(-x))
@@ -317,3 +329,12 @@ samp_size <- rd %>%
   pivot_wider(names_from = class, values_from = ratio) %>%
   write.csv("data//pregnancy_sample_sizes.csv")
 
+#Writing and need results summary===============================================
+
+prg_dat %>%
+  group_by(`Age/lactation class`) %>%
+  summarise(
+    lci = quantile(val, .025),
+    mci = quantile(val, 0.50),
+    uci = quantile(val, .975)
+    )

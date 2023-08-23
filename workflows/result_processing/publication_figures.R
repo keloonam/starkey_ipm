@@ -944,6 +944,7 @@ resid_s_wm <- ggplot(data = full_s_dat, aes(x = `PDI_lag`, y = resid_mci)) +
 marg_fig_grph_size <- .02
 marg_fig_text_size <- 7
 tit_mult <- .9
+point_mult <- .5
 ##### Recruitment #####
 r_color_1 <- "#0033FF"
 r_color_2 <- "#00CCFF"
@@ -956,7 +957,7 @@ r_cougar_marg_plot <- ggplot(data = r_cg_ln, aes(x = val, y = mci)) +
   geom_pointrange(
     data = r_cov_dat,
     aes(x = `Cougar Index`, y = mean, ymin = lci, ymax = uci),
-    size = marg_fig_grph_size
+    size = marg_fig_grph_size * point_mult
   ) +
   theme_classic() +
   labs(
@@ -976,7 +977,7 @@ r_pdilag_marg_plot <- ggplot(data = r_pm_ln, aes(x = val, y = mci)) +
   geom_pointrange(
     data = r_cov_dat,
     aes(x = PDSI_lag, y = mean, ymin = lci, ymax = uci),
-    size = marg_fig_grph_size
+    size = marg_fig_grph_size * point_mult
     # position = position_jitter(width = .2)
   ) +
   theme_classic() +
@@ -997,7 +998,7 @@ r_pdi_marg_plot <- ggplot(data = r_pt_ln, aes(x = val, y = mci)) +
   geom_pointrange(
     data = r_cov_dat,
     aes(x = PDSI, y = mean, ymin = lci, ymax = uci),
-    size = marg_fig_grph_size
+    size = marg_fig_grph_size * point_mult
     # position = position_jitter(width = .2)
   ) +
   theme_classic() +
@@ -1018,7 +1019,7 @@ r_ed_marg_plot <- ggplot(data = r_ed_ln, aes(x = val, y = mci)) +
   geom_pointrange(
     data = r_cov_dat,
     aes(x = `Female Density`, y = mean, ymin = lci, ymax = uci),
-    size = marg_fig_grph_size
+    size = marg_fig_grph_size * point_mult
     # position = position_jitter(width = .2)
   ) +
   theme_classic() +
@@ -1043,7 +1044,7 @@ s_cougar_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
   geom_pointrange(
     data = s_cov_dat,
     aes(x = `Cougar Index`, y = mean, ymin = lci, ymax = uci),
-    size = marg_fig_grph_size
+    size = marg_fig_grph_size * point_mult
   ) +
   theme_classic() +
   labs(
@@ -1063,7 +1064,7 @@ s_pdilag_marg_plot <- ggplot(data = s_pm_line, aes(x = val, y = mci)) +
   geom_pointrange(
     data = s_cov_dat,
     aes(x = PDI_lag, y = mean, ymin = lci, ymax = uci),
-    size = marg_fig_grph_size
+    size = marg_fig_grph_size * point_mult
     # position = position_jitter(width = .2)
   ) +
   theme_classic() +
@@ -1084,7 +1085,7 @@ s_pdi_marg_plot <- ggplot(data = s_pt_line, aes(x = val, y = mci)) +
   geom_pointrange(
     data = s_cov_dat,
     aes(x = PDSI, y = mean, ymin = lci, ymax = uci),
-    size = marg_fig_grph_size
+    size = marg_fig_grph_size * point_mult
     # position = position_jitter(width = .2)
   ) +
   theme_classic() +
@@ -1105,7 +1106,7 @@ s_ed_marg_plot <- ggplot(data = s_ed_line, aes(x = val, y = mci)) +
   geom_pointrange(
     data = s_cov_dat,
     aes(x = `Female Density`, y = mean, ymin = lci, ymax = uci),
-    size = marg_fig_grph_size
+    size = marg_fig_grph_size * point_mult
     # position = position_jitter(width = .2)
   ) +
   theme_classic() +
@@ -1132,7 +1133,7 @@ l_cougar_marg_plot <- ggplot(data = lam_cg_line, aes(x = val, y = mci)) +
   geom_pointrange(
     data = lam_quant,
     aes(x = cd * cg_sd + cg_mn, y = `50%`, ymin = `2.5%`, ymax = `97.5%`),
-    size = marg_fig_grph_size
+    size = marg_fig_grph_size * point_mult
   ) +
   theme_classic() +
   labs(
@@ -1142,7 +1143,7 @@ l_cougar_marg_plot <- ggplot(data = lam_cg_line, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(0, 2.12)
+  xlim(0, 2.12) + ylim(0.5955, 1.4)
 
 # PDI lag
 l_pdilag_marg_plot <- ggplot(data = lam_pdilag_line, aes(x = val, y = mci)) +
@@ -1155,7 +1156,7 @@ l_pdilag_marg_plot <- ggplot(data = lam_pdilag_line, aes(x = val, y = mci)) +
         y = `50%`, 
         ymin = `2.5%`, 
         ymax = `97.5%`),
-    size = marg_fig_grph_size
+    size = marg_fig_grph_size * point_mult
   ) +
   theme_classic() +
   labs(
@@ -1165,7 +1166,7 @@ l_pdilag_marg_plot <- ggplot(data = lam_pdilag_line, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(-3.7, 2.3)
+  xlim(-3.7, 2.3)+ ylim(0.5955, 1.4)
 
 # PDI
 l_pdi_marg_plot <- ggplot(data = lam_pdi_line, aes(x = val, y = mci)) +
@@ -1175,7 +1176,7 @@ l_pdi_marg_plot <- ggplot(data = lam_pdi_line, aes(x = val, y = mci)) +
   geom_pointrange(
     data = lam_quant,
     aes(x = pdi * pdi_sd + pdi_mn, y = `50%`, ymin = `2.5%`, ymax = `97.5%`),
-    size = marg_fig_grph_size
+    size = marg_fig_grph_size * point_mult
   ) +
   theme_classic() +
   labs(
@@ -1185,7 +1186,7 @@ l_pdi_marg_plot <- ggplot(data = lam_pdi_line, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(-4.65, 2.3)
+  xlim(-4.65, 2.3)+ ylim(0.5955, 1.4)
 
 # ED
 l_ed_marg_plot <- ggplot(data = lam_ed_line, aes(x = val, y = mci)) +
@@ -1195,7 +1196,7 @@ l_ed_marg_plot <- ggplot(data = lam_ed_line, aes(x = val, y = mci)) +
   geom_pointrange(
     data = lam_quant,
     aes(x = ed * ed_sd + ed_mn, y = `50%`, ymin = `2.5%`, ymax = `97.5%`),
-    size = marg_fig_grph_size
+    size = marg_fig_grph_size * point_mult
   ) +
   theme_classic() +
   labs(
@@ -1205,7 +1206,7 @@ l_ed_marg_plot <- ggplot(data = lam_ed_line, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(1, 4.8)
+  xlim(1, 4.8)+ ylim(0.5955, 1.4)
 
 ##### Pregnancy #####
 
@@ -1219,7 +1220,7 @@ p_pdi_marg_plot <- ggplot(data = p_pt_line, aes(x = val, y = mci)) +
   geom_pointrange(
     data = p_point_dat,
     aes(x = pdi, y = `50%`, ymin = `2.5%`, ymax = `97.5%`),
-    size = marg_fig_grph_size
+    size = marg_fig_grph_size * point_mult
   ) +
   theme_classic() +
   labs(
@@ -1229,7 +1230,7 @@ p_pdi_marg_plot <- ggplot(data = p_pt_line, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(-4.65, 2.3)
+  xlim(-4.65, 2.3) + ylim(0.25, 1)
 
 # ED
 p_ed_marg_plot <- ggplot(data = p_ed_line, aes(x = val, y = mci)) +
@@ -1239,7 +1240,7 @@ p_ed_marg_plot <- ggplot(data = p_ed_line, aes(x = val, y = mci)) +
   geom_pointrange(
     data = p_point_dat,
     aes(x = elk, y = `50%`, ymin = `2.5%`, ymax = `97.5%`),
-    size = marg_fig_grph_size
+    size = marg_fig_grph_size * point_mult
   ) +
   theme_classic() +
   labs(
@@ -1249,7 +1250,7 @@ p_ed_marg_plot <- ggplot(data = p_ed_line, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(1, 4.8)
+  xlim(1, 4.8) + ylim(0.25, 1)
 
 p_cougar_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
   # geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
@@ -1268,7 +1269,7 @@ p_cougar_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(0, 2.12)
+  xlim(0, 2.12) + ylim(0.25, 1)
 
 # PDI Lag
 p_pdilag_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
@@ -1289,7 +1290,7 @@ p_pdilag_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(-3.7, 2.3)
+  xlim(-3.7, 2.3) + ylim(0.25, 1)
 
 # save(
 #   s_cg_line, 
