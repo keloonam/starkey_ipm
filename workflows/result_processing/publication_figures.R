@@ -241,7 +241,7 @@ dem_abund <- abundance %>% filter(class == "Total") %>%
     geom_line(size = dem_fig_grph_size, aes(group = 1), colour = "#66CCCC") +
     # geom_point(size = dem_fig_grph_size * 2) +
     theme_classic() +
-    labs(title = "A - Elk abundance", y = "N individuals", x = "") +
+    labs(title = "a - Elk abundance", y = "N individuals", x = "") +
     ylim(NA,800) +
     scale_color_jco() +
     theme(
@@ -258,7 +258,7 @@ dem_recruit <- dem_dat %>% filter(class %in% c("Recruitment")) %>%
     fill = "#FF9966") +
   geom_line(size = dem_fig_grph_size, aes(group = 1), colour = "#CC6666") +
   theme_classic() +
-  labs(title = "B - Recruitment", y = "Calves / female", x = "") +
+  labs(title = "b - Recruitment", y = "Calves / female", x = "") +
   xlim(1988,NA) +
   scale_color_jco() +
   geom_vline(xintercept = 1999, linetype = "dashed", size = dem_fig_grph_size) +
@@ -276,7 +276,7 @@ dem_ca_surv <- dem_dat %>% filter(class %in% c("Calf Survival")) %>%
     fill = "#99DDCC") +
   geom_line(size = dem_fig_grph_size, aes(group = 1), colour = "336600") +
   theme_classic() +
-  labs(title = "D - Calf survival", y = "Probability", x = "Year") +
+  labs(title = "d - Calf survival", y = "Probability", x = "Year") +
   xlim(1988,NA) +
   scale_color_jco() +
   geom_vline(xintercept = 1999, linetype = "dashed", size = dem_fig_grph_size) +
@@ -293,7 +293,7 @@ lambda <- ggplot(data = lam_dat, aes(x = year, y = mean)) +
     fill = "#FF99CC") +
   geom_line(size = dem_fig_grph_size, aes(group = 1), colour = "#AA99AA") +
   theme_classic() +
-  labs(title = "C - Population growth", y = "Lambda", x = "Year") +
+  labs(title = "c - Population growth", y = "PP", x = "Year") +
   xlim(1988,NA) +
   scale_color_jco() +
   geom_hline(yintercept = 1, linetype = "dashed", size = dem_fig_grph_size) +
@@ -376,7 +376,7 @@ elk_density <- ggplot(
   geom_line(size = cov_fig_grph_size, color = cbbPalette[2]) +
   geom_point(size = cov_fig_grph_size * 2) +
   theme_classic() +
-  labs(title = "A - Elk density", y = bquote('Females km'^-2), x = "Year") +
+  labs(title = "a - Elk density", y = bquote('Females km'^-2), x = "Year") +
   xlim(1988, NA) +
   scale_color_jco()
 puma_density <- ggplot(
@@ -385,7 +385,7 @@ puma_density <- ggplot(
   geom_line(size = cov_fig_grph_size, color = cbbPalette[3]) +
   geom_point(size = cov_fig_grph_size * 2) +
   theme_classic() +
-  labs(title = "B - Puma density", y = bquote('Puma 100 km'^-2), x = "Year") +
+  labs(title = "b - Puma density", y = bquote('Puma 100 km'^-2), x = "Year") +
   xlim(1988, NA) +
   scale_color_jco()
 management_plot <- net_management %>% filter(class == "total") %>%
@@ -395,7 +395,7 @@ management_plot <- net_management %>% filter(class == "total") %>%
     geom_line(size = cov_fig_grph_size, color = cbbPalette[4]) +
     geom_point(size = cov_fig_grph_size * 2) +
     theme_classic() +
-    labs(title = "C - Management influence", y = "Net elk added", x = "Year") +
+    labs(title = "c - Management influence", y = "Net elk added", x = "Year") +
     xlim(1988, NA) +
     scale_color_jco()
 pdi_plot <- ggplot(
@@ -404,7 +404,7 @@ pdi_plot <- ggplot(
   geom_line(size = cov_fig_grph_size, color = cbbPalette[8]) +
   geom_point(size = cov_fig_grph_size * 2) +
   theme_classic() +
-  labs(title = "D - Palmer index", y = "PDI", x = "Year") +
+  labs(title = "d - Palmer index", y = "PDI", x = "Year") +
   xlim(1988, NA) +
   scale_color_jco()
 
@@ -458,7 +458,7 @@ cougar_marg_plot <- ggplot(data = r_cg_ln, aes(x = val, y = mci)) +
   labs(
     x = bquote('Puma 100 km'^-2), 
     y = "Calves / female", 
-    title = "A - Puma density") +
+    title = "a - Puma density") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
@@ -521,7 +521,7 @@ ed_marg_plot <- ggplot(data = r_ed_ln, aes(x = val, y = mci)) +
   labs(
     x = bquote('Females km'^-2), 
     y = NULL, 
-    title = "B - Elk density") +
+    title = "b - Elk density") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
@@ -588,7 +588,7 @@ resid_r_cg <- ggplot(data = full_r_dat, aes(x = `Cougar Index`, y = resid_mci)) 
   labs(
     x = "Puma density scaled", 
     y = "Recruitment residual", 
-    title = "A - Puma density residuals") +
+    title = "a - Puma density residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
 resid_r_ed <- ggplot(data = full_r_dat, aes(x = `Female Density`, y = resid_mci)) +
@@ -600,7 +600,7 @@ resid_r_ed <- ggplot(data = full_r_dat, aes(x = `Female Density`, y = resid_mci)
   labs(
     x = "Female density scaled", 
     y = "Recruitment residual", 
-    title = "B - Density dependence residuals") +
+    title = "b - Density dependence residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
 resid_r_wt <- ggplot(data = full_r_dat, aes(x = PDSI, y = resid_mci)) +
@@ -612,7 +612,7 @@ resid_r_wt <- ggplot(data = full_r_dat, aes(x = PDSI, y = resid_mci)) +
   labs(
     x = "PDI scaled (t)", 
     y = "Recruitment residual", 
-    title = "C - PDI residuals") +
+    title = "c - PDI residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
 resid_r_wm <- ggplot(data = full_r_dat, aes(x = `PDSI_lag`, y = resid_mci)) +
@@ -624,7 +624,7 @@ resid_r_wm <- ggplot(data = full_r_dat, aes(x = `PDSI_lag`, y = resid_mci)) +
   labs(
     x = "PDI scaled (t-1)", 
     y = "Recruitment residual", 
-    title = "D - PDI (t-1) residuals") +
+    title = "d - PDI (t-1) residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
 # plot_grid(
@@ -763,7 +763,7 @@ s_cougar_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
   labs(
     x = bquote('Puma 100 km'^-2), 
     y = "Calf survival", 
-    title = "A - Puma density") +
+    title = "a - Puma density") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
@@ -784,7 +784,7 @@ s_pdilag_marg_plot <- ggplot(data = s_pm_line, aes(x = val, y = mci)) +
   labs(
     x = "PDI (t-1)", 
     y = NULL, 
-    title = "D - PDI prior year") +
+    title = "d - PDI prior year") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
@@ -805,7 +805,7 @@ s_pdi_marg_plot <- ggplot(data = s_pt_line, aes(x = val, y = mci)) +
   labs(
     x = "PDI (t)", 
     y = "Calf survival", 
-    title = "C - PDI current year") +
+    title = "c - PDI current year") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
@@ -826,7 +826,7 @@ s_ed_marg_plot <- ggplot(data = s_ed_line, aes(x = val, y = mci)) +
   labs(
     x = bquote('Females km'^-2), 
     y = NULL, 
-    title = "B - Elk density") +
+    title = "b - Elk density") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
@@ -890,7 +890,7 @@ resid_s_cg <- ggplot(data = full_s_dat, aes(x = `Cougar Index`, y = resid_mci)) 
   labs(
     x = "Puma density scaled", 
     y = "Recruitment residual", 
-    title = "A - Puma density residuals") +
+    title = "a - Puma density residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
 resid_s_ed <- ggplot(data = full_s_dat, aes(x = `Female Density`, y = resid_mci)) +
@@ -902,7 +902,7 @@ resid_s_ed <- ggplot(data = full_s_dat, aes(x = `Female Density`, y = resid_mci)
   labs(
     x = "Female density scaled", 
     y = "Recruitment residual", 
-    title = "B - Density dependence residuals") +
+    title = "b - Density dependence residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
 resid_s_wt <- ggplot(data = full_s_dat, aes(x = PDSI, y = resid_mci)) +
@@ -914,7 +914,7 @@ resid_s_wt <- ggplot(data = full_s_dat, aes(x = PDSI, y = resid_mci)) +
   labs(
     x = "PDI scaled (t)", 
     y = "Recruitment residual", 
-    title = "C - PDI residuals") +
+    title = "c - PDI residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
 resid_s_wm <- ggplot(data = full_s_dat, aes(x = `PDI_lag`, y = resid_mci)) +
@@ -926,7 +926,7 @@ resid_s_wm <- ggplot(data = full_s_dat, aes(x = `PDI_lag`, y = resid_mci)) +
   labs(
     x = "PDI scaled (t-1)", 
     y = "Recruitment residual", 
-    title = "D - PDI (t-1) residuals") +
+    title = "d - PDI (t-1) residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
 # plot_grid(
@@ -965,7 +965,7 @@ r_cougar_marg_plot <- ggplot(data = r_cg_ln, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = bquote("A4 - Puma density")) +
+    title = bquote("a4 - Puma density")) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
@@ -986,7 +986,7 @@ r_pdilag_marg_plot <- ggplot(data = r_pm_ln, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = bquote("A3 - Palmer Index (t-1)")) +
+    title = bquote("a3 - Palmer Index (t-1)")) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
@@ -1007,7 +1007,7 @@ r_pdi_marg_plot <- ggplot(data = r_pt_ln, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = bquote("A2 - Palmer Index (t)")) +
+    title = bquote("a2 - Palmer Index (t)")) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
@@ -1028,7 +1028,7 @@ r_ed_marg_plot <- ggplot(data = r_ed_ln, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = "Calves/Female", 
-    title = "A1 - Elk density") +
+    title = "a1 - Elk density") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
@@ -1052,7 +1052,7 @@ s_cougar_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = "B4") +
+    title = "b4") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
@@ -1073,7 +1073,7 @@ s_pdilag_marg_plot <- ggplot(data = s_pm_line, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = bquote("B3")) +
+    title = bquote("b3")) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
@@ -1094,7 +1094,7 @@ s_pdi_marg_plot <- ggplot(data = s_pt_line, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = bquote("B2")) +
+    title = bquote("b2")) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
@@ -1115,7 +1115,7 @@ s_ed_marg_plot <- ggplot(data = s_ed_line, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = "Calf survival", 
-    title = "B1") +
+    title = "b1") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
@@ -1141,7 +1141,7 @@ l_cougar_marg_plot <- ggplot(data = lam_cg_line, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = "C4") +
+    title = "c4") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
@@ -1164,7 +1164,7 @@ l_pdilag_marg_plot <- ggplot(data = lam_pdilag_line, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = bquote("C3")) + 
+    title = bquote("c3")) + 
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
@@ -1184,7 +1184,7 @@ l_pdi_marg_plot <- ggplot(data = lam_pdi_line, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = bquote("C2")) + 
+    title = bquote("c2")) + 
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
@@ -1203,8 +1203,8 @@ l_ed_marg_plot <- ggplot(data = lam_ed_line, aes(x = val, y = mci)) +
   theme_classic() +
   labs(
     x = NULL, 
-    y = "Lambda", 
-    title = "C1") + 
+    y = "PP", 
+    title = "c1") + 
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
@@ -1228,7 +1228,7 @@ p_pdi_marg_plot <- ggplot(data = p_pt_line, aes(x = val, y = mci)) +
   labs(
     x = bquote(PDI[t]), 
     y = NULL, 
-    title = bquote("D2")) + 
+    title = bquote("d2")) + 
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
@@ -1248,7 +1248,7 @@ p_ed_marg_plot <- ggplot(data = p_ed_line, aes(x = val, y = mci)) +
   labs(
     x = bquote({"Females km"^-2}[t]), 
     y = "Pregnancy rate", 
-    title = bquote("D1")) + 
+    title = bquote("d1")) + 
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
@@ -1267,7 +1267,7 @@ p_cougar_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
   labs(
     x = bquote({"Puma 100 km"^-2}[t]), 
     y = NULL, 
-    title = "D4") +
+    title = "d4") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
@@ -1288,7 +1288,7 @@ p_pdilag_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
   labs(
     x = bquote(PDI[t-1]), 
     y = NULL, 
-    title = bquote("D3")) +
+    title = bquote("d3")) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +

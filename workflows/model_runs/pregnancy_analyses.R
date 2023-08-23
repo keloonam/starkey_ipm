@@ -7,6 +7,7 @@
 
 niter <- 500000
 nburn <- 100000
+nthin <- 100
 
 niter <- 100000
 nburn <- 50000
@@ -118,7 +119,8 @@ nimble_results <- nimble::nimbleMCMC(
   monitors = nimble_monitors,
   niter = niter,
   nburnin = nburn,
-  nchains = chain
+  nchains = chain,
+  thin = nthin
 )
   
 mcmcplots::mcmcplot(nimble_results)
