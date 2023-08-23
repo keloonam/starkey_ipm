@@ -141,13 +141,15 @@ cov_post <- rslt %>%
   map(as_tibble) %>%
   bind_rows() %>%
   pivot_longer(1:ncol(.), names_to = "parameter") %>%
-  filter(parameter %in% c("R_cg", "R_dd", "R_wm", "R_wt")) %>%
-  mutate(Covariate = case_when(
-    parameter == "R_cg" ~ "Cougar Density",
-    parameter == "R_dd" ~ "Density Dependence",
-    parameter == "R_wm" ~ "PDSI Lag",
-    parameter == "R_wt" ~ "PDSI"
-  ))
+  filter(parameter %in% c("R_cg", "R_dd", "R_wm", "R_wt", "S_cg", "S_dd", "S_wm", "S_wt")) %>%
+  mutate(direction = value > 0) %>%
+  group_by(parameter) %>%
+  summarise(
+    lcri = quantile(value, .025),
+    medi = quantile(value, 0.50),
+    ucri = quantile(value, .975),
+    pofd = mean(direction)
+  )
 
 # Effects
 eff_post <- rslt %>%
