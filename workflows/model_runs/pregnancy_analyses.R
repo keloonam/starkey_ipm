@@ -7,7 +7,7 @@
 
 niter <- 500000
 nburn <- 100000
-nthin <- 100
+nthin <- 10
 
 niter <- 100000
 nburn <- 50000
@@ -247,24 +247,26 @@ preg <- readRDS(save_file)
 
 p_eff_post <- nimble_results %>%
   map(as_tibble) %>%
-  bind_rows() %>%
-  pivot_longer(1:ncol(.), names_to = "parameter") %>%
-  filter(parameter %in% c(
-    "b0_mean", 
-    "b_lac_prm_mean", "bden_lac_prm", "bpdi_lac_prm",
-    "b_dry_prm_mean", "bden_dry_prm", "bpdi_dry_prm",
-    "b_lac_old_mean", "bden_lac_old", "bpdi_lac_old",
-    "b_dry_old_mean", "bden_dry_old", "bpdi_dry_old",
-    "b_dry_yng_mean", "bden_dry_yng", "bpdi_dry_yng"
-    )) %>%
-  mutate(id = sort(rep(1:(nrow(.)/4), 4))) %>%
-  group_by(parameter) %>%
-  summarise(
-    lci = quantile(value, .025),
-    mci = quantile(value, .5),
-    uci = quantile(value, .975),
-    pod = mean(value > 0)
-  )
+  bind_rows() 
+
+# %>%
+#   pivot_longer(1:ncol(.), names_to = "parameter") %>%
+#   filter(parameter %in% c(
+#     "b0_mean", 
+#     "b_lac_prm_mean", "bden_lac_prm", "bpdi_lac_prm",
+#     "b_dry_prm_mean", "bden_dry_prm", "bpdi_dry_prm",
+#     "b_lac_old_mean", "bden_lac_old", "bpdi_lac_old",
+#     "b_dry_old_mean", "bden_dry_old", "bpdi_dry_old",
+#     "b_dry_yng_mean", "bden_dry_yng", "bpdi_dry_yng"
+#   )) %>%
+#   mutate(id = sort(rep(1:(nrow(.)/4), 4))) %>%
+#   group_by(parameter) %>%
+#   summarise(
+#     lci = quantile(value, .025),
+#     mci = quantile(value, .5),
+#     uci = quantile(value, .975),
+#     pod = mean(value > 0)
+#   )
 
 
 expit <- function(x){
