@@ -45,4 +45,21 @@ preg_rates <- rd %>% group_by(HandlingYr, Lactating, age_class) %>%
     id, yr, lactating, pregnancy_rate, pregnancy_sd, n_observations, age_class
     ) 
 
+ rd %>% group_by(Lactating, age_class) %>%
+  summarise(
+    pregnancy_rate = mean(Pregnant, na.rm = T),
+    pregnancy_sd = sd(Pregnant, na.rm = T),
+    n_observations = n()
+  ) %>%
+  filter(Lactating == "F" | Lactating == "T") %>%
+  mutate(lactating = Lactating == "T") %>%
+  ungroup() %>%
+  # separate(HandlingYr, c("yr", "yr2")) %>%
+  mutate(id = 1:nrow(.)) %>%
+  select(
+    id, lactating, pregnancy_rate, pregnancy_sd, n_observations, age_class
+  ) 
+
+preg_rates %>% filter(age_class == "young") %>% pull(pregnancy_rate)
+
 write.csv(preg_rates, "data//pregnancy_rates.csv")

@@ -947,6 +947,8 @@ marg_fig_grph_size <- .02
 marg_fig_text_size <- 7
 tit_mult <- .9
 point_mult <- .5
+label_color <- "#dddddd"
+label_mult <- 0.3
 ##### Recruitment #####
 r_color_1 <- "#0033FF"
 r_color_2 <- "#00CCFF"
@@ -965,13 +967,23 @@ r_cougar_marg_plot <- ggplot(data = r_cg_ln, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = bquote("a4 - Puma density (0.99)")) +
+    title = NULL) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(0, 2.12)
+  theme(plot.title = element_blank(), axis.text = element_blank()) +
+  xlim(0, 2.12) + ylim(0.12, 0.81) +
+  annotate(
+    geom = "label", 
+    label = "P(d) = 0.99", 
+    x = .05, 
+    y = 0.155, 
+    hjust = 0,
+    vjust = 0.5,
+    size = marg_fig_text_size * label_mult,
+    alpha = 0.8,
+    fill = label_color)
 
-# PDI Lag
+# Recruitment PDI Lag===========================================================
 r_pdilag_marg_plot <- ggplot(data = r_pm_ln, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = r_color_2) +
   geom_line(color = r_color_1) +
@@ -986,13 +998,23 @@ r_pdilag_marg_plot <- ggplot(data = r_pm_ln, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = bquote("a3 - Palmer Index (t-1) (0.92)")) +
+    title = NULL) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(-3.7, 2.3)
+  theme(plot.title = element_blank(), axis.text = element_blank()) +
+  xlim(-3.7, 2.3) + ylim(0.12, 0.81) +
+  annotate(
+    geom = "label", 
+    label = "P(d) = 0.92", 
+    x = -3.65, 
+    y = 0.155, 
+    hjust = 0,
+    vjust = 0.5,
+    size = marg_fig_text_size * label_mult,
+    fill = label_color,
+    alpha = 0.8)
 
-# PDI
+# Recruitment PDI===============================================================
 r_pdi_marg_plot <- ggplot(data = r_pt_ln, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = r_color_2) +
   geom_line(color = r_color_1) +
@@ -1007,13 +1029,24 @@ r_pdi_marg_plot <- ggplot(data = r_pt_ln, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = bquote("a2 - Palmer Index (t) (0.58)")) +
+    title = NULL) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(-4.65, 2.3)
+  theme(plot.title = element_blank(), axis.text = element_blank()) +
+  xlim(-4.65, 2.3) + ylim(0.12, 0.81) +
+  annotate(
+    geom = "label", 
+    label = "P(d) = 0.58", 
+    x = -4.6, 
+    y = 0.155, 
+    hjust = 0,
+    vjust = 0.5,
+    size = marg_fig_text_size * label_mult,
+    fill = label_color,
+    alpha = 0.8)
 
-# Elk Density Lag
+
+# Recruitment Elk Density Lag===================================================
 r_ed_marg_plot <- ggplot(data = r_ed_ln, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = r_color_2) +
   geom_line(color = r_color_1) +
@@ -1028,17 +1061,28 @@ r_ed_marg_plot <- ggplot(data = r_ed_ln, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = "Calves/Female", 
-    title = "a1 - Elk density (0.44)") +
+    title = NULL) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(1, 4.8)
+  theme(plot.title = element_blank(), axis.text.x.bottom = element_blank()) +
+  xlim(1, 4.8) + ylim(0.12, 0.81) +
+  annotate(
+    geom = "label", 
+    label = "P(d) = 0.44", 
+    x = 1.05, 
+    y = 0.155, 
+    hjust = 0,
+    vjust = 0.5,
+    size = marg_fig_text_size * label_mult,
+    fill = label_color,
+    alpha = 0.8)
+
 
 ##### Survival #####
 
 s_color_1 <- "#993300"
 s_color_2 <- "#FFCC66"
-# Cougars
+# Survival Cougars==============================================================
 s_cougar_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = s_color_2) +
   geom_line(color = s_color_1) +
@@ -1052,13 +1096,23 @@ s_cougar_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = "b4 (0.99)") +
+    title = NULL) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(0, 2.12)
+  theme(plot.title = element_blank(), axis.text = element_blank()) +
+  xlim(0, 2.12) + ylim(0.14, 1) +
+  annotate(
+    geom = "label", 
+    label = "P(d) = 0.99", 
+    x = .05, 
+    y = 0.185, 
+    hjust = 0,
+    vjust = 0.5,
+    size = marg_fig_text_size * label_mult,
+    fill = label_color,
+    alpha = 0.8)
 
-# PDI Lag
+#Survival PDI Lag===============================================================
 s_pdilag_marg_plot <- ggplot(data = s_pm_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = s_color_2) +
   geom_line(color = s_color_1) +
@@ -1073,13 +1127,24 @@ s_pdilag_marg_plot <- ggplot(data = s_pm_line, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = bquote("b3 (0.66)")) +
+    title = NULL) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(-3.7, 2.3)
+  theme(plot.title = element_blank(),
+        axis.text = element_blank()) +
+  xlim(-3.7, 2.3) + ylim(0.14, 1) +
+  annotate(
+    geom = "label", 
+    label = "P(d) = 0.66", 
+    x = -3.65, 
+    y = 0.185, 
+    hjust = 0,
+    vjust = 0.5,
+    size = marg_fig_text_size * label_mult,
+    fill = label_color,
+    alpha = 0.8)
 
-# PDI
+#Survival PDI===================================================================
 s_pdi_marg_plot <- ggplot(data = s_pt_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = s_color_2) +
   geom_line(color = s_color_1) +
@@ -1094,13 +1159,24 @@ s_pdi_marg_plot <- ggplot(data = s_pt_line, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = bquote("b2 (0.39)")) +
+    title = NULL) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(-4.65, 2.3)
+  theme(plot.title = element_blank(),
+        axis.text = element_blank()) +
+  xlim(-4.65, 2.3) + ylim(0.14, 1) +
+  annotate(
+    geom = "label", 
+    label = "P(d) = 0.39", 
+    x = -4.6, 
+    y = 0.185, 
+    hjust = 0,
+    vjust = 0.5,
+    size = marg_fig_text_size * label_mult,
+    fill = label_color,
+    alpha = 0.8)
 
-# Elk Density Lag
+# Survival Elk Density Lag======================================================
 s_ed_marg_plot <- ggplot(data = s_ed_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = s_color_2) +
   geom_line(color = s_color_1) +
@@ -1115,11 +1191,22 @@ s_ed_marg_plot <- ggplot(data = s_ed_line, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = "Calf survival", 
-    title = "b1 (0.84)") +
+    title = NULL) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(1, 4.8)
+  theme(plot.title = element_blank(),
+        axis.text.x.bottom = element_blank()) +
+  xlim(1, 4.8) + ylim(0.14, 1) +
+  annotate(
+    geom = "label", 
+    label = "P(d) = 0.84", 
+    x = 1.05, 
+    y = 0.185, 
+    hjust = 0,
+    vjust = 0.5,
+    size = marg_fig_text_size * label_mult,
+    fill = label_color,
+    alpha = 0.8)
 
 ##### Lambda #####
 # You'll need to run analyses from 
@@ -1127,7 +1214,7 @@ s_ed_marg_plot <- ggplot(data = s_ed_line, aes(x = val, y = mci)) +
 
 l_color_1 <- "#006633"
 l_color_2 <- "#66CC99"
-# Cougars
+#Lambda Puma====================================================================
 l_cougar_marg_plot <- ggplot(data = lam_cg_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = l_color_2) +
   geom_line(color = l_color_1) +
@@ -1141,13 +1228,24 @@ l_cougar_marg_plot <- ggplot(data = lam_cg_line, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = "c4 (p = 0.01)") +
+    title = NULL) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(0, 2.12) + ylim(0.5955, 1.4)
+  theme(plot.title = element_blank(),
+        axis.text = element_blank()) +
+  xlim(0, 2.12) + ylim(0.5955, 1.4) +
+  annotate(
+    geom = "label", 
+    label = "p = 0.01", 
+    x = 0.05, 
+    y = 0.635, 
+    hjust = 0,
+    vjust = 0.5,
+    size = marg_fig_text_size * label_mult,
+    fill = label_color,
+    alpha = 0.8)
 
-# PDI lag
+#Lambda PDI lag=================================================================
 l_pdilag_marg_plot <- ggplot(data = lam_pdilag_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = l_color_2) +
   geom_line(color = l_color_1) +
@@ -1164,13 +1262,25 @@ l_pdilag_marg_plot <- ggplot(data = lam_pdilag_line, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = bquote("c3 (p = 0.52)")) + 
+    title = NULL) + 
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(-3.7, 2.3)+ ylim(0.5955, 1.4)
+  theme(plot.title = element_blank(),
+        axis.text.x.bottom = element_blank(),
+        axis.text.y.left = element_blank()) +
+  xlim(-3.7, 2.3)+ ylim(0.5955, 1.4) +
+  annotate(
+    geom = "label", 
+    label = "p = 0.52", 
+    x = -3.65, 
+    y = 0.635, 
+    hjust = 0,
+    vjust = 0.5,
+    size = marg_fig_text_size * label_mult,
+    fill = label_color,
+    alpha = 0.8)
 
-# PDI
+#Lambda PDI=====================================================================
 l_pdi_marg_plot <- ggplot(data = lam_pdi_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = l_color_2) +
   geom_line(color = l_color_1) +
@@ -1184,13 +1294,24 @@ l_pdi_marg_plot <- ggplot(data = lam_pdi_line, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = bquote("c2 (p = 0.29)")) + 
+    title = NULL) + 
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(-4.65, 2.3)+ ylim(0.5955, 1.4)
+  theme(plot.title = element_blank(),
+        axis.text = element_blank()) +
+  xlim(-4.65, 2.3)+ ylim(0.5955, 1.4) +
+  annotate(
+    geom = "label", 
+    label = "p = 0.29", 
+    x = -4.6, 
+    y = 0.635, 
+    hjust = 0,
+    vjust = 0.5,
+    size = marg_fig_text_size * label_mult,
+    fill = label_color,
+    alpha = 0.8)
 
-# ED
+#lambda ED======================================================================
 l_ed_marg_plot <- ggplot(data = lam_ed_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = l_color_2) +
   geom_line(color = l_color_1) +
@@ -1204,17 +1325,28 @@ l_ed_marg_plot <- ggplot(data = lam_ed_line, aes(x = val, y = mci)) +
   labs(
     x = NULL, 
     y = "PP", 
-    title = "c1 (p = 0.18)") + 
+    title = NULL) + 
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(1, 4.8)+ ylim(0.5955, 1.4)
+  theme(plot.title = element_blank(),
+        axis.text.x.bottom = element_blank()) +
+  xlim(1, 4.8)+ ylim(0.5955, 1.4) +
+  annotate(
+    geom = "label", 
+    label = "p = 0.18", 
+    x = 1.05, 
+    y = 0.635, 
+    hjust = 0,
+    vjust = 0.5,
+    size = marg_fig_text_size * label_mult,
+    fill = label_color,
+    alpha = 0.8)
 
 ##### Pregnancy #####
 
 p_color_1 <- "#660066"
 p_color_2 <- "#FF99FF"
-# PDI
+#Pregnancy PDI==================================================================
 p_pdi_marg_plot <- ggplot(data = p_pt_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = p_color_2) +
   geom_line(color = p_color_1) +
@@ -1228,13 +1360,25 @@ p_pdi_marg_plot <- ggplot(data = p_pt_line, aes(x = val, y = mci)) +
   labs(
     x = bquote(PDI[t]), 
     y = NULL, 
-    title = bquote("d2 (0.97)")) + 
+    title = NULL) + #bquote("d2 (0.97)")) + 
   scale_color_jco() +
-  theme(text = element_text(size = marg_fig_text_size)) +
+  theme(text = element_text(size = marg_fig_text_size),
+        axis.text.y.left = element_blank()) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(-4.65, 2.3) + ylim(0.25, 1)
+  xlim(-4.65, 2.3) + ylim(0.25, 1) +
+  annotate(
+    geom = "label", 
+    label = "P(d) = 0.97", 
+    x = -4.6, 
+    y = 0.30, 
+    hjust = 0,
+    vjust = 0.5,
+    size = marg_fig_text_size * label_mult,
+    fill = label_color,
+    alpha = 0.8)
 
-# ED
+
+#Pregnancy Density Dependence===================================================
 p_ed_marg_plot <- ggplot(data = p_ed_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = p_color_2) +
   geom_line(color = p_color_1) +
@@ -1248,50 +1392,47 @@ p_ed_marg_plot <- ggplot(data = p_ed_line, aes(x = val, y = mci)) +
   labs(
     x = bquote({"Females km"^-2}[t]), 
     y = "Pregnancy rate", 
-    title = bquote("d1 (0.70)")) + 
+    title = NULL, # bquote("d1 (0.70)")
+  ) + 
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(1, 4.8) + ylim(0.25, 1)
+  xlim(1, 4.8) + ylim(0.25, 1) +
+  annotate(
+    geom = "label", 
+    label = "P(d) = 0.70", 
+    x = 1.05, 
+    y = 0.3, 
+    hjust = 0,
+    vjust = 0.5,
+    size = marg_fig_text_size * label_mult,
+    fill = label_color,
+    alpha = 0.8)
 
+#Pregnancy Pumas================================================================
 p_cougar_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
-  # geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
-  # geom_line() +
-  # # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
-  # geom_pointrange(
-  #   data = s_cov_dat,
-  #   aes(x = `Cougar Index`, y = mean, ymin = lci, ymax = uci),
-  #   size = marg_fig_grph_size
-  # ) +
   theme_classic() +
   labs(
     x = bquote({"Puma 100 km"^-2}[t]), 
     y = NULL, 
-    title = "d4") +
+    title = NULL) +
   scale_color_jco() +
-  theme(text = element_text(size = marg_fig_text_size)) +
+  theme(text = element_text(size = marg_fig_text_size),
+        axis.text.y.left = element_blank()) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
   xlim(0, 2.12) + ylim(0.25, 1)
 
-# PDI Lag
+#Pregnancy PDI Lag==============================================================
 p_pdilag_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
-  # geom_ribbon(aes(ymin = lci, ymax = uci), fill = "grey70") +
-  # geom_line() +
-  # # geom_point(data = r_cov_dat, aes(x = `Cougar Index`, y = mean)) +
-  # geom_pointrange(
-  #   data = s_cov_dat,
-  #   aes(x = PDI_lag, y = mean, ymin = lci, ymax = uci),
-  #   size = marg_fig_grph_size
-  #   # position = position_jitter(width = .2)
-  # ) +
   theme_classic() +
   labs(
     x = bquote(PDI[t-1]), 
     y = NULL, 
-    title = bquote("d3")) +
+    title = NULL) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
+  theme(plot.title = element_text(size = marg_fig_text_size * tit_mult),
+        axis.text.y.left = element_blank()) +
   xlim(-3.7, 2.3) + ylim(0.25, 1)
 
 # save(
@@ -1315,7 +1456,7 @@ p_pdilag_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
 #   s_cov_dat,
 #   file = "results//full_plot_data.Rdata"
 # )
-
+#Plot Grid======================================================================
 plot_grid(
   r_ed_marg_plot, r_pdi_marg_plot, r_pdilag_marg_plot, r_cougar_marg_plot,
   s_ed_marg_plot, s_pdi_marg_plot, s_pdilag_marg_plot, s_cougar_marg_plot,
@@ -1327,7 +1468,8 @@ plot_grid(
 
 ggsave(
   "figures//all_marginal_plots.png",
-  width = 7,
-  height = 6,
-  units = "in",
-  dpi = 300)
+  width = 18,
+  height = 16,
+  units = "cm",
+  dpi = 500)
+

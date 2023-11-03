@@ -7,13 +7,10 @@
 
 niter <- 500000
 nburn <- 100000
-nthin <- 10
-
-niter <- 100000
-nburn <- 50000
+nthin <- 100
 
 chain <- 3
-save_file <- "results//pregnancy_analysis_7jul2023.rds"
+save_file <- "results//pregnancy_analysis_3sep2023.rds"
 
 #Packages=======================================================================
 
@@ -106,7 +103,9 @@ nimble_monitors <- c(
   "bpdi_lac_yng",
   "bpdi_lac_old",
   "p",
-  "bpdi_lac_old"
+  "bpdi_lac_old",
+  "rsdl",
+  "preg_young"
 )
 
 #Run model======================================================================
@@ -342,3 +341,4 @@ prg_dat %>%
     mci = quantile(val, 0.50),
     uci = quantile(val, .975)
     )
+

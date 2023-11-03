@@ -13,6 +13,7 @@ nimble_code <- nimble::nimbleCode({
   b_lac_prm_sd   ~ T(dnorm(0, sd = 10), 0, 10)
   b_lac_yng_sd   ~ T(dnorm(0, sd = 10), 0, 10)
   b_lac_old_sd   ~ T(dnorm(0, sd = 10), 0, 10)
+  logit(preg_yng_mean) <- b0_mean + b_yng_mean
   for(t in 1:ny){
     b0[t]        ~ dnorm(b0_mean,        sd = b0_sd)
     b_yng[t]     ~ dnorm(b_yng_mean,     sd = b_yng_sd)
@@ -20,6 +21,7 @@ nimble_code <- nimble::nimbleCode({
     b_lac_prm[t] ~ dnorm(b_lac_prm_mean, sd = b_lac_prm_sd)
     b_lac_yng[t] ~ dnorm(b_lac_yng_mean, sd = b_lac_yng_sd)
     b_lac_old[t] ~ dnorm(b_lac_old_mean, sd = b_lac_old_sd)
+    logit(preg_young[t]) <- b0[t] + b_yng[t]
   }
   bden_dry_prm ~ dlogis(0, 1)
   bden_dry_yng ~ dlogis(0, 1)
@@ -57,6 +59,7 @@ nimble_code <- nimble::nimbleCode({
 
   # Model  
     preg[i] ~ dbin(p[i], nobs[i])
+    rsdl[i] <- preg[i] / nobs[i] - p[i]
   }
 }
 )
