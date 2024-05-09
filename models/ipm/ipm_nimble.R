@@ -1,0 +1,254 @@
+code <- nimbleCode({
+  # IPM -- Built for the Starkey elk population
+  # Kenneth Loonam
+  
+  # Parameters to estimate:
+  # R: recruitment
+  # S: survival
+  # N: abundance
+  
+  # indexing follows [age, sex, year] unless otherwise specified
+  # e.g: N[a,x,yr] -- abundance of age class a, sex x, in year yr
+  # ages:
+  #   [1,,]: 0.5 yr -- calf
+  #   [2,,]: 1.5 yr -- subadult
+  #   [3,,]: 2.5 yr -- adult - young
+  #   [4,,]: 3.5+yr -- adult - mature
+  # sex:
+  #   [,1,]: female
+  #   [,2,]: male
+  
+  # Estimated parameters are *CAPITALIZED*
+  # Data objects are *lowercase*
+  # Exceptions are intermediate parameters (e.g. random effects)
+  
+  
+  #Process Model================================================================
+  
+  for(yr in 2:n_year){ # yr
+    ##### Recruitment #####
+    # R indexing follows [age,yr]  . . .  males rarely get pregnant
+    # Assumes equal sex ratio from birth to age 0.5 years
+    
+    n_exp[1,1,yr] <- R[yr] * sum(N[2:4,1,yr]) * 0.5
+    tau_exp[1,1,yr] <- abs(1 / ((n_exp[1,1,yr]) * (1 - R[yr])+1))
+    
+    N[1,1,yr] ~ T(dnorm(n_exp[1,1,yr], tau_exp[1,1,yr]), min_ca[yr], )
+    N[1,2,yr] <- N[1,1,yr]
+    
+    for(x in 1:2){ # x (sex)
+      ##### Survival #####
+      # Sexes have separate survivals except in 0.5 to 1.5 transition
+      # All ages have separate survivals except 2.5 to 3.5 and 3.5+ (ages 3 & 4)
+      # indexing follows [age, sex, year]
+      
+      # approximate proportion of adults in each age class
+      prop_ad[1,x,yr] <- 0
+      prop_ad[2,x,yr] <- N[1,x,yr-1] / sum(N[1:4,x,yr-1])
+      prop_ad[3,x,yr] <- N[2,x,yr-1] / sum(N[1:4,x,yr-1])
+      prop_ad[4,x,yr] <- sum(N[3:4,x,yr-1]) / sum(N[1:4,x,yr-1])
+      
+      for(a in 1:4){
+        # minimum adults and adults moved broken down by age classes 
+        # assumed proportional to corresponding age classes in yr-1
+        min_ad_app[a,x,yr] <- min_ad[x,yr]  * prop_ad[a,x,yr] + n_har[a,x,yr]
+        n_ad_mov[a,x,yr]   <- n_a_mov[x,yr] * prop_ad[a,x,yr]
+      } # a (age)
+      
+      # Expected number to survive to hunting season
+      n_exp[2,x,yr] <- (N[1,x,yr-1] + n_c_mov[x,yr])    * S[2,x,yr]
+      n_exp[3,x,yr] <- (N[2,x,yr-1] + n_ad_mov[2,x,yr]) * S[3,x,yr]
+      n_exp[4,x,yr] <- (sum(N[3:4,x,yr-1])+sum(n_ad_mov[3:4,x,yr])) * S[4,x,yr]
+      
+      # Expected to survive ignoring management (for calculating lambda)
+      n_x_l[2,x,yr] <- N[1,x,yr-1]        * S[2,x,yr]
+      n_x_l[3,x,yr] <- N[2,x,yr-1]        * S[3,x,yr]
+      n_x_l[4,x,yr] <- sum(N[3:4,x,yr-1]) * S[4,x,yr]
+      
+      for(a in 2:4){
+        tau_exp[a,x,yr] <- abs(1 / ((n_exp[a,x,yr]) * (1 - S[a,x,yr])+1))
+        N_AUG[a,x,yr]~dnorm(n_exp[a,x,yr],tau_exp[a,x,yr])T(min_ad_app[a,x,yr],)
+        N[a,x,yr] <- N_AUG[a,x,yr] - n_har[a,x,yr]
+      } # a (age)
+    } # x (sex)
+    
+    ##### Abundance #####
+    # Derived values from process each year
+    # Add whatever totals are interesting
+    N_c[yr]    <- N[1,1,yr] + N[1,2,yr]
+    N_yf[yr]   <- N[2,1,yr]
+    N_ym[yr]   <- N[2,2,yr]
+    N_af[yr]   <- N[3,1,yr] + N[4,1,yr]
+    N_am[yr]   <- N[3,2,yr] + N[4,2,yr]
+    N_f[yr]    <- N[3,1,yr] + N[4,1,yr] + N[2,1,yr]
+    N_m[yr]    <- N[3,2,yr] + N[4,2,yr] + N[2,2,yr]
+    N_tot[yr]  <- sum(N[,,yr])
+    
+    N_lam[yr]  <- N_c[yr] + sum(n_x_l[2:4,1:2,yr])
+    
+    lambda[yr] <- N_lam[yr] / N_tot[yr-1]
+    pop_r[yr]  <- log(lambda[yr])
+  } # yr
+  mean_pop_r <- mean(pop_r[2:n_year])
+  
+  #Observation Models===========================================================
+  
+  # Data are indexed by row (i), with one observation per row
+  # The columns for the data follow [year, age, sex, mean, tau]
+  # data[i,1] = year of first row of data
+  # data[i,4] = mean (estimate) of first row of data
+  # For example n_sight[3,4] is the mean sightability for the third observation
+  
+  ##### Abundance #####
+  # Sightability & C/R
+  for(i in 1:nn_ca){
+    n_sight_ca[i,4] ~ dnorm(N_c[n_sight_ca[i,1]], n_sight_ca[i,5])T(0,)
+  }
+  for(i in 1:nn_af){
+    n_sight_af[i,4] ~ dnorm(N_f[n_sight_af[i,1]], n_sight_af[i,5])T(0,)
+  }
+  for(i in 1:nn_am){
+    n_sight_am[i,4] ~ dnorm(N_m[n_sight_am[i,1]], n_sight_am[i,5])T(0,)
+  }
+  
+  sd_afcount ~ dunif(0,50)
+  tau_afcount <- 1/sd_afcount^2
+  for(i in 1:nn_fc){
+    af_count[i,4] ~ dnorm(N_f[af_count[i,1]], tau_afcount)T(0,)
+  }
+  
+  sd_amcount ~ dunif(0,50)
+  tau_amcount <- 1/sd_amcount^2
+  for(i in 1:nn_mc){
+    am_count[i,4] ~ dnorm(N_m[am_count[i,1]], tau_amcount)T(0,)
+  }
+  
+  ##### Survival #####
+  # CJS - Feedgrounds
+  for(i in 1:ns){
+    s_cjs[i,4] ~ dnorm(S[s_cjs[i,2], s_cjs[i,3], s_cjs[i,1]], s_cjs[i,5])T(0,1)
+  }
+  
+  ##### Recruitment #####
+  # Ratio - Feedgrounds
+  for(i in 1:nr){
+    r_ratio[i,4] ~ dnorm(R[r_ratio[i,1]], r_ratio[i,5])T(0,1)
+  }
+  
+  #Priors and GLMs==============================================================
+  
+  ##### Recruitment #####
+  # random effect on year
+  
+  sd_R ~ dunif(0,50) # SD and precision for random effect by year
+  tau_R <- 1/sd_R^2
+  
+  R_B0 ~ dlogis(0, 1) # Covariates on recruitment for:
+  R_wt ~ dlogis(0, 1) # weather in year t (PDSI, NDVI, rainfall, temperature)
+  R_wm ~ dlogis(0, 1) # weather in year t - 1
+  R_cg ~ dlogis(0, 1) # cougar index
+  R_dd ~ dlogis(0, 1) # female elk density in year t - 1
+  
+  for(yr in 2:n_year){ # yr
+    R_yr[yr] ~ dnorm(0, tau_R) # random effect by year
+    # GLM for annual recruitment (R[yr])
+    logit(R[yr]) <- R_B0 + 
+      R_wt * clim[yr] + 
+      R_wm * clim[yr-1] + 
+      R_dd * n_adj[yr-1] + 
+      R_cg * cdens[yr] +
+      R_yr[yr]
+  } # yr
+  
+  
+  ##### Survival #####
+  # Independent calf, yearling, and adult survival
+  # Sex effect on non-calves, sex survival equal in calves
+  # Separate random effect on each sex/age class
+  # _C_ = calf, survival from 0.5 to 1.5
+  # _Y_ = yearling, survival from 1.5 to 2.5
+  # _A_ = adult, all other age steps
+  # _F_ = female, _M_ = male
+  # Keeping all of this longhand to facilitate informative priors later on
+  S_C_B0_ps   ~ dunif(0, 1)
+  S_Y_F_B0_ps ~ dbeta(3, 1.2)
+  S_Y_M_B0_ps ~ dbeta(3, 1.2)
+  test_ps     ~ dbeta(3, 1.2)
+  
+  S_C_B0   <- logit(S_C_B0_ps)
+  S_Y_F_B0 <- logit(S_Y_F_B0_ps)
+  S_Y_M_B0 <- logit(S_Y_M_B0_ps)
+  
+  S_wt ~ dlogis(0, 1) # weather in year t (PDSI, NDVI, rainfall, temperature)
+  S_wm ~ dlogis(0, 1) # weather in year t - 1
+  S_cg ~ dlogis(0, 1) # cougar index
+  S_dd ~ dlogis(0, 1) # female elk density in year t - 1 
+  
+  sd_S_C   ~ dunif(0,50)
+  sd_S_Y_F ~ dunif(0,50)
+  sd_S_Y_M ~ dunif(0,50)
+  
+  tau_S_C   <- 1/sd_S_C^2
+  tau_S_Y_F <- 1/sd_S_Y_F^2
+  tau_S_Y_M <- 1/sd_S_Y_M^2
+  
+  for(yr in 2:n_year){ # yr
+    # Survival for age class 1 is not used in the process model
+    # The probabilities read as p(surviving to age class ____)
+    # p(surviving to 0.5 yr) is absorbed in the recruitment term
+    S[1,1,yr] <- 0
+    S[1,2,yr] <- 0
+    
+    # Survival from 0.5 to 1.5 years (to age class 2)
+    # Random effect on year, male/female equal
+    S_C_yr[yr] ~ dnorm(0, tau_S_C)
+    logit(S[2,1,yr]) <- S_C_B0 + 
+      S_wt * clim[yr] + 
+      S_wm * clim[yr-1] + 
+      S_dd * n_adj[yr-1] + 
+      S_cg * cdens[yr] +
+      S_C_yr[yr]
+    S[2,2,yr] <- S[2,1,yr]
+    
+    # Survival from 1.5 to 2.5 years (to age class 3)
+    # Separate random effects by year for both males and females
+    S_Y_F_yr[yr] ~ dnorm(0, tau_S_Y_F)
+    S_Y_M_yr[yr] ~ dnorm(0, tau_S_Y_M)
+    logit(S[3,1,yr]) <- S_Y_F_B0 + S_Y_F_yr[yr]
+    logit(S[3,2,yr]) <- S_Y_M_B0 + S_Y_M_yr[yr]
+    S[4,1,yr] <- S[3,1,yr]
+    S[4,2,yr] <- S[3,2,yr]
+    
+    # Derived survivals for easy tracking
+    survival_af[yr] <- S[3,1,yr]
+    survival_am[yr] <- S[3,2,yr]
+    survival_ca[yr] <- S[2,1,yr]
+  } # yr
+  
+  ##### Abundance -- starting #####
+  # can adjust this later on to take opinions on initial population size
+  # to make informative priors
+  
+  for(x in 1:2){ # x
+    for(a in 1:4){ # a
+      init_N[a,x] ~ dnorm(est_n1[a,x], 0.0001)T(min_n1[a,x],)
+      N[a,x,1] <- round(init_N[a,x])
+    } # a
+  } # x
+  
+  # Derived Values for easier tracking
+  N_c [1]  = N[1,1,1] + N[1,2,1]
+  N_yf[1]  = N[2,1,1]
+  N_ym[1]  = N[2,2,1]
+  N_af[1]  = N[3,1,1] + N[4,1,1]
+  N_am[1]  = N[3,2,1] + N[4,2,1]
+  N_f[1]   = N[3,1,1] + N[4,1,1] + N[2,1,1]
+  N_m[1]   = N[3,2,1] + N[4,2,1] + N[2,2,1]
+  N_tot[1] = sum(N[1:4,1:2,1])
+  
+  logit(R_mean)   = R_B0
+  logit(S_F_mean) = S_Y_F_B0 
+  logit(S_M_mean) = S_Y_M_B0
+  logit(S_C_mean) = S_C_B0
+  LAMBDA_mean     = mean(lambda[2:n_year])
+})
