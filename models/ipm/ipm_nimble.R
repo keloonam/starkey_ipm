@@ -1,4 +1,4 @@
-code <- nimbleCode({
+nimble_code <- nimbleCode({
   # IPM -- Built for the Starkey elk population
   # Kenneth Loonam
   
@@ -67,7 +67,9 @@ code <- nimbleCode({
       
       for(a in 2:4){
         tau_exp[a,x,yr] <- abs(1 / ((n_exp[a,x,yr]) * (1 - S[a,x,yr])+1))
-        N_AUG[a,x,yr]~dnorm(n_exp[a,x,yr],tau_exp[a,x,yr])T(min_ad_app[a,x,yr],)
+        N_AUG[a,x,yr] ~ T(
+          dnorm(n_exp[a,x,yr],tau_exp[a,x,yr]), 
+          min_ad_app[a,x,yr], )
         N[a,x,yr] <- N_AUG[a,x,yr] - n_har[a,x,yr]
       } # a (age)
     } # x (sex)
@@ -102,37 +104,39 @@ code <- nimbleCode({
   ##### Abundance #####
   # Sightability & C/R
   for(i in 1:nn_ca){
-    n_sight_ca[i,4] ~ dnorm(N_c[n_sight_ca[i,1]], n_sight_ca[i,5])T(0,)
+    n_sight_ca[i,4] ~ T(dnorm(N_c[n_sight_ca[i,1]], n_sight_ca[i,5]), 0, )
   }
   for(i in 1:nn_af){
-    n_sight_af[i,4] ~ dnorm(N_f[n_sight_af[i,1]], n_sight_af[i,5])T(0,)
+    n_sight_af[i,4] ~ T(dnorm(N_f[n_sight_af[i,1]], n_sight_af[i,5]), 0, )
   }
   for(i in 1:nn_am){
-    n_sight_am[i,4] ~ dnorm(N_m[n_sight_am[i,1]], n_sight_am[i,5])T(0,)
+    n_sight_am[i,4] ~ T(dnorm(N_m[n_sight_am[i,1]], n_sight_am[i,5]), 0, )
   }
   
   sd_afcount ~ dunif(0,50)
   tau_afcount <- 1/sd_afcount^2
   for(i in 1:nn_fc){
-    af_count[i,4] ~ dnorm(N_f[af_count[i,1]], tau_afcount)T(0,)
+    af_count[i,4] ~ T(dnorm(N_f[af_count[i,1]], tau_afcount), 0, )
   }
   
   sd_amcount ~ dunif(0,50)
   tau_amcount <- 1/sd_amcount^2
   for(i in 1:nn_mc){
-    am_count[i,4] ~ dnorm(N_m[am_count[i,1]], tau_amcount)T(0,)
+    am_count[i,4] ~ T(dnorm(N_m[am_count[i,1]], tau_amcount), 0, )
   }
   
   ##### Survival #####
   # CJS - Feedgrounds
   for(i in 1:ns){
-    s_cjs[i,4] ~ dnorm(S[s_cjs[i,2], s_cjs[i,3], s_cjs[i,1]], s_cjs[i,5])T(0,1)
+    s_cjs[i,4] ~ T(
+      dnorm(S[s_cjs[i,2], s_cjs[i,3], s_cjs[i,1]], s_cjs[i,5]), 
+      0, 1)
   }
   
   ##### Recruitment #####
   # Ratio - Feedgrounds
   for(i in 1:nr){
-    r_ratio[i,4] ~ dnorm(R[r_ratio[i,1]], r_ratio[i,5])T(0,1)
+    r_ratio[i,4] ~ T(dnorm(R[r_ratio[i,1]], r_ratio[i,5]), 0, 1)
   }
   
   #Priors and GLMs==============================================================
@@ -231,7 +235,7 @@ code <- nimbleCode({
   
   for(x in 1:2){ # x
     for(a in 1:4){ # a
-      init_N[a,x] ~ dnorm(est_n1[a,x], 0.0001)T(min_n1[a,x],)
+      init_N[a,x] ~ T(dnorm(est_n1[a,x], 0.0001), min_n1[a,x], )
       N[a,x,1] <- round(init_N[a,x])
     } # a
   } # x
