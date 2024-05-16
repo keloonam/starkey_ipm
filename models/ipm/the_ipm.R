@@ -13,7 +13,10 @@ nimble_code <- nimbleCode({
   # N_e = expected number
   # N_man = net change from management
   # N_S = N ____ surviving
-  
+  # N__est = estimates of N_ passed as data
+    # indexed by observation (row), and columns = {(1)year (2)mean (3)sd}
+  # r_dt = recruitment data
+    # indexed by observation (row), and columns = {(1)year (2)calves (3)cows}
   
   #Process Model================================================================
   for(t in 2:n_year){
@@ -112,13 +115,43 @@ nimble_code <- nimbleCode({
   }
   
   ##### Starting Abundance #####
-  NC[1] T(dnorm(nc1e, sd = 100), nc1e_min, )
-  NF[1] T(dnorm(nf1e, sd = 100), nf1e_min, )
-  NM[1] T(dnorm(nm1e, sd = 100), nm1e_min, )
+  NC[1] ~ T(dnorm(nc1e, sd = 100), nc1e_min, )
+  NF[1] ~ T(dnorm(nf1e, sd = 100), nf1e_min, )
+  NM[1] ~ T(dnorm(nm1e, sd = 100), nm1e_min, )
   
   #Observation Models===========================================================
   ##### Abundance #####
+  for(i in 1:nNC){ 
+    NC_est[i,2] ~ T(dnorm(NC[NC_est[i,1]], sd = NC_est[i,3]), 0, )
+  }
+  for(i in 1:nNF){
+    NF_est[i,2] ~ T(dnorm(NF[NF_est[i,1]], sd = NF_est[i,3]), 0, )
+  }
+  for(i in 1:nNM){
+    NM_est[i,2] ~ T(dnorm(NM[NM_est[i,1]], sd = NM_est[i,3]), 0, )
+  }
   
+  ##### Counts #####
+  for(i in 1:cNF){ # loop over number of observations of female counts
+    # set sd for normal approximation of binomial based on cjs p and NF
+    NFct_sd[i]   <- sqrt(p[NF_ct[i,1]] * NF[NF_ct[i,1]] * (1 - pF[NF_ct[i,1]]))
+    NF_ct[i,2] ~ dnorm(NF[NF_ct[i,1]], sd = NFct_sd[i])
+  }
+  for(i in 1:cNC){ # loop over number of observations of male counts
+    # set sd for normal approximation of binomial based on cjs p and NM
+    NMct_sd[i]   <- sqrt(p[NM_ct[i,1]] * NM[NM_ct[i,1]] * (1 - pM[NM_ct[i,1]]))
+    NM_ct[i,2] ~ dnorm(NM[NM_ct[i,1]], sd = NMct_sd[i])
+  }
+  
+  ##### Recruitment #####
+  for(i in 1:nR){ # loop over number of observations of recruitment
+    r_dt[i,2] ~ dbinom(R[r_dt[i,1]], r_dt[i,3])
+  }
+  
+  ##### Survival #####
+  for(i in 1:nS){
+    # THE CJS MODEL TO USE IS SAVED AS models//survival//cjs_elk.R
+  }
 })
 
 
