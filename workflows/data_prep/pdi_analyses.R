@@ -53,12 +53,16 @@ modis <- read_csv("data//climate//ndvi_modis.csv") %>%
 
 ndvi <- full_join(avhrr, modis)
 
-ggplot(ndvi, aes(x = modis, y = avhrr, color = as.factor(yr))) +
+ndvi_lm <- lm(ndvi$avhrr ~ ndvi$modis)
+ndvi_pred <- predict(ndvi_lm)
+ggplot(ndvi, aes(x = modis, y = avhrr, color = as.factor(yr), shape = as.factor(yr))) +
   geom_point() +
   xlab("Modis")+
   ylab("AVHRR") +
-  labs(title = "Comparision of NDVI sources (2001-2003)", color = "Year") +
-  theme_classic() 
+  labs(title = "Comparision of NDVI sources (2001-2003)", color = "Year", shape = "Year") +
+  theme_classic() +
+  geom_abline(slope = 1, intercept = 0, linetype = 2) +
+  geom_line(aes(x = modis, y = ndvi_pred), color = "black")
 
 logit <- function(x){log(x/(1-x))}
 ilogit <- function(x){1/(1+exp(-x))}
