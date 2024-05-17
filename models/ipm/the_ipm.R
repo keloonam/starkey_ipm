@@ -75,7 +75,7 @@ nimble_code <- nimbleCode({
   
   # Annual recruitment assignment
   for(t in 2:n_year){
-    R_B0[t] ~ dnorm(R_B0_mean, sd = R_B0_shape)
+    R_B0[t] ~ dnorm(R_B0_mean, sd = R_B0_sd)
     logit(R[t]) <- R_B0 + 
       R_Bvy * veg[t] +
       R_Bvm * veg[t-1] +
@@ -84,7 +84,7 @@ nimble_code <- nimbleCode({
   }
   
   ##### Survival #####
-  # Random intercept setup
+  # Random intercept setup -- Survival
   SC_B0_mean ~ dlogis(0, 1)
   SF_mean ~ dbeta(3, 1.2)
   SM_mean ~ dbeta(3, 1.2)
@@ -94,24 +94,39 @@ nimble_code <- nimbleCode({
   SF_B0_sd ~ dunif(0, 5)
   SM_B0_sd ~ dunif(0, 5)
   
+  # Random intercept setup -- Detection probability
+  PF_B0_mean ~ dlogis(0, 1)
+  PM_B0_mean ~ dlogis(0, 1)
+  PF_B0_sd ~ dunif(0, 5)
+  PM_B0_sd ~ dunif(0, 5)
+  
   # Covariates on calf survival
   SC_Bvy ~ dlogis(0, 1) # veg proxy in year t
   SC_Bvm ~ dlogis(0, 1) # veg proxy in year t-1
   SC_Bpu ~ dlogis(0, 1) # puma index
   SC_Bdd ~ dlogis(0, 1) # elk density
   
+  # Fixed effects for non-Main Study elk (some switch back and forth)
+  S__Bhe ~ dlogis(0, 1)
+  P__Bhe ~ dlogis(0, 1)
+  
   # Annual survival assignment
   for(t in 2:n_year){
-    SF_B0[t] ~ dnorm(SF_B0_mean, SF_B0_sd)
-    SM_B0[t] ~ dnorm(SM_B0_mean, SM_B0_sd)
-    SC_B0[t] ~ dnorm(SC_B0_mean, SC_B0_sd)
+    SF_B0[t] ~ dnorm(SF_B0_mean, sd = SF_B0_sd)
+    SM_B0[t] ~ dnorm(SM_B0_mean, sd = SM_B0_sd)
+    SC_B0[t] ~ dnorm(SC_B0_mean, sd = SC_B0_sd)
+    
+    PM_B0[t] ~ dnorm(PM_B0_mean, sd = PM_B0_sd)
+    PF_B0[t] ~ dnorm(PF_B0_mean, sd = PF_B0_sd)
+    
     logit(SF[t]) <- SF_B0[t]
     logit(SM[t]) <- SM_B0[t]
-    logit(SC[t]) <- SC_B0[t] +
+    SC_Byr[t]    <- SC_B0[t] +
       SC_Bvy * veg[t] +
       SC_Bvm * veg[t-1] +
       SC_Bpu * pum[t] +
       SC_Bdd * elk[t]
+    logit(SC[t]) <- SC_Byr[t]
   }
   
   ##### Starting Abundance #####
@@ -149,8 +164,22 @@ nimble_code <- nimbleCode({
   }
   
   ##### Survival #####
-  for(i in 1:nS){
-    # THE CJS MODEL TO USE IS SAVED AS models//survival//cjs_elk.R
+  for(i in 1:nind){
+    for(t in (f[i]+1):l[i]){
+      # Setting Probabilities
+      logit(p[i,t]) <- PF_B0[t] * female[i,t-1] + 
+        PM_B0[t] * male[i,t-1] + 
+        P__Bhe * herd[i,t-1]
+      logis(s[i,t]) <- SF_B0[t] * female[i,t-1] +
+        SM_B0[t] * male[i,t-1] +
+        SC_Byr[t] * calf[i,t-1] +
+        S__Bhe * herd[i,t-1]
+      
+      # State Process ------- alive >>> z = 1
+      z[i,t] ~ dbern(s[i,t] * z[i,t-1])
+      # Observation Process ------- seen >>> y = 1
+      y[i,t] ~ dbern(p[i,t] * z[i,t])
+    }
   }
 })
 
