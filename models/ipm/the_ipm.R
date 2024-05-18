@@ -26,7 +26,7 @@ nimble_code <- nimbleCode({
     NCe_sd[t]   <- sqrt(R[t] * NF[t] * (1 - R[t]))
     
     # Recruitment process
-    NC[t] ~ T(dnorm(NCe_mean[t], sd = NCe_sd[t]), NC_min[t], )
+    NC[t] ~ T(dnorm(NCe_mean[t], sd = NCe_sd[t]), NCmin[t], )
     
     ##### Survival #####
     # Expected survival for normal approximation
@@ -46,20 +46,20 @@ nimble_code <- nimbleCode({
     NMaug[t] ~ T(dnorm(NMSe_mean[t], sd = NMSe_sd[t]), NMmin[t], )
     
     # Harvest process - make it to November 1 (biological year start)
-    NF[t] <- NF_aug[t] + NC_aug[t]/2 - NFhar[t]
-    NM[t] <- NM_aug[t] + NC_aug[t]/2 - NMhar[t]
+    NF[t] <- NFaug[t] + NCaug[t]/2 - NFhar[t]
+    NM[t] <- NMaug[t] + NCaug[t]/2 - NMhar[t]
     
     ##### Abundance #####
     # Expected abundance ignoring management & harvest - for calculating lambda
     NCSe_lambda[t] <- NC[t-1] * SC[t]
     NFe_lambda[t] <- NF[t-1] * SF[t] + NCSe_lambda[t] / 2
-    NMe_lambda[t] <- NM[t-1] * SM[t] + NCSe+lambda[t] / 2
+    NMe_lambda[t] <- NM[t-1] * SM[t] + NCSe_lambda[t] / 2
     NCe_lambda[t] <- (NFe_lambda[t] + NCSe_lambda[t]) * R[t]
     N_lambda[t] <- NCe_lambda[t] + NMe_lambda[t] + NFe_lambda[t]
-    LAMBDA <- N_lambda[t] / N_tot[t-1]
+    LAMBDA[t] <- N_lambda[t] / Ntot[t-1]
     
     # Total abundance
-    N_tot[t] <- NM[t] + NF[t] + NC[t]
+    Ntot[t] <- NM[t] + NF[t] + NC[t]
   }
   #Priors and GLMs==============================================================
   ##### Recruitment #####
@@ -76,7 +76,7 @@ nimble_code <- nimbleCode({
   # Annual recruitment assignment
   for(t in 2:n_year){
     R_B0[t] ~ dnorm(R_B0_mean, sd = R_B0_sd)
-    logit(R[t]) <- R_B0 + 
+    logit(R[t]) <- R_B0[t] + 
       R_Bvy * veg[t] +
       R_Bvm * veg[t-1] +
       R_Bpu * pum[t] +
@@ -121,6 +121,8 @@ nimble_code <- nimbleCode({
     
     logit(SF[t]) <- SF_B0[t]
     logit(SM[t]) <- SM_B0[t]
+    logit(PF[t]) <- PF_B0[t]
+    logit(PM[t]) <- PM_B0[t]
     SC_Byr[t]    <- SC_B0[t] +
       SC_Bvy * veg[t] +
       SC_Bvm * veg[t-1] +
@@ -147,15 +149,17 @@ nimble_code <- nimbleCode({
   }
   
   ##### Counts #####
-  for(i in 1:cNF){ # loop over number of observations of female counts
-    # set sd for normal approximation of binomial based on cjs p and NF
-    NFct_sd[i]   <- sqrt(p[NF_ct[i,1]] * NF[NF_ct[i,1]] * (1 - pF[NF_ct[i,1]]))
-    NF_ct[i,2] ~ dnorm(NF[NF_ct[i,1]], sd = NFct_sd[i])
+  for(t in 2:n_year){ # loop over number of observations - no P in year 1
+    # prep normal approximation of binomial based on cjs p and NF
+    NFct_sd[t] <- sqrt(PF[t] * NF[t] * (1 - PF[t]))
+    NFct_ex[t] <- PF[t] * NF[t]
+    NF_ct[t] ~ dnorm(NFct_ex[t], sd = NFct_sd[t])
   }
-  for(i in 1:cNC){ # loop over number of observations of male counts
-    # set sd for normal approximation of binomial based on cjs p and NM
-    NMct_sd[i]   <- sqrt(p[NM_ct[i,1]] * NM[NM_ct[i,1]] * (1 - pM[NM_ct[i,1]]))
-    NM_ct[i,2] ~ dnorm(NM[NM_ct[i,1]], sd = NMct_sd[i])
+  for(t in 2:n_year){ # loop over number of observations - no P in year 1
+    # prep normal approximation of binomial based on cjs p and NF
+    NMct_sd[t] <- sqrt(PM[t] * NM[t] * (1 - PM[t]))
+    NMct_ex[t] <- PM[t] * NM[t]
+    NM_ct[t] ~ dnorm(NMct_ex[t], sd = NMct_sd[t])
   }
   
   ##### Recruitment #####
@@ -170,7 +174,7 @@ nimble_code <- nimbleCode({
       logit(p[i,t]) <- PF_B0[t] * female[i,t-1] + 
         PM_B0[t] * male[i,t-1] + 
         P__Bhe * herd[i,t-1]
-      logis(s[i,t]) <- SF_B0[t] * female[i,t-1] +
+      logit(s[i,t]) <- SF_B0[t] * female[i,t-1] +
         SM_B0[t] * male[i,t-1] +
         SC_Byr[t] * calf[i,t-1] +
         S__Bhe * herd[i,t-1]
