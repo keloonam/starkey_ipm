@@ -8,7 +8,7 @@ require(nimble); require(mcmcplots); require(dplyr)
 
 full_data <- readRDS("data//the_ipm_data.rds")
 
-model_code <- source("models//ipm//the_ipm.R")
+source("models//ipm//the_ipm.R")
 
 #Data===========================================================================
 
@@ -91,7 +91,7 @@ inits <- list(
         0.284574348,
         0.286075717
   ),
-  NF = c(224.1625333,
+  NFaug = c(224.1625333,
          310.9118628,
          290.445508,
          259.0745867,
@@ -126,7 +126,7 @@ inits <- list(
          66.63617122,
          58.69381116
   ),
-  NM = c(54.33,
+  NMaug = c(54.33,
          64.71020621,
          71.57009807,
          107.7273599,
@@ -211,10 +211,10 @@ inits <- list(
   SM_B0_sd = 1,
   PF_B0_mean = .7,
   PM_B0_mean = .4,
-  S_Bvy = 0,
-  S_Bvm = 0,
-  S_Bpu = 0,
-  S_Bdd = 0,
+  SC_Bvy = 0,
+  SC_Bvm = 0,
+  SC_Bpu = 0,
+  SC_Bdd = 0,
   S__Bhe = 0,
   P__Bhe = 0,
   SF = c(0.884770525,
@@ -327,10 +327,15 @@ inits <- list(
 )
 
 #Model setup====================================================================
+mons <- c(c(
+  "R", "SC", "SF", "SM", "NC", "NF", "NM", "PF", "PM", "R_Bvy", "R_Bvm", 
+  "R_Bpu", "R_Bdd", "SC_Bvy", "SC_Bvm", "SC_Bpu", "SC_Bdd", "Ntot"
+))
+# nimbleMCMC(code = model_code, data = dtf, constants = cnst, inits = inits,
+#            monitors = mons, niter = 1000, nburnin = 100, nchains = 1)
 
 ipm <- nimbleModel(
-  code = model_code,
-  name = "TheIPM",
+  code = nimble_code,
   constants = cnst,
   data = dtf,
   inits = inits
@@ -338,10 +343,11 @@ ipm <- nimbleModel(
 
 ipm_conf <- configureMCMC(ipm, monitors = c(
   "R", "SC", "SF", "SM", "NC", "NF", "NM", "PF", "PM", "R_Bvy", "R_Bvm", 
-  "R_Bpu", "R_Bdd", "SC_Bvy", "SC_Bvm", "SC_Bpu", "SC_Bdd"
+  "R_Bpu", "R_Bdd", "SC_Bvy", "SC_Bvm", "SC_Bpu", "SC_Bdd", "NFaug", "NMaug", 
+  "NCaug", "Ntot"
 ))
 
 ipm_mcmc <- buildMCMC(ipm_conf)
-ipm_mcmc$run(1000)
-c_ipm_mcmc <- compileNimble(ipm_mcmc)
-c_ipm_mcmc$run(1000)
+c_ipm_mcmc <- compileNimble(ipm_mcmc, ipm)
+c_ipm_mcmc$ipm_mcmc$run(100000)
+x <- c_ipm_mcmc$ipm_mcmc$mvSamples %>% as.matrix()
