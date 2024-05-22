@@ -8,13 +8,14 @@ require(nimble); require(mcmcplots); require(dplyr)
 
 full_data <- readRDS("data//the_ipm_data.rds")
 
-source("models//ipm//the_ipm.R")
+source("models//ipm//the_ipm_less_cjs.R")
+load("data//elk_ipm_data_21apr2023.Rdata")
 
 #Data===========================================================================
 
 dtf <- list(
-  y = full_data$y,
-  z = full_data$z,
+  # y = full_data$y,
+  # z = full_data$z,
   NC_est = full_data$NC_est,
   NF_est = full_data$NF_est,
   NM_est = full_data$NM_est,
@@ -23,6 +24,14 @@ dtf <- list(
   r_dt = full_data$r_dt,
   nc1e = full_data$nc1e,
   nf1e = full_data$nf1e,
+  s_cjs = ipm_data$s_cjs,
+  l = full_data$l,
+  male = full_data$male,
+  female = full_data$female,
+  calf = full_data$calf,
+  herd = full_data$herd,
+  f = full_data$f,
+  nind = full_data$nind,
   nm1e = full_data$nm1e
 )
 
@@ -36,13 +45,6 @@ cnst <- list(
   NMman = full_data$NMman,
   NFhar = full_data$NFhar,
   NMhar = full_data$NMhar,
-  male = full_data$male,
-  female = full_data$female,
-  calf = full_data$calf,
-  herd = full_data$herd,
-  l = full_data$l,
-  f = full_data$f,
-  nind = full_data$nind,
   n_year = full_data$n_year,
   nNC = full_data$nNC,
   nNF = full_data$nNF,
@@ -53,6 +55,7 @@ cnst <- list(
   nm1e_min = full_data$nm1e_min,
   veg = full_data$sep_pdi,
   pum = full_data$puma_composit,
+  ns = nrow(ipm_data$s_cjs),
   elk = full_data$elk_density
 )
 
@@ -351,3 +354,8 @@ ipm_mcmc <- buildMCMC(ipm_conf)
 c_ipm_mcmc <- compileNimble(ipm_mcmc, ipm)
 c_ipm_mcmc$ipm_mcmc$run(100000)
 x <- c_ipm_mcmc$ipm_mcmc$mvSamples %>% as.matrix()
+
+colnames(ipm_data$s_cjs) <- c("yr", "age", "sx", "mn", "tau")
+ipm_data$s_cjs %>%
+  as_tibble() %>%
+  pull(sx)
