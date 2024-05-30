@@ -148,7 +148,18 @@ nimble_code <- nimbleCode({
     NM_est[i,2] ~ T(dnorm(NM[NM_est[i,1]], sd = NM_est[i,3]), 0, )
   }
   
-  # ##### Counts #####
+  ##### Counts #####
+  sd_afcount ~ dunif(0,50)
+  tau_afcount <- 1/sd_afcount^2
+  for(i in 1:nn_fc){
+    af_count[i,4] ~ T(dnorm(NFaug[af_count[i,1]], tau_afcount), 0, )
+  }
+  
+  sd_amcount ~ dunif(0,50)
+  tau_amcount <- 1/sd_amcount^2
+  for(i in 1:nn_mc){
+    am_count[i,4] ~ T(dnorm(NMaug[am_count[i,1]], tau_amcount), 0, )
+  }
   # for(t in 2:n_year){ # loop over number of observations - no P in year 1
   #   # prep normal approximation of binomial based on cjs p and NF
   #   NFct_sd[t] <- sqrt(PF[t] * NF[t] * (1 - PF[t]))
@@ -168,9 +179,16 @@ nimble_code <- nimbleCode({
   }
   
   ##### Survival #####
-  S[]
+  # CJS - Feedgrounds
+  # S[1,1:3,1:2] <- 0
+  # S[2:n_year,1,1:2] <- 0
+  for(t in 2:n_year){
+    S[t,2,1:2] <- SC[t]
+    S[t,3,1] <- SF[t]
+    S[t,3,2] <- SM[t]
+  }
   for(i in 1:ns){
-    s_cjs[i,4] ~ T(dnorm(S[s_cjs[i,2], s_cjs[i,3], s_cjs[i,1]], s_cjs[i,5]),0,1)
+    s_cjs[i,4] ~ T(dnorm(S[s_cjs[i,1], s_cjs[i,2], s_cjs[i,3]], s_cjs[i,5]),0,1)
   }
   
   
