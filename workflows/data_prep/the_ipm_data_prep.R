@@ -105,6 +105,7 @@ dtf$r_dt <- read_csv("data//min_n_handle_summaries.csv") %>%
   mutate(yr = year - yr_a + 1) %>%
   select(yr, ca, fe_ad) %>%
   as.matrix() 
+dtf$r_dt[33,2] <- 13
 
 #Rebuild from previous IPM data=================================================
 
@@ -167,6 +168,9 @@ dtf$nm1e <- ipm_data$est_n1[2:3,2] %>% sum()
 dtf$nc1e_min <- ipm_data$min_n1[1,] %>% sum()
 dtf$nf1e_min <- ipm_data$min_n1[2:3,1] %>% sum()
 dtf$nm1e_min <- ipm_data$min_n1[2:3,2] %>% sum()
+
+dtf$NFmin <- dtf$NFmin + dtf$NFman
+dtf$NMmin <- dtf$NMmin + dtf$NMman
 
 #Weather covariates=============================================================
 

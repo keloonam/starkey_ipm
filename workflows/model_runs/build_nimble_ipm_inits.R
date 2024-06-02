@@ -3,6 +3,7 @@ require(purrr); require(dplyr); require(tidyr); require(rjags)
 fd <- readRDS("data//the_ipm_data.rds")
 load("data//elk_ipm_data_21apr2023.Rdata")
 load("results//ipm_result_21apr2023_R&S_pdi.Rdata")
+full_data <- readRDS("data//the_ipm_data.rds")
 data <- summary(rslt)
 q    <- data$quantiles
 dq <- as_tibble(q) %>%
@@ -72,143 +73,113 @@ R_B0_m <- dq %>%
 logit <- function(x){
   log(x/(1-x))
 }
-SC_B0_m <- dq %>%
+R_B0_mean <- dq %>%
+  filter(grepl("R_B0", .$var)) %>%
+  pull(`50%`) 
+R_B0_sd <- sd(logit(R_m))
+SC_B0_mean <- dq %>%
   filter(grepl("S_C_mean", .$var)) %>%
   pull(`50%`) %>%
   logit()
+NCe_sd <- sqrt(R_m * NF_m * (1 - R_m))
+NCe_mean <- R_m * NF_m
+NCSe_mean <- (c(0, NC_m[-length(NC_m)]) + full_data$NCman) * SC_m
+NCSe_sd <- sqrt(NCSe_mean * (1 - SC_m))
+NCaug_m <- NCSe_mean
+for(i in 1:length(NCaug_m)){
+  if(full_data$NCmin[i] > NCaug_m[i]){
+    NCaug_m[i] <- full_data$NCmin[i]
+  }
+}
+NFSe_mean <- (c(0, NF_m[-length(NF_m)]) + full_data$NFman) * SF_m
+NFSe_sd <- sqrt(NFSe_mean * (1 - SF_m))
+NMSe_mean <- (c(0, NM_m[-length(NM_m)]) + full_data$NMman) * SM_m
+NMSe_sd <- sqrt(NMSe_mean * (1 - SM_m))
+NCSe_lambda <- c(0, NC_m[-length(NC_m)] * SC_m[-1])
+NFe_lambda <- c(0, NF_m[-length(NF_m)] * SF_m[-1] + NCSe_lambda[-1] / 2)
+NMe_lambda <- c(0, NM_m[-length(NM_m)] * SM_m[-1] + NCSe_lambda[-1] / 2)
+NCe_lambda <- (NFe_lambda + NCSe_lambda) * R_m
+N_lambda <- NFe_lambda + NMe_lambda + NCe_lambda
+lambda <- dq %>%
+  filter(grepl("lambda", .$var)) %>%
+  pull(`50%`)
+lambda <- c(0, lambda)
+Ntot <- NM_m + NF_m + NC_m
+sd_afcount <- 80
+tau_afcount <- 1/(sd_afcount^2)
+sd_amcount <- 30
+tau_amcount <- 1/(sd_amcount^2)
+ilogit <- function(x){
+  return(1/(1+exp(-x)))
+}
+R0 <- ilogit(
+  logit(R_m) - 
+    R_Bvy_m * ipm_data$palmer_index - 
+    R_Bvm_m * c(0, ipm_data$palmer_index[-length(ipm_data$palmer_index)]) - 
+    R_Bdd_m * ipm_data$elk_density -
+    R_Bpu_m * ipm_data$cougar_density
+  )
+SC0 <- ilogit(
+  logit(SC_m) - 
+    SC_Bvy_m * ipm_data$palmer_index - 
+    SC_Bvm_m * c(0, ipm_data$palmer_index[-length(ipm_data$palmer_index)]) - 
+    SC_Bdd_m * ipm_data$elk_density -
+    SC_Bpu_m * ipm_data$cougar_density
+)
 
 inits <- list(
   R = R_m,
   NFaug = NFaug_m,
   NMaug = NMaug_m,
-  NC = NC_ma,
-  R_B0_mean = 0,
-  R_B0_sd = 1,
-  R_Bvy = 0,
-  R_Bvm = 0,
-  R_Bpu = 0,
-  R_Bdd = 0,
-  R_B0 = rep(0, cnst$n_year),
-  SC_B0_mean = 1,
-  SF_mean = .9,
-  SM_mean = .8,
-  SC_B0_sd = 1,
-  SF_B0_sd = 1,
-  SM_B0_sd = 1,
-  PF_B0_mean = .7,
-  PM_B0_mean = .4,
-  SC_Bvy = 0,
-  SC_Bvm = 0,
-  SC_Bpu = 0,
-  SC_Bdd = 0,
-  S__Bhe = 0,
-  P__Bhe = 0,
-  SF = c(0.884770525,
-         0.889001221,
-         0.901899499,
-         0.782582815,
-         0.969685794,
-         0.880314217,
-         0.962460604,
-         0.918201538,
-         0.980822869,
-         0.958146548,
-         0.935717436,
-         0.857003911,
-         0.971228656,
-         0.823726637,
-         0.892128052,
-         0.94147829,
-         0.94393519,
-         0.962483867,
-         0.874637305,
-         0.8769206,
-         0.947995336,
-         0.948126502,
-         0.905557352,
-         0.916445677,
-         0.964549789,
-         0.927572767,
-         0.902715829,
-         0.87945314,
-         0.964015907,
-         0.586101054,
-         0.934172145,
-         0.945457986,
-         0.405536903,
-         0.884650128
-  ),
-  SM = c(0.760445645,
-         0.827459361,
-         0.608605794,
-         0.774641003,
-         0.456817942,
-         0.853863678,
-         0.932848557,
-         0.647822222,
-         0.786981871,
-         0.891836691,
-         0.895242527,
-         0.83777281,
-         0.877889374,
-         0.793611417,
-         0.532948225,
-         0.847230942,
-         0.815926834,
-         0.607894006,
-         0.746633978,
-         0.788936987,
-         0.866870234,
-         0.891211443,
-         0.926472189,
-         0.81703107,
-         0.784293764,
-         0.798438117,
-         0.860758045,
-         0.575583445,
-         0.73502042,
-         0.809603998,
-         0.735831226,
-         0.92917555,
-         0.325154839,
-         0.762322668
-  ),
-  SC = c(0.737036848,
-         0.777284558,
-         0.306886163,
-         0.91429004,
-         0.899786264,
-         0.886486318,
-         0.947097171,
-         0.841966395,
-         0.94125792,
-         0.91744994,
-         0.930535903,
-         0.88232726,
-         0.934271591,
-         0.854962102,
-         0.817068509,
-         0.809010935,
-         0.814618543,
-         0.897819545,
-         0.668726539,
-         0.660063051,
-         0.671526593,
-         0.727844492,
-         0.529458412,
-         0.562617538,
-         0.635847343,
-         0.55438308,
-         0.592073328,
-         0.338506906,
-         0.644386021,
-         0.707520546,
-         0.629802288,
-         0.848658224,
-         0.695773043,
-         0.734352731
-  ),
-  S = array(0.9, dim = c(full_data$n_year, 3, 2)),
-  PM_B0 = rep(3, cnst$n_year),
-  PF_B0 = rep(1, cnst$n_year)
+  NCaug = NCaug_m,
+  NC = NC_m,
+  NF = NF_m,
+  NM = NM_m,
+  R_B0_mean = mean(logit(R0)), 
+  R_B0_sd = sd(logit(R0)), 
+  R_Bvy = R_Bvy_m, 
+  R_Bvm = R_Bvm_m, 
+  R_Bpu = R_Bpu_m, 
+  R_Bdd = R_Bdd_m, 
+  R_B0 = logit(R0), 
+  SC_B0_mean = mean(logit(SC0)), 
+  # SF_mean = mean(SF_m), 
+  # SM_mean = mean(SM_m), 
+  SF_B0_mean = logit(mean(SF_m)),
+  SM_B0_mean = logit(mean(SM_m)),
+  SC_B0_sd = sd(logit(SC0)), 
+  SF_B0_sd = 3*sd(logit(SF_m)), 
+  SM_B0_sd = 3*sd(logit(SM_m)), 
+  SC_Bvy = SC_Bvy_m, 
+  SC_Bvm = SC_Bvm_m, 
+  SC_Bpu = SC_Bpu_m, 
+  SC_Bdd = SC_Bdd_m, 
+  SF = SF_m, 
+  SM = SM_m, 
+  SC = SC_m, 
+  SF_B0 = logit(SF_m), 
+  SM_B0 = logit(SM_m), 
+  SC_B0 = logit(SC0), 
+  SC_Byr = logit(SC_m), 
+  NCe_mean = NCe_mean, 
+  NCe_sd = NCe_sd, 
+  NCSe_mean = NCSe_mean, 
+  NCSe_sd = NCSe_sd, 
+  NFSe_mean = NFSe_mean, 
+  NFSe_sd = NFSe_sd, 
+  NMSe_mean = NMSe_mean, 
+  NMSe_sd = NMSe_sd, 
+  NCSe_lambda = NCSe_lambda, 
+  NFe_lambda = NFe_lambda, 
+  NMe_lambda = NMe_lambda, 
+  NCe_lambda = NCe_lambda, 
+  N_lambda = NL_m, 
+  LAMBDA = lambda, 
+  Ntot = Ntot, 
+  sd_afcount = sd_afcount, 
+  tau_afcount = tau_afcount, 
+  sd_amcount = sd_amcount, 
+  tau_amcount = tau_amcount 
 )
+saveRDS(inits, file = "data//the_ipm_inits.rds")
+rm(list = ls())

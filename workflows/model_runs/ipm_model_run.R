@@ -6,17 +6,17 @@
 
 # Specify the model
 model_file <- "models//ipm//ipm_elk_in_progress.txt"
-save_file <- "results//ipm_result_21apr2023_R&S_pdi.Rdata"
+save_file <- "results//ipm_result_31may2024_test.Rdata"
 
 # Loop dimension parameters
 n_year <- 34
 
 # JAGS control parameters
-n_i <- 500000
-n_a <- 50000
-n_b <- 100000
+n_i <- 50000
+n_a <- 5000
+n_b <- 10000
 n_c <- 3
-n_t <- 100
+n_t <- 10
 
 #Environment====================================================================
 
@@ -124,7 +124,16 @@ params = c(
   "R_mean",
   "S_F_mean",
   "S_M_mean",
-  "S_C_mean"
+  "S_C_mean",
+  "sd_afcount",
+  "sd_amcount",
+  "sd_R",
+  "S_C_B0",
+  "S_Y_F_B0",
+  "S_Y_M_B0",
+  "sd_S_C",
+  "sd_S_Y_M",
+  "sd_S_Y_F"
 )
 
 #Model==========================================================================

@@ -16,18 +16,20 @@ load("data//elk_ipm_data_21apr2023.Rdata")
 dtf <- list(
   # y = full_data$y,
   # z = full_data$z,
-  NC_est = full_data$NC_est,
-  NF_est = full_data$NF_est,
-  NM_est = full_data$NM_est,
+  NC_est = full_data$NC_est[,2:3],
+  NF_est = full_data$NF_est[,2:3],
+  NM_est = full_data$NM_est[,2:3],
   # NF_ct = full_data$NF_ct,
   # NM_ct = full_data$NM_ct,
-  r_dt = full_data$r_dt,
+  r_dt = full_data$r_dt[,2:3],
   nc1e = full_data$nc1e,
   nf1e = full_data$nf1e,
   nm1e = full_data$nm1e,
-  s_cjs = ipm_data$s_cjs,
-  af_count = ipm_data$n_f_p_count,
-  am_count = ipm_data$n_m_p_count
+  sc_cjs = ipm_data$s_cjs[62:92,4:5],
+  sf_cjs = ipm_data$s_cjs[1:30, 4:5],
+  sm_cjs = ipm_data$s_cjs[31:61,4:5],
+  af_count = ipm_data$n_f_p_count[,4],
+  am_count = ipm_data$n_m_p_count[,4]
   # l = full_data$l,
   # male = full_data$male,
   # female = full_data$female,
@@ -57,289 +59,37 @@ cnst <- list(
   nm1e_min = full_data$nm1e_min,
   veg = full_data$sep_pdi,
   pum = full_data$puma_composit,
-  ns = nrow(ipm_data$s_cjs),
+  nsc = nrow(dtf$sc_cjs),
+  nsf = nrow(dtf$sf_cjs),
+  nsm = nrow(dtf$sm_cjs),
   nn_fc = nrow(ipm_data$n_f_p_count),
   nn_mc = nrow(ipm_data$n_m_p_count),
-  elk = full_data$elk_density
+  elk = full_data$elk_density,
+  sc_cjs_t = ipm_data$s_cjs[62:92,1],
+  sf_cjs_t = ipm_data$s_cjs[1:30, 1],
+  sm_cjs_t = ipm_data$s_cjs[31:61,1],
+  af_count_t = ipm_data$n_f_p_count[,1],
+  am_count_t = ipm_data$n_m_p_count[,1],
+  NC_est_t = full_data$NC_est[,1],
+  NF_est_t = full_data$NF_est[,1],
+  NM_est_t = full_data$NM_est[,1],
+  r_dt_t = full_data$r_dt[,1]
 )
 
 #Initial values=================================================================
 
-inits <- list(
-  R = c(0.5, 0.42, 0.54, 0.36,
-        0.641326393,
-        0.449607787,
-        0.431958558,
-        0.526323124,
-        0.670152118,
-        0.597578183,
-        0.491346513,
-        0.438850481,
-        0.411674777,
-        0.411457089,
-        0.348868303,
-        0.401305408,
-        0.327524625,
-        0.246378034,
-        0.235898718,
-        0.237286338,
-        0.272931878,
-        0.370521078,
-        0.296479984,
-        0.296415541,
-        0.364183347,
-        0.314792626,
-        0.388751356,
-        0.373434837,
-        0.319290278,
-        0.196429028,
-        0.277744988,
-        0.288206509,
-        0.284574348,
-        0.286075717
-  ),
-  NFaug = c(224.1625333,
-         310.9118628,
-         290.445508,
-         259.0745867,
-         227.33314,
-         233.7287245,
-         253.6191942,
-         278.7734264,
-         305.9722027,
-         311.6669945,
-         331.1900154,
-         275.1092269,
-         231.0670628,
-         207.7774898,
-         192.1529085,
-         171.4899839,
-         192.0738463,
-         193.0058841,
-         153.4518326,
-         135.1100519,
-         151.3151314,
-         174.1253478,
-         198.9366127,
-         213.488268,
-         236.6712382,
-         283.9602402,
-         309.4113978,
-         306.21831,
-         358.4293733,
-         202.02552,
-         207.0598099,
-         196.195272,
-         66.63617122,
-         58.69381116
-  ),
-  NMaug = c(54.33,
-         64.71020621,
-         71.57009807,
-         107.7273599,
-         55.67271543,
-         78.03274139,
-         87.50727794,
-         61.1564799,
-         46.3652644,
-         60.02322728,
-         104.9424737,
-         92.21525129,
-         73.63611717,
-         80.90676955,
-         65.64417649,
-         76.98215043,
-         89.18133921,
-         73.11652558,
-         55.32497152,
-         51.277138,
-         56.67382699,
-         69.92152582,
-         88.61229262,
-         93.00979114,
-         86.64215508,
-         101.4205147,
-         117.702611,
-         78.05811684,
-         108.1208797,
-         124.281993,
-         100.0127092,
-         122.5569338,
-         42.7076286,
-         38.08939209
-  ),
-  NC = c(96.016,
-         256.9632169,
-         186.0236998,
-         82.92370623,
-         152.3095242,
-         102.5309247,
-         105.0676533,
-         148.73835,
-         190.7538284,
-         190.529757,
-         159.3389297,
-         128.739904,
-         154.2573989,
-         94.21234298,
-         69.18283776,
-         106.276033,
-         64.01213206,
-         41.57949421,
-         34.49918358,
-         48.52264803,
-         58.7812777,
-         98.17053036,
-         90.27333228,
-         68.52193624,
-         149.5925834,
-         112.0857496,
-         153.6903004,
-         180.0495465,
-         180.1741421,
-         55.41476175,
-         75.81157058,
-         74.30377686,
-         27.15396482,
-         18.42618114
-  ),
-  R_B0_mean = 0,
-  R_B0_sd = 1,
-  R_Bvy = 0,
-  R_Bvm = 0,
-  R_Bpu = 0,
-  R_Bdd = 0,
-  R_B0 = rep(0, cnst$n_year),
-  SC_B0_mean = 1,
-  SF_mean = .9,
-  SM_mean = .8,
-  SC_B0_sd = 1,
-  SF_B0_sd = 1,
-  SM_B0_sd = 1,
-  PF_B0_mean = .7,
-  PM_B0_mean = .4,
-  SC_Bvy = 0,
-  SC_Bvm = 0,
-  SC_Bpu = 0,
-  SC_Bdd = 0,
-  S__Bhe = 0,
-  P__Bhe = 0,
-  SF = c(0.884770525,
-         0.889001221,
-         0.901899499,
-         0.782582815,
-         0.969685794,
-         0.880314217,
-         0.962460604,
-         0.918201538,
-         0.980822869,
-         0.958146548,
-         0.935717436,
-         0.857003911,
-         0.971228656,
-         0.823726637,
-         0.892128052,
-         0.94147829,
-         0.94393519,
-         0.962483867,
-         0.874637305,
-         0.8769206,
-         0.947995336,
-         0.948126502,
-         0.905557352,
-         0.916445677,
-         0.964549789,
-         0.927572767,
-         0.902715829,
-         0.87945314,
-         0.964015907,
-         0.586101054,
-         0.934172145,
-         0.945457986,
-         0.405536903,
-         0.884650128
-  ),
-  SM = c(0.760445645,
-         0.827459361,
-         0.608605794,
-         0.774641003,
-         0.456817942,
-         0.853863678,
-         0.932848557,
-         0.647822222,
-         0.786981871,
-         0.891836691,
-         0.895242527,
-         0.83777281,
-         0.877889374,
-         0.793611417,
-         0.532948225,
-         0.847230942,
-         0.815926834,
-         0.607894006,
-         0.746633978,
-         0.788936987,
-         0.866870234,
-         0.891211443,
-         0.926472189,
-         0.81703107,
-         0.784293764,
-         0.798438117,
-         0.860758045,
-         0.575583445,
-         0.73502042,
-         0.809603998,
-         0.735831226,
-         0.92917555,
-         0.325154839,
-         0.762322668
-  ),
-  SC = c(0.737036848,
-         0.777284558,
-         0.306886163,
-         0.91429004,
-         0.899786264,
-         0.886486318,
-         0.947097171,
-         0.841966395,
-         0.94125792,
-         0.91744994,
-         0.930535903,
-         0.88232726,
-         0.934271591,
-         0.854962102,
-         0.817068509,
-         0.809010935,
-         0.814618543,
-         0.897819545,
-         0.668726539,
-         0.660063051,
-         0.671526593,
-         0.727844492,
-         0.529458412,
-         0.562617538,
-         0.635847343,
-         0.55438308,
-         0.592073328,
-         0.338506906,
-         0.644386021,
-         0.707520546,
-         0.629802288,
-         0.848658224,
-         0.695773043,
-         0.734352731
-  ),
-  S = array(0.9, dim = c(full_data$n_year, 3, 2)),
-  PM_B0 = rep(3, cnst$n_year),
-  PF_B0 = rep(1, cnst$n_year)
-)
+inits <- readRDS("data//the_ipm_inits.rds")
 
 #Model setup====================================================================
-mons <- c(c(
-  "R", "SC", "SF", "SM", "NC", "NF", "NM", "PF", "PM", "R_Bvy", "R_Bvm", 
-  "R_Bpu", "R_Bdd", "SC_Bvy", "SC_Bvm", "SC_Bpu", "SC_Bdd", "NFaug", "NMaug", 
+mons <- c(
+  "R", "SC", "SF", "SM", "NC", "NF", "NM", "R_Bvy", "R_Bvm", "R_B0_mean", 
+  "R_Bpu", "R_Bdd", "R_B0_sd", "SC_B0_mean", "SC_B0_sd", "SC_Bvy", "SC_Bvm", 
+  "SC_Bpu", "SC_Bdd", "NFaug", "NMaug", "SM_B0_mean", "SF_B0_mean", "SM_B0_sd",
+  "SF_B0_sd", "sd_afcount", "sd_amcount",
   "NCaug", "Ntot"
-))
+)
+# "PF", "PM",
+
 # nimbleMCMC(code = model_code, data = dtf, constants = cnst, inits = inits,
 #            monitors = mons, niter = 1000, nburnin = 100, nchains = 1)
 
@@ -347,18 +97,76 @@ ipm <- nimbleModel(
   code = nimble_code,
   constants = cnst,
   data = dtf,
-  inits = inits,
-  dimensions = list(S = c(full_data$n_year, 3, 2))
+  inits = inits
+)
+CMipm <- compileNimble(ipm)
+
+cnf <- configureMCMC(
+  model = ipm, 
+  monitors = mons,
+  onlySlice = F,
+  autoBlock = F
 )
 
-ipm_conf <- configureMCMC(ipm, monitors = mons)
+block_variables <- function(cnf, variables, block_type){
+  cnf$removeSamplers(variables)
+  cnf$addSampler(variables, block_type)
+}
+sample_log <- function(cnf, variable){
+  cnf$removeSampler(variable)
+  cnf$addSampler(variable, "RW", control = list(log = T))
+}
+reflect_sample <- function(cnf, variable){
+  cnf$removeSampler(variable)
+  cnf$addSampler(variable, "RW", control = list(reflect = T))
+}
+reflect_sample <- function(cnf, variable){
+  cnf$removeSampler(variable)
+  cnf$addSampler(variable, "RW", control = list(reflect = T))
+}
+# block_variables(cnf, paste0("R_B0[", 2:34, "]"))
+# map(c(
+#   paste0("NCaug[", 2:32, "]"), 
+#   paste0("NFaug[", 2:33, "]"), 
+#   paste0("NMaug[", 2:33, "]")),
+#   reflect_sample, cnf = cnf
+# )
+block_variables(
+  cnf = cnf, 
+  variables = paste0("NCaug[", 2:32, "]"), 
+  block_type = "AF_slice"
+)
+block_variables(
+  cnf = cnf, 
+  variables = paste0("NFaug[", 2:33, "]"), 
+  block_type = "AF_slice"
+)
+block_variables(
+  cnf = cnf, 
+  variables = paste0("NMaug[", 2:33, "]"), 
+  block_type = "AF_slice"
+)
+# sample_log(cnf, paste0("NCaug[", 2:32, "]"))
+# sample_log(cnf, paste0("NFaug[", 2:33, "]"))
+# sample_log(cnf, paste0("NMaug[", 2:33, "]"))
 
-ipm_mcmc <- buildMCMC(ipm_conf)
-c_ipm_mcmc <- compileNimble(ipm_mcmc, ipm)
-c_ipm_mcmc$ipm_mcmc$run(10000)
-x <- c_ipm_mcmc$ipm_mcmc$mvSamples %>% as.matrix()
+# block_variables(cnf, paste0("SC_B0[", 2:32, "]"))
+# block_variables(cnf, paste0("SF_B0[", 2:33, "]"))
+# block_variables(cnf, paste0("SM_B0[", 2:33, "]"))
 
-colnames(ipm_data$s_cjs) <- c("yr", "age", "sx", "mn", "tau")
-ipm_data$s_cjs %>%
-  as_tibble() %>%
-  pull(sx)
+MCipm <- buildMCMC(cnf)
+MCMCipm <- compileNimble(MCipm)
+# c_ipm_mcmc$ipm_mcmc$run(10000)
+# x <- c_ipm_mcmc$ipm_mcmc$mvSamples %>% as.matrix()
+
+rslt <- runMCMC(
+  MCMCipm, 
+  niter = 100000, 
+  nburnin = 0, 
+  nchains = 5, 
+  inits = inits,
+  thin = 10
+)
+# c_ipm_mcmc$ipm_mcmc$run(100000, reset = FALSE)
+# as.matrix(c_ipm_mcmc$ipm_mcmc$mvSamples) %>% mcmcplot()
+mcmcplot(rslt)
