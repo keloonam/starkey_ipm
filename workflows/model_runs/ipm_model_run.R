@@ -12,11 +12,11 @@ save_file <- "results//ipm_result_31may2024_test.Rdata"
 n_year <- 34
 
 # JAGS control parameters
-n_i <- 50000
+n_i <- 500000
 n_a <- 5000
-n_b <- 10000
-n_c <- 3
-n_t <- 10
+n_b <- 0
+n_c <- 1
+n_t <- 1
 
 #Environment====================================================================
 

@@ -111,13 +111,13 @@ model{
     n_sight_am[i,4] ~ dnorm(N_m[n_sight_am[i,1]], n_sight_am[i,5])T(0,)
   }
   
-  sd_afcount ~ dunif(0,50)
+  sd_afcount ~ dnorm(0, 0.0001)T(0, )
   tau_afcount <- 1/sd_afcount^2
   for(i in 1:nn_fc){
     af_count[i,4] ~ dnorm(N_f[af_count[i,1]], tau_afcount)T(0,)
   }
   
-  sd_amcount ~ dunif(0,50)
+  sd_amcount ~ dnorm(0, 0.0001)T(0, )
   tau_amcount <- 1/sd_amcount^2
   for(i in 1:nn_mc){
     am_count[i,4] ~ dnorm(N_m[am_count[i,1]], tau_amcount)T(0,)
