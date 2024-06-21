@@ -1,0 +1,59 @@
+model{
+# Test IPM - Does deterministic harvest push N up?
+
+#########################
+##### Process Model #####
+#########################
+for(t in 2:ny){
+  N[1,t] ~ dbinom(R[t], N[2,t-1])
+  N[2,t] ~ dbinom(S[t], sum(N[1:2,t-1]))
+}
+
+##############################
+##### Observation Models #####
+##############################
+###=============###
+### Recruitment ###
+###=============###
+for(t in 2:ny){
+  rdt[t,1] ~ dbinom(R[t], rdt[t,2])
+}
+###==========###
+### Survival ###
+###==========###
+for(i in 1:ni){
+  for(t in (f[i]+1):ny){
+    y[i,t] ~ dbern(P * z[i,t])
+    z[i,t] ~ dbern(S[t] * z[i,t-1])
+  }
+}
+###===========###
+### Abundance ###
+###===========###
+for(t in 2:ny){
+  c[1,t] ~ dpois(N[1,t])
+  c[2,t] ~ dpois(N[2,t])
+}
+
+##################
+##### Priors #####
+##################
+###=============###
+### Recruitment ###
+###=============###
+for(t in 2:ny){
+  R[t] ~ dunif(0, 1)
+}
+###==========###
+### Survival ###
+###==========###
+for(t in 2:ny){
+  S[t] ~ dunif(0, 1)
+}
+P ~ dunif(0, 1)
+###===========###
+### Abundance ###
+###===========###
+N[1,1] ~ dpois(c[1,1])
+N[2,1] ~ dpois(c[2,1])
+}
