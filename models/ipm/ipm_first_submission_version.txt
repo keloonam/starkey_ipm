@@ -1,5 +1,5 @@
 model{
-# IPM -- Built for the Starkey elk population
+  # IPM -- Built for the Starkey elk population
   # Kenneth Loonam
   
   # Parameters to estimate:
@@ -22,7 +22,7 @@ model{
   # Data objects are *lowercase*
   # Exceptions are intermediate parameters (e.g. random effects)
   
-
+  
   #Process Model================================================================
   
   for(yr in 2:n_year){ # yr
@@ -95,8 +95,8 @@ model{
   
   # Data are indexed by row (i), with one observation per row
   # The columns for the data follow [year, age, sex, mean, tau]
-    # data[i,1] = year of first row of data
-    # data[i,4] = mean (estimate) of first row of data
+  # data[i,1] = year of first row of data
+  # data[i,4] = mean (estimate) of first row of data
   # For example n_sight[3,4] is the mean sightability for the third observation
   
   ##### Abundance #####
@@ -111,64 +111,28 @@ model{
     n_sight_am[i,4] ~ dnorm(N_m[n_sight_am[i,1]], n_sight_am[i,5])T(0,)
   }
   
-  #sd_afcount ~ dnorm(0, 0.0001)T(0, )
-  #tau_afcount <- 1/sd_afcount^2
-  #for(i in 1:nn_fc){
-  #  af_count[i,4] ~ dnorm(N_f[af_count[i,1]], tau_afcount)T(0,)
-  #}
-  
-  #sd_amcount ~ dnorm(0, 0.0001)T(0, )
-  #tau_amcount <- 1/sd_amcount^2
-  #for(i in 1:nn_mc){
-  #  am_count[i,4] ~ dnorm(N_m[am_count[i,1]], tau_amcount)T(0,)
-  #}
-  
-  ##### Counts - CJS #####
-  for(yr in 2:n_year){ # loop over number of observations - no P in year 1
-    # prep normal approximation of binomial based on cjs p and NF
-    NFct_tau[yr] <- 1 / (PF[yr] * N_f[yr] * (1 - PF[yr]))
-    NFct_ex[yr] <- PF[yr] * N_f[yr]
-    NF_ct[yr] ~ dnorm(NFct_ex[yr], NFct_tau[yr])
+  sd_afcount ~ dnorm(0, 0.0001)T(0, )
+  tau_afcount <- 1/sd_afcount^2
+  for(i in 1:nn_fc){
+    af_count[i,4] ~ dnorm(N_f[af_count[i,1]], tau_afcount)T(0,)
   }
-  for(yr in 2:n_year){ # loop over number of observations - no P in year 1
-    # prep normal approximation of binomial based on cjs p and NF
-    NMct_tau[yr] <- 1 / (PM[yr] * N_m[yr] * (1 - PM[yr]))
-    NMct_ex[yr] <- PM[yr] * N_m[yr]
-    NM_ct[yr] ~ dnorm(NMct_ex[yr], NMct_tau[yr])
+  
+  sd_amcount ~ dnorm(0, 0.0001)T(0, )
+  tau_amcount <- 1/sd_amcount^2
+  for(i in 1:nn_mc){
+    am_count[i,4] ~ dnorm(N_m[am_count[i,1]], tau_amcount)T(0,)
   }
   
   ##### Survival #####
   # CJS - Feedgrounds
-  #for(i in 1:ns){
-  #  s_cjs[i,4] ~ dnorm(S[s_cjs[i,2], s_cjs[i,3], s_cjs[i,1]], s_cjs[i,5])T(0,1)
-  #}
-  for(i in 1:n_ind){
-    for(yr in (f[i]+1):l[i]){
-      # Setting Probabilities
-      logit(p[i,yr]) <- PF_B0[yr] * female[i,yr-1] + 
-        PM_B0[yr] * male[i,yr-1] + 
-        P__Bhe * herd[i,yr-1]
-      logit(s_it[i,yr]) <- (S_F_B0 + S_F_yr[yr]) * female[i,yr-1] +
-        (S_M_B0 + S_M_yr[yr]) * male[i,yr-1] +
-        S_C_B_yr[yr] * calf[i,yr-1] +
-        S__Bhe * herd[i,yr-1]
-     
-      # State Process ------- alive >>> z = 1
-      z[i,yr] ~ dbern(s_it[i,yr] * z[i,yr-1])
-      # Observation Process ------- seen >>> y = 1
-      y[i,yr] ~ dbern(p[i,yr] * z[i,yr])
-    }
+  for(i in 1:ns){
+    s_cjs[i,4] ~ dnorm(S[s_cjs[i,2], s_cjs[i,3], s_cjs[i,1]], s_cjs[i,5])T(0,1)
   }
   
   ##### Recruitment #####
   # Ratio - Feedgrounds
-  #for(i in 1:nr){
-  #  r_ratio[i,4] ~ dnorm(R[r_ratio[i,1]], r_ratio[i,5])T(0,1)
-  #}
-  for(i in 1:n_R_data){ # loop over number of observations of recruitment
-    # columns of r_data are: year, calves, cows
-    # each row of r_data is a year
-    r_data[i,2] ~ dbinom(R[r_data[i,1]], r_data[i,3])
+  for(i in 1:nr){
+    r_ratio[i,4] ~ dnorm(R[r_ratio[i,1]], r_ratio[i,5])T(0,1)
   }
   
   #Priors and GLMs==============================================================
@@ -189,11 +153,11 @@ model{
     R_yr[yr] ~ dnorm(0, tau_R) # random effect by year
     # GLM for annual recruitment (R[yr])
     logit(R[yr]) <- R_B0 + 
-                    R_wt * clim[yr] + 
-                    R_wm * clim[yr-1] + 
-                    R_dd * n_adj[yr-1] + 
-                    R_cg * cdens[yr] +
-                    R_yr[yr]
+      R_wt * clim[yr] + 
+      R_wm * clim[yr-1] + 
+      R_dd * n_adj[yr-1] + 
+      R_cg * cdens[yr] +
+      R_yr[yr]
   } # yr
   
   
@@ -201,42 +165,32 @@ model{
   # Independent calf, yearling, and adult survival
   # Sex effect on non-calves, sex survival equal in calves
   # Separate random effect on each sex/age class
-    # _C_ = calf, survival from 0.5 to 1.5
-    # _Y_ = yearling, survival from 1.5 to 2.5
-    # _A_ = adult, all other age steps
-    # _F_ = female, _M_ = male
+  # _C_ = calf, survival from 0.5 to 1.5
+  # _Y_ = yearling, survival from 1.5 to 2.5
+  # _A_ = adult, all other age steps
+  # _F_ = female, _M_ = male
   # Keeping all of this longhand to facilitate informative priors later on
   S_C_B0_ps   ~ dunif(0, 1)
-  S_F_B0_ps ~ dbeta(3, 1.2)
-  S_M_B0_ps ~ dbeta(3, 1.2)
+  S_Y_F_B0_ps ~ dbeta(3, 1.2)
+  S_Y_M_B0_ps ~ dbeta(3, 1.2)
   test_ps     ~ dbeta(3, 1.2)
   
-  S_C_B0 <- logit(S_C_B0_ps)
-  S_F_B0 <- logit(S_F_B0_ps)
-  S_M_B0 <- logit(S_M_B0_ps)
- 
+  S_C_B0   <- logit(S_C_B0_ps)
+  S_Y_F_B0 <- logit(S_Y_F_B0_ps)
+  S_Y_M_B0 <- logit(S_Y_M_B0_ps)
+  
   S_wt ~ dlogis(0, 1) # weather in year t (PDSI, NDVI, rainfall, temperature)
   S_wm ~ dlogis(0, 1) # weather in year t - 1
   S_cg ~ dlogis(0, 1) # cougar index
   S_dd ~ dlogis(0, 1) # female elk density in year t - 1 
- 
-  sd_S_C ~ dunif(0,50)
-  sd_S_F ~ dunif(0,50)
-  sd_S_M ~ dunif(0,50)
   
-  tau_S_C <- 1/sd_S_C^2
-  tau_S_F <- 1/sd_S_F^2
-  tau_S_M <- 1/sd_S_M^2
+  sd_S_C   ~ dunif(0,50)
+  sd_S_Y_F ~ dunif(0,50)
+  sd_S_Y_M ~ dunif(0,50)
   
-  # Random intercept setup -- Detection probability
-  PF_B0_mean ~ dlogis(0, 1)
-  PM_B0_mean ~ dlogis(0, 1)
-  PF_B0_sd ~ dunif(0, 5)
-  PM_B0_sd ~ dunif(0, 5)
-  PF_B0_tau <- 1 / PF_B0_sd^2
-  PM_B0_tau <- 1 / PM_B0_sd^2
-  P__Bhe ~ dlogis(0, 1) # effect of herd on detectin probability
-  S__Bhe ~ dlogis(0, 1) # effect of herd on survival probability
+  tau_S_C   <- 1/sd_S_C^2
+  tau_S_Y_F <- 1/sd_S_Y_F^2
+  tau_S_Y_M <- 1/sd_S_Y_M^2
   
   for(yr in 2:n_year){ # yr
     # Survival for age class 1 is not used in the process model
@@ -248,39 +202,32 @@ model{
     # Survival from 0.5 to 1.5 years (to age class 2)
     # Random effect on year, male/female equal
     S_C_yr[yr] ~ dnorm(0, tau_S_C)
-    S_C_B_yr[yr] <- S_C_B0 + 
-                      S_wt * clim[yr] + 
-                      S_wm * clim[yr-1] + 
-                      S_dd * n_adj[yr-1] + 
-                      S_cg * cdens[yr] +
-                      S_C_yr[yr]
-    logit(S[2,1,yr]) <- S_C_B_yr[yr]
+    logit(S[2,1,yr]) <- S_C_B0 + 
+      S_wt * clim[yr] + 
+      S_wm * clim[yr-1] + 
+      S_dd * n_adj[yr-1] + 
+      S_cg * cdens[yr] +
+      S_C_yr[yr]
     S[2,2,yr] <- S[2,1,yr]
     
     # Survival from 1.5 to 2.5 years (to age class 3)
     # Separate random effects by year for both males and females
-    S_F_yr[yr] ~ dnorm(0, tau_S_F)
-    S_M_yr[yr] ~ dnorm(0, tau_S_M)
-    logit(S[3,1,yr]) <- S_F_B0 + S_F_yr[yr]
-    logit(S[3,2,yr]) <- S_M_B0 + S_M_yr[yr]
+    S_Y_F_yr[yr] ~ dnorm(0, tau_S_Y_F)
+    S_Y_M_yr[yr] ~ dnorm(0, tau_S_Y_M)
+    logit(S[3,1,yr]) <- S_Y_F_B0 + S_Y_F_yr[yr]
+    logit(S[3,2,yr]) <- S_Y_M_B0 + S_Y_M_yr[yr]
     S[4,1,yr] <- S[3,1,yr]
     S[4,2,yr] <- S[3,2,yr]
     
     # Derived survivals for easy tracking
-    S_f[yr] <- S[3,1,yr]
-    S_m[yr] <- S[3,2,yr]
-    S_c[yr] <- S[2,1,yr]
-    
-    # Detection probability of males and females in cjs model
-    PM_B0[yr] ~ dnorm(PM_B0_mean, PM_B0_tau)
-    PF_B0[yr] ~ dnorm(PF_B0_mean, PF_B0_tau)
-    logit(PF[yr]) <- PF_B0[yr]
-    logit(PM[yr]) <- PM_B0[yr]
+    survival_af[yr] <- S[3,1,yr]
+    survival_am[yr] <- S[3,2,yr]
+    survival_ca[yr] <- S[2,1,yr]
   } # yr
   
   ##### Abundance -- starting #####
   # can adjust this later on to take opinions on initial population size
-    # to make informative priors
+  # to make informative priors
   
   for(x in 1:2){ # x
     for(a in 1:4){ # a
@@ -291,13 +238,17 @@ model{
   
   # Derived Values for easier tracking
   N_c [1]  = N[1,1,1] + N[1,2,1]
+  N_yf[1]  = N[2,1,1]
+  N_ym[1]  = N[2,2,1]
+  N_af[1]  = N[3,1,1] + N[4,1,1]
+  N_am[1]  = N[3,2,1] + N[4,2,1]
   N_f[1]   = N[3,1,1] + N[4,1,1] + N[2,1,1]
   N_m[1]   = N[3,2,1] + N[4,2,1] + N[2,2,1]
   N_tot[1] = sum(N[1:4,1:2,1])
   
   logit(R_mean)   = R_B0
-  logit(S_F_mean) = S_F_B0 
-  logit(S_M_mean) = S_M_B0
+  logit(S_F_mean) = S_Y_F_B0 
+  logit(S_M_mean) = S_Y_M_B0
   logit(S_C_mean) = S_C_B0
   LAMBDA_mean     = mean(lambda[2:n_year])
 }

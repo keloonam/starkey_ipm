@@ -169,8 +169,8 @@ dtf$nc1e_min <- ipm_data$min_n1[1,] %>% sum()
 dtf$nf1e_min <- ipm_data$min_n1[2:3,1] %>% sum()
 dtf$nm1e_min <- ipm_data$min_n1[2:3,2] %>% sum()
 
-dtf$NFmin <- dtf$NFmin + dtf$NFman
-dtf$NMmin <- dtf$NMmin + dtf$NMman
+dtf$NFmin <- dtf$NFmin + dtf$NFhar + dtf$NFman
+dtf$NMmin <- dtf$NMmin + dtf$NMhar + dtf$NMman
 
 #Weather covariates=============================================================
 

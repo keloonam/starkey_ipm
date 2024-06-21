@@ -25,16 +25,16 @@ model{
 
   #Process Model================================================================
   
-  for(yr in 2:n_year){ # yr
+  for(t in 2:n_year){ # t
     ##### Recruitment #####
     # R indexing follows [age,yr]  . . .  males rarely get pregnant
     # Assumes equal sex ratio from birth to age 0.5 years
     
-    n_exp[1,1,yr] <- R[yr] * sum(N[2:4,1,yr]) * 0.5
-    tau_exp[1,1,yr] <- abs(1 / ((n_exp[1,1,yr]) * (1 - R[yr])+1))
+    Ne[1,1,t] <- R[t] * sum(N[2:4,1,t]) * 0.5
+    Te[1,1,t] <- abs(1 / ((Ne[1,1,t]) * (1 - R[t])+1))
     
-    N[1,1,yr] ~ dnorm(n_exp[1,1,yr], tau_exp[1,1,yr])T(min_ca[yr],)
-    N[1,2,yr] <- N[1,1,yr]
+    N[1,1,t] ~ dnorm(Ne[1,1,t], Te[1,1,t])T(min_ca[t],N_f[t])
+    N[1,2,t] <- N[1,1,t]
     
     for(x in 1:2){ # x (sex)
       ##### Survival #####
@@ -43,52 +43,57 @@ model{
       # indexing follows [age, sex, year]
       
       # approximate proportion of aults in each age class
-      prop_ad[1,x,yr] <- 0
-      prop_ad[2,x,yr] <- N[1,x,yr-1] / sum(N[1:4,x,yr-1])
-      prop_ad[3,x,yr] <- N[2,x,yr-1] / sum(N[1:4,x,yr-1])
-      prop_ad[4,x,yr] <- sum(N[3:4,x,yr-1]) / sum(N[1:4,x,yr-1])
+      prop_ad[1,x,t] <- 0
+      prop_ad[2,x,t] <- N[1,x,t-1] / sum(N[1:4,x,t-1])
+      prop_ad[3,x,t] <- N[2,x,t-1] / sum(N[1:4,x,t-1])
+      prop_ad[4,x,t] <- sum(N[3:4,x,t-1]) / sum(N[1:4,x,t-1])
       
       for(a in 1:4){
         # minimum adults and adults moved broken down by age classes 
         # assumed proportional to corresponding age classes in yr-1
-        min_ad_app[a,x,yr] <- min_ad[x,yr]  * prop_ad[a,x,yr] + n_har[a,x,yr]
-        n_ad_mov[a,x,yr]   <- n_a_mov[x,yr] * prop_ad[a,x,yr]
+        Naug_min[a,x,t] <- min_ad[x,t]  * prop_ad[a,x,t] + n_har[a,x,t]
+        n_ad_mov[a,x,t] <- n_a_mov[x,t] * prop_ad[a,x,t]
       } # a (age)
       
-      # Expected number to survive to hunting season
-      n_exp[2,x,yr] <- (N[1,x,yr-1] + n_c_mov[x,yr])    * S[2,x,yr]
-      n_exp[3,x,yr] <- (N[2,x,yr-1] + n_ad_mov[2,x,yr]) * S[3,x,yr]
-      n_exp[4,x,yr] <- (sum(N[3:4,x,yr-1])+sum(n_ad_mov[3:4,x,yr])) * S[4,x,yr]
+      # Maximum number of adults possible at start of hunting season
+      Naug_max[2,x,t] <- N[1,x,t-1] +            n_c_mov[x,t]       
+      Naug_max[3,x,t] <- N[2,x,t-1] +            n_ad_mov[2,x,t]    
+      Naug_max[4,x,t] <- sum(N[3:4,x,t-1]) + sum(n_ad_mov[3:4,x,t]) 
+      
+      # Expected number of adults at start of hunting season
+      Ne[2,x,t] <- Naug_max[2,x,t] * S[2,x,t]
+      Ne[3,x,t] <- Naug_max[3,x,t] * S[3,x,t]
+      Ne[4,x,t] <- Naug_max[4,x,t] * S[4,x,t]
       
       # Expected to survive ignoring management (for calculating lambda)
-      n_x_l[2,x,yr] <- N[1,x,yr-1]        * S[2,x,yr]
-      n_x_l[3,x,yr] <- N[2,x,yr-1]        * S[3,x,yr]
-      n_x_l[4,x,yr] <- sum(N[3:4,x,yr-1]) * S[4,x,yr]
+      n_x_l[2,x,t] <- N[1,x,t-1]        * S[2,x,t]
+      n_x_l[3,x,t] <- N[2,x,t-1]        * S[3,x,t]
+      n_x_l[4,x,t] <- sum(N[3:4,x,t-1]) * S[4,x,t]
       
       for(a in 2:4){
-        tau_exp[a,x,yr] <- abs(1 / ((n_exp[a,x,yr]) * (1 - S[a,x,yr])+1))
-        N_AUG[a,x,yr]~dnorm(n_exp[a,x,yr],tau_exp[a,x,yr])T(min_ad_app[a,x,yr],)
-        N[a,x,yr] <- N_AUG[a,x,yr] - n_har[a,x,yr]
+        Te[a,x,t] <- abs(1 / ((Ne[a,x,t]) * (1 - S[a,x,t])))
+        Naug[a,x,t] ~ dnorm(Ne[a,x,t], Te[a,x,t])T(Naug_min[a,x,t], Naug_max[a,x,t])
+        N[a,x,t] <- Naug[a,x,t] - n_har[a,x,t]
       } # a (age)
     } # x (sex)
     
     ##### Abundance #####
     # Derived values from process each year
     # Add whatever totals are interesting
-    N_c[yr]    <- N[1,1,yr] + N[1,2,yr]
-    N_yf[yr]   <- N[2,1,yr]
-    N_ym[yr]   <- N[2,2,yr]
-    N_af[yr]   <- N[3,1,yr] + N[4,1,yr]
-    N_am[yr]   <- N[3,2,yr] + N[4,2,yr]
-    N_f[yr]    <- N[3,1,yr] + N[4,1,yr] + N[2,1,yr]
-    N_m[yr]    <- N[3,2,yr] + N[4,2,yr] + N[2,2,yr]
-    N_tot[yr]  <- sum(N[,,yr])
+    N_c[t]    <- N[1,1,t] + N[1,2,t]
+    N_yf[t]   <- N[2,1,t]
+    N_ym[t]   <- N[2,2,t]
+    N_af[t]   <- N[3,1,t] + N[4,1,t]
+    N_am[t]   <- N[3,2,t] + N[4,2,t]
+    N_f[t]    <- N[3,1,t] + N[4,1,t] + N[2,1,t]
+    N_m[t]    <- N[3,2,t] + N[4,2,t] + N[2,2,t]
+    N_tot[t]  <- sum(N[,,t])
     
-    N_lam[yr]  <- N_c[yr] + sum(n_x_l[2:4,1:2,yr])
+    N_lam[t]  <- N_c[t] + sum(n_x_l[2:4,1:2,t])
     
-    lambda[yr] <- N_lam[yr] / N_tot[yr-1]
-    pop_r[yr]  <- log(lambda[yr])
-  } # yr
+    lambda[t] <- N_lam[t] / N_tot[t-1]
+    pop_r[t]  <- log(lambda[t])
+  } # t
   mean_pop_r <- mean(pop_r[2:n_year])
   
   #Observation Models===========================================================
@@ -111,30 +116,16 @@ model{
     n_sight_am[i,4] ~ dnorm(N_m[n_sight_am[i,1]], n_sight_am[i,5])T(0,)
   }
   
-  #sd_afcount ~ dnorm(0, 0.0001)T(0, )
-  #tau_afcount <- 1/sd_afcount^2
-  #for(i in 1:nn_fc){
-  #  af_count[i,4] ~ dnorm(N_f[af_count[i,1]], tau_afcount)T(0,)
-  #}
-  
-  #sd_amcount ~ dnorm(0, 0.0001)T(0, )
-  #tau_amcount <- 1/sd_amcount^2
-  #for(i in 1:nn_mc){
-  #  am_count[i,4] ~ dnorm(N_m[am_count[i,1]], tau_amcount)T(0,)
-  #}
-  
-  ##### Counts - CJS #####
-  for(yr in 2:n_year){ # loop over number of observations - no P in year 1
-    # prep normal approximation of binomial based on cjs p and NF
-    NFct_tau[yr] <- 1 / (PF[yr] * N_f[yr] * (1 - PF[yr]))
-    NFct_ex[yr] <- PF[yr] * N_f[yr]
-    NF_ct[yr] ~ dnorm(NFct_ex[yr], NFct_tau[yr])
-  }
-  for(yr in 2:n_year){ # loop over number of observations - no P in year 1
-    # prep normal approximation of binomial based on cjs p and NF
-    NMct_tau[yr] <- 1 / (PM[yr] * N_m[yr] * (1 - PM[yr]))
-    NMct_ex[yr] <- PM[yr] * N_m[yr]
-    NM_ct[yr] ~ dnorm(NMct_ex[yr], NMct_tau[yr])
+  ##### Counts #####
+  # p_cjs follows normal column rules:
+    # (1)year, (2)age, (3)sex, (4)mean, (5)tau, and adds (6)count, (7/8)95% CRI
+  for(i in 1:nn_count){
+    PB0[i] ~ dnorm(p_cjs[i,4], p_cjs[i,5])T(p_cjs[i,7], p_cjs[i,8])
+    logit(P[i]) <- PB0[i]
+    exp_ct[i] <- P[i] * sum(N[2:4, p_cjs[i,3], p_cjs[i,1]])
+    tau_ct[i] <- 1 / (exp_ct[i] * (1 - P[i]))
+    
+    p_cjs[i,6] ~ dnorm(exp_ct[i], tau_ct[i])T(0,)
   }
   
   ##### Survival #####
@@ -176,17 +167,17 @@ model{
   ##### Recruitment #####
   # random effect on year
   
-  sd_R ~ dunif(0,50) # SD and precision for random effect by year
+  sd_R ~ dnorm(0, 0.25)T(0, 5) # SD and precision for random effect by year
   tau_R <- 1/sd_R^2
   
-  R_B0 ~ dlogis(0, 1) # Covariates on recruitment for:
-  R_wt ~ dlogis(0, 1) # weather in year t (PDSI, NDVI, rainfall, temperature)
-  R_wm ~ dlogis(0, 1) # weather in year t - 1
-  R_cg ~ dlogis(0, 1) # cougar index
-  R_dd ~ dlogis(0, 1) # female elk density in year t - 1
+  R_B0 ~ dlogis(0, 1)T(-2, 2) # Covariates on recruitment for:
+  R_wt ~ dlogis(0, 1)T(-2, 2) # weather in year t (PDSI, NDVI, rainfall, temperature)
+  R_wm ~ dlogis(0, 1)T(-2, 2) # weather in year t - 1
+  R_cg ~ dlogis(0, 1)T(-2, 2) # cougar index
+  R_dd ~ dlogis(0, 1)T(-2, 2) # female elk density in year t - 1
   
   for(yr in 2:n_year){ # yr
-    R_yr[yr] ~ dnorm(0, tau_R) # random effect by year
+    R_yr[yr] ~ dnorm(0, tau_R)T(-2, 2) # random effect by year
     # GLM for annual recruitment (R[yr])
     logit(R[yr]) <- R_B0 + 
                     R_wt * clim[yr] + 
@@ -206,37 +197,32 @@ model{
     # _A_ = adult, all other age steps
     # _F_ = female, _M_ = male
   # Keeping all of this longhand to facilitate informative priors later on
-  S_C_B0_ps   ~ dunif(0, 1)
-  S_F_B0_ps ~ dbeta(3, 1.2)
-  S_M_B0_ps ~ dbeta(3, 1.2)
-  test_ps     ~ dbeta(3, 1.2)
-  
-  S_C_B0 <- logit(S_C_B0_ps)
-  S_F_B0 <- logit(S_F_B0_ps)
-  S_M_B0 <- logit(S_M_B0_ps)
+  S_C_B0 ~ dlogis(0, 1)T(-3, 3)
+  S_F_B0 ~ dlogis(0, 1)T(-3, 3)
+  S_M_B0 ~ dlogis(0, 1)T(-3, 3)
  
-  S_wt ~ dlogis(0, 1) # weather in year t (PDSI, NDVI, rainfall, temperature)
-  S_wm ~ dlogis(0, 1) # weather in year t - 1
-  S_cg ~ dlogis(0, 1) # cougar index
-  S_dd ~ dlogis(0, 1) # female elk density in year t - 1 
+  S_wt ~ dlogis(0, 1)T(-2, 2) # weather in year t (PDSI, NDVI, rainfall, temperature)
+  S_wm ~ dlogis(0, 1)T(-2, 2) # weather in year t - 1
+  S_cg ~ dlogis(0, 1)T(-2, 2) # cougar index
+  S_dd ~ dlogis(0, 1)T(-2, 2) # female elk density in year t - 1 
  
-  sd_S_C ~ dunif(0,50)
-  sd_S_F ~ dunif(0,50)
-  sd_S_M ~ dunif(0,50)
+  sd_S_C ~ dnorm(0, 0.25)T(0, 5)
+  sd_S_F ~ dnorm(0, 0.25)T(0, 5)
+  sd_S_M ~ dnorm(0, 0.25)T(0, 5)
   
   tau_S_C <- 1/sd_S_C^2
   tau_S_F <- 1/sd_S_F^2
   tau_S_M <- 1/sd_S_M^2
   
   # Random intercept setup -- Detection probability
-  PF_B0_mean ~ dlogis(0, 1)
-  PM_B0_mean ~ dlogis(0, 1)
-  PF_B0_sd ~ dunif(0, 5)
-  PM_B0_sd ~ dunif(0, 5)
+  PF_B0_mean ~ dlogis(0, 1)T(-2, 2)
+  PM_B0_mean ~ dlogis(0, 1)T(-2, 2)
+  PF_B0_sd ~ dnorm(0, 0.25)T(0, 5)
+  PM_B0_sd ~ dnorm(0, 0.25)T(0, 5)
   PF_B0_tau <- 1 / PF_B0_sd^2
   PM_B0_tau <- 1 / PM_B0_sd^2
-  P__Bhe ~ dlogis(0, 1) # effect of herd on detectin probability
-  S__Bhe ~ dlogis(0, 1) # effect of herd on survival probability
+  P__Bhe ~ dlogis(0, 1)T(-2, 2) # effect of herd on detectin probability
+  S__Bhe ~ dlogis(0, 1)T(-2, 2) # effect of herd on survival probability
   
   for(yr in 2:n_year){ # yr
     # Survival for age class 1 is not used in the process model
@@ -247,7 +233,7 @@ model{
     
     # Survival from 0.5 to 1.5 years (to age class 2)
     # Random effect on year, male/female equal
-    S_C_yr[yr] ~ dnorm(0, tau_S_C)
+    S_C_yr[yr] ~ dnorm(0, tau_S_C)T(-3, 3)
     S_C_B_yr[yr] <- S_C_B0 + 
                       S_wt * clim[yr] + 
                       S_wm * clim[yr-1] + 
@@ -259,8 +245,8 @@ model{
     
     # Survival from 1.5 to 2.5 years (to age class 3)
     # Separate random effects by year for both males and females
-    S_F_yr[yr] ~ dnorm(0, tau_S_F)
-    S_M_yr[yr] ~ dnorm(0, tau_S_M)
+    S_F_yr[yr] ~ dnorm(0, tau_S_F)T(-6, 6)
+    S_M_yr[yr] ~ dnorm(0, tau_S_M)T(-6, 6)
     logit(S[3,1,yr]) <- S_F_B0 + S_F_yr[yr]
     logit(S[3,2,yr]) <- S_M_B0 + S_M_yr[yr]
     S[4,1,yr] <- S[3,1,yr]
@@ -272,8 +258,8 @@ model{
     S_c[yr] <- S[2,1,yr]
     
     # Detection probability of males and females in cjs model
-    PM_B0[yr] ~ dnorm(PM_B0_mean, PM_B0_tau)
-    PF_B0[yr] ~ dnorm(PF_B0_mean, PF_B0_tau)
+    PM_B0[yr] ~ dnorm(PM_B0_mean, PM_B0_tau)T(-5, 5)
+    PF_B0[yr] ~ dnorm(PF_B0_mean, PF_B0_tau)T(-5, 5)
     logit(PF[yr]) <- PF_B0[yr]
     logit(PM[yr]) <- PM_B0[yr]
   } # yr

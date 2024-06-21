@@ -181,5 +181,13 @@ inits <- list(
   sd_amcount = sd_amcount, 
   tau_amcount = tau_amcount 
 )
+inits$NCaug[1]  <- NA
+inits$NFaug[1]  <- NA
+inits$NMaug[1]  <- NA
+inits$R_B0[1]   <- NA
+inits$SC_B0[1]  <- NA
+inits$SF_B0[1]  <- NA
+inits$SM_B0[1]  <- NA
+
 saveRDS(inits, file = "data//the_ipm_inits.rds")
 rm(list = ls())

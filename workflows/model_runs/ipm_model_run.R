@@ -5,30 +5,31 @@
 #Variables======================================================================
 
 # Specify the model
-model_file <- "models//ipm//ipm_elk_in_progress.txt"
-save_file <- "results//ipm_result_31may2024_test.Rdata"
+model_file <- "models//ipm//ipm_test_18jun2024.txt"
+save_file <- "results//ipm_test_18june2024_result.Rdata"
 
 # Loop dimension parameters
 n_year <- 34
 
 # JAGS control parameters
-n_i <- 500000
-n_a <- 5000
-n_b <- 0
+n_i <- 50000
+n_a <- 100
+n_b <- 10000
 n_c <- 1
-n_t <- 1
+n_t <- 5
 
 #Environment====================================================================
 
 require(tidyverse); require(rjags); require(mcmcplots)
 # load("data//elk_ipm_data.Rdata")
-load("data//elk_ipm_data_21apr2023.Rdata")
+load("data//elk_ipm_data_14jun2024.Rdata")
 
 #Data_prep======================================================================
 
 jags_data <- list(
-  s_cjs      = ipm_data$s_cjs,
-  r_ratio    = ipm_data$r_ratio,
+  # s_cjs      = ipm_data$s_cjs,
+  p_cjs      = ipm_data$p_cjs,
+  # r_ratio    = ipm_data$r_ratio,
   n_sight_ca = ipm_data$n_sight_ca,
   n_sight_am = ipm_data$n_sight_am,
   n_sight_af = ipm_data$n_sight_af,
@@ -38,22 +39,34 @@ jags_data <- list(
   nn_ca      = nrow(ipm_data$n_sight_ca),
   nn_af      = nrow(ipm_data$n_sight_af),
   nn_am      = nrow(ipm_data$n_sight_am),
-  ns         = nrow(ipm_data$s_cjs),
-  nr         = nrow(ipm_data$r_ratio),
+  nn_count   = nrow(ipm_data$p_cjs),
+  # ns         = nrow(ipm_data$s_cjs),
+  # nr         = nrow(ipm_data$r_ratio),
   n_har      = ipm_data$n_hnt,
   min_ad     = ipm_data$min_ad,
   min_ca     = ipm_data$min_ca,
-  prcp       = ipm_data$summer_precip,
-  temp       = ipm_data$summer_temp,
   af_count   = ipm_data$n_f_p_count,
   nn_fc      = nrow(ipm_data$n_f_p_count),
   am_count   = ipm_data$n_m_p_count,
   nn_mc      = nrow(ipm_data$n_m_p_count),
-  cdens      = ipm_data$cougar_density,
+  cdens      = ipm_data$puma_derived,
   n_adj      = ipm_data$af_density,
   min_n1     = ipm_data$min_n1,
   est_n1     = ipm_data$est_n1,
-  clim       = ipm_data$palmer_index
+  clim       = ipm_data$palmer_index,
+  y          = ipm_data$y,
+  z          = ipm_data$z,
+  f          = ipm_data$f,
+  l          = ipm_data$l,
+  calf       = ipm_data$calf,
+  male       = ipm_data$male,
+  female     = ipm_data$female,
+  herd       = ipm_data$herd,
+  n_ind      = ipm_data$n_ind,
+  n_R_data   = nrow(ipm_data$r_data),
+  r_data     = ipm_data$r_data
+  # NF_ct      = ipm_data$cjs_n_female,
+  # NM_ct      = ipm_data$cjs_n_male
 )
 
 
@@ -64,33 +77,19 @@ inits <- function(){
   N[,] <- 500
   
   # Recruitment
-  R <- 0.9
-  
-  # # Harvest
-  # p_har <- array(data = 0, dim = c(3,2,33))
-  # p_har[,,1] <- NA
-  
-  # # Removals
-  # p_rem <- array(data = 0.01, dim = c(2,2,33))
-  # p_rem[,,1] <- NA
+  R <- 2
   
   # Survival
-  S_C_B0_ps <- 0.99
-  S_Y_F_B0_ps <- 0.99
-  S_Y_M_B0_ps <- 0.99
-  S_A_F_B0_ps <- 0.99
-  S_A_M_B0_ps <- 0.99
+  S_C_B0 <- 3
+  S_F_B0 <- 3
+  S_M_B0 <- 3
   
   out <- list(
     init_N = N,
-    R_B0_ps = R,
-    S_C_B0_ps = S_C_B0_ps,
-    S_Y_F_B0_ps = S_Y_F_B0_ps,
-    S_Y_M_B0_ps = S_Y_M_B0_ps,
-    S_A_F_B0_ps = S_A_F_B0_ps,
-    S_A_M_B0_ps = S_A_M_B0_ps
-    # p_har = p_har,
-    # p_rem = p_rem
+    R_B0 = R,
+    S_C_B0 = S_C_B0,
+    S_F_B0 = S_F_B0,
+    S_M_B0 = S_M_B0
   )
   return(out)
 }
@@ -99,10 +98,10 @@ initial_values <- inits()
 
 params = c(
   "N_tot",
-  "survival_ca",
-  "survival_af",
-  "survival_am",
   "R",
+  "S_f",
+  "S_m",
+  "S_c",
   "N_f",
   "N_c",
   "N_m",
@@ -125,18 +124,28 @@ params = c(
   "S_F_mean",
   "S_M_mean",
   "S_C_mean",
-  "sd_afcount",
-  "sd_amcount",
+  # "sd_afcount",
+  # "sd_amcount",
   "sd_R",
   "S_C_B0",
-  "S_Y_F_B0",
-  "S_Y_M_B0",
+  "S_F_B0",
+  "S_M_B0",
   "sd_S_C",
-  "sd_S_Y_M",
-  "sd_S_Y_F"
+  "sd_S_M",
+  "sd_S_F",
+  # "PF",
+  # "PM"
+  "P",
+  "exp_ct",
+  "tau_ct",
+  "Ne",
+  "Te",
+  "Naug"
 )
 
 #Model==========================================================================
+cat("This run was started at", as.character(Sys.time()), "\n")
+tictoc::tic()
 
 jgs_mdl <- jags.model(
   file = model_file,
@@ -146,7 +155,7 @@ jgs_mdl <- jags.model(
   n.adapt = n_a
 )
 
-update(jgs_mdl, n.iter = n_b)
+# update(jgs_mdl, n.iter = n_b)
 
 rslt <- coda.samples(
   jgs_mdl,
@@ -155,16 +164,11 @@ rslt <- coda.samples(
   thin = n_t
 )
 
+cat("From start to end of this model run,")
+tictoc::toc()
+
 mcmcplots::mcmcplot(rslt)
 
-# data <- summary(rslt)
-# 
-# q <- data$quantiles
-# 
-# n_tot <- q[grep("N_tot", dimnames(q)[[1]]), c(1,3,5)] %>%
-#   as_tibble() %>%
-#   mutate(year = 1988:2021)
 
-
-save(rslt, file = save_file)
+saveRDS(rslt, file = save_file)
 

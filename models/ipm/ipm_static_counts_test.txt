@@ -111,32 +111,30 @@ model{
     n_sight_am[i,4] ~ dnorm(N_m[n_sight_am[i,1]], n_sight_am[i,5])T(0,)
   }
   
-  #sd_afcount ~ dnorm(0, 0.0001)T(0, )
-  #tau_afcount <- 1/sd_afcount^2
-  #for(i in 1:nn_fc){
-  #  af_count[i,4] ~ dnorm(N_f[af_count[i,1]], tau_afcount)T(0,)
-  #}
+  sd_afcount ~ dnorm(0, 0.0001)T(0, )
+  tau_afcount <- 1/sd_afcount^2
+  for(i in 1:nn_fc){
+    af_count[i,4] ~ dnorm(N_f[af_count[i,1]], tau_afcount)T(0,)
+  }
   
-  #sd_amcount ~ dnorm(0, 0.0001)T(0, )
-  #tau_amcount <- 1/sd_amcount^2
-  #for(i in 1:nn_mc){
-  #  am_count[i,4] ~ dnorm(N_m[am_count[i,1]], tau_amcount)T(0,)
-  #}
+  sd_amcount ~ dnorm(0, 0.0001)T(0, )
+  tau_amcount <- 1/sd_amcount^2
+  for(i in 1:nn_mc){
+    am_count[i,4] ~ dnorm(N_m[am_count[i,1]], tau_amcount)T(0,)
+  }
   
   ##### Counts - CJS #####
-  for(yr in 2:n_year){ # loop over number of observations - no P in year 1
-    # prep normal approximation of binomial based on cjs p and NF
-    NFct_tau[yr] <- 1 / (PF[yr] * N_f[yr] * (1 - PF[yr]))
-    NFct_ex[yr] <- PF[yr] * N_f[yr]
-    NF_ct[yr] ~ dnorm(NFct_ex[yr], NFct_tau[yr])
-  }
-  for(yr in 2:n_year){ # loop over number of observations - no P in year 1
-    # prep normal approximation of binomial based on cjs p and NF
-    NMct_tau[yr] <- 1 / (PM[yr] * N_m[yr] * (1 - PM[yr]))
-    NMct_ex[yr] <- PM[yr] * N_m[yr]
-    NM_ct[yr] ~ dnorm(NMct_ex[yr], NMct_tau[yr])
-  }
+  #for(yr in 2:n_year){ # loop over number of observations - no P in year 1
+  #  # prep normal approximation of binomial based on cjs p and NF/NM
+  #  NFct_tau[yr] <- 1 / (PF[yr] * N_f[yr] * (1 - PF[yr]))
+  #  NFct_ex[yr] <- PF[yr] * N_f[yr]
+  #  NF_ct[yr] ~ dnorm(NFct_ex[yr], NFct_tau[yr])
   
+  #  NMct_tau[yr] <- 1 / (PM[yr] * N_m[yr] * (1 - PM[yr]))
+  #  NMct_ex[yr] <- PM[yr] * N_m[yr]
+  #  NM_ct[yr] ~ dnorm(NMct_ex[yr], NMct_tau[yr])
+  #}
+
   ##### Survival #####
   # CJS - Feedgrounds
   #for(i in 1:ns){

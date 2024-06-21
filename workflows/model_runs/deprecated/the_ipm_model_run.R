@@ -1,16 +1,21 @@
 # IPM run - Starkey Elk
 # Kenneth Loonam
 # May 2024
-
+results_file_name <- "results//ipm_06jun2024_test.rds"
 #Environment====================================================================
 
-require(nimble); require(mcmcplots); require(dplyr)
+require(nimble); require(mcmcplots); require(dplyr); require(rjags)
 
 full_data <- readRDS("data//the_ipm_data.rds")
 
-source("models//ipm//the_ipm_less_cjs.R")
+# source("models//ipm//the_nipm_less_cjs.R")
+model_file <- "models//ipm//the_jipm_no_cjs.txt"
 load("data//elk_ipm_data_21apr2023.Rdata")
 
+nchains <- 3
+nburnin <- 10000
+niter <- 110000
+nthin <- 5
 #Data===========================================================================
 
 dtf <- list(
@@ -90,83 +95,97 @@ mons <- c(
 )
 # "PF", "PM",
 
-# nimbleMCMC(code = model_code, data = dtf, constants = cnst, inits = inits,
-#            monitors = mons, niter = 1000, nburnin = 100, nchains = 1)
-
-ipm <- nimbleModel(
-  code = nimble_code,
-  constants = cnst,
-  data = dtf,
-  inits = inits
-)
-CMipm <- compileNimble(ipm)
-
-cnf <- configureMCMC(
-  model = ipm, 
-  monitors = mons,
-  onlySlice = F,
-  autoBlock = F
-)
-
-block_variables <- function(cnf, variables, block_type){
-  cnf$removeSamplers(variables)
-  cnf$addSampler(variables, block_type)
-}
-sample_log <- function(cnf, variable){
-  cnf$removeSampler(variable)
-  cnf$addSampler(variable, "RW", control = list(log = T))
-}
-reflect_sample <- function(cnf, variable){
-  cnf$removeSampler(variable)
-  cnf$addSampler(variable, "RW", control = list(reflect = T))
-}
-reflect_sample <- function(cnf, variable){
-  cnf$removeSampler(variable)
-  cnf$addSampler(variable, "RW", control = list(reflect = T))
-}
-# block_variables(cnf, paste0("R_B0[", 2:34, "]"))
-# map(c(
-#   paste0("NCaug[", 2:32, "]"), 
-#   paste0("NFaug[", 2:33, "]"), 
-#   paste0("NMaug[", 2:33, "]")),
-#   reflect_sample, cnf = cnf
+#Run the IPM in nimble==========================================================
+# # This doesn't work (yet?)
+# # Look, models like this are hard, and nimble is complicated
+# # I really want to revisit this when I have infinite time
+# ipm <- nimbleModel(
+#   code = nimble_code,
+#   constants = cnst,
+#   data = dtf,
+#   inits = inits
 # )
-block_variables(
-  cnf = cnf, 
-  variables = paste0("NCaug[", 2:32, "]"), 
-  block_type = "AF_slice"
-)
-block_variables(
-  cnf = cnf, 
-  variables = paste0("NFaug[", 2:33, "]"), 
-  block_type = "AF_slice"
-)
-block_variables(
-  cnf = cnf, 
-  variables = paste0("NMaug[", 2:33, "]"), 
-  block_type = "AF_slice"
-)
-# sample_log(cnf, paste0("NCaug[", 2:32, "]"))
-# sample_log(cnf, paste0("NFaug[", 2:33, "]"))
-# sample_log(cnf, paste0("NMaug[", 2:33, "]"))
+# CMipm <- compileNimble(ipm)
+# 
+# cnf <- configureMCMC(
+#   model = ipm, 
+#   monitors = mons,
+#   onlySlice = F,
+#   autoBlock = F
+# )
+# 
+# block_variables <- function(cnf, variables, block_type){
+#   cnf$removeSamplers(variables)
+#   cnf$addSampler(variables, block_type)
+# }
+# sample_log <- function(cnf, variable){
+#   cnf$removeSampler(variable)
+#   cnf$addSampler(variable, "RW", control = list(log = T))
+# }
+# reflect_sample <- function(cnf, variable){
+#   cnf$removeSampler(variable)
+#   cnf$addSampler(variable, "RW", control = list(reflect = T))
+# }
+# reflect_sample <- function(cnf, variable){
+#   cnf$removeSampler(variable)
+#   cnf$addSampler(variable, "RW", control = list(reflect = T))
+# }
+# block_variables(
+#   cnf = cnf, 
+#   variables = paste0("NCaug[", 2:32, "]"), 
+#   block_type = "AF_slice"
+# )
+# block_variables(
+#   cnf = cnf, 
+#   variables = paste0("NFaug[", 2:33, "]"), 
+#   block_type = "AF_slice"
+# )
+# block_variables(
+#   cnf = cnf, 
+#   variables = paste0("NMaug[", 2:33, "]"), 
+#   block_type = "AF_slice"
+# )
+# MCipm <- buildMCMC(cnf)
+# MCMCipm <- compileNimble(MCipm)
+# 
+# rslt <- runMCMC(
+#   MCMCipm, 
+#   niter = 100000, 
+#   nburnin = 0, 
+#   nchains = 5, 
+#   inits = inits,
+#   thin = 10
+# )
 
-# block_variables(cnf, paste0("SC_B0[", 2:32, "]"))
-# block_variables(cnf, paste0("SF_B0[", 2:33, "]"))
-# block_variables(cnf, paste0("SM_B0[", 2:33, "]"))
+#Run the IPM in JAGS============================================================
 
-MCipm <- buildMCMC(cnf)
-MCMCipm <- compileNimble(MCipm)
-# c_ipm_mcmc$ipm_mcmc$run(10000)
-# x <- c_ipm_mcmc$ipm_mcmc$mvSamples %>% as.matrix()
+jags_data <- append(dtf, cnst)
 
-rslt <- runMCMC(
-  MCMCipm, 
-  niter = 100000, 
-  nburnin = 0, 
-  nchains = 5, 
+# Change sd to tau
+jags_data$NC_est[,2] <- 1 / jags_data$NC_est[,2]^2
+jags_data$NF_est[,2] <- 1 / jags_data$NF_est[,2]^2
+jags_data$NM_est[,2] <- 1 / jags_data$NM_est[,2]^2
+
+# Fix nimble inits for jags
+inits <- inits[c(2:5, 8:24, 28:30, 47, 49)]
+
+jgs_mdl <- jags.model(
+  file = model_file,
+  data = jags_data,
   inits = inits,
-  thin = 10
+  n.chains = nchains,
+  n.adapt = 1000
 )
-# c_ipm_mcmc$ipm_mcmc$run(100000, reset = FALSE)
-# as.matrix(c_ipm_mcmc$ipm_mcmc$mvSamples) %>% mcmcplot()
+
+# update(jgs_mdl, n.iter = nburnin)
+
+rslt <- coda.samples(
+  jgs_mdl,
+  variable.names = mons,
+  n.iter = niter - nburnin,
+  thin = nthin
+)
+
+saveRDS(rslt, "")
+
 mcmcplot(rslt)

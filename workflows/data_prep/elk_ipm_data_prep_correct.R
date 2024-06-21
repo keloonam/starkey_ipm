@@ -11,6 +11,8 @@ ratio_yrs <- c(min_yr = 2, max_yr = 34)
 first_year <- 1988
 start_year <- first_year
 end_year <- 2021
+yr_a <- first_year
+yr_z <- end_year
 
 cjs_file <- "results//survival//cjs_rslt_13sep2022.Rdata"
 ratio_file <- "results//recruitment_years_2to31.Rdata"
@@ -41,7 +43,22 @@ cpm_years <- 1:32
 #Environment====================================================================
 
 require(tidyverse)
-# hist(cjs_raw$`survival_af[29]`)
+
+scale_clean <- function(x){
+  out <- (x - mean(x, na.rm = T))/sd(x, na.rm = T)
+  return(out)
+}
+
+logit <- function(x){
+  out <- log(x / (1 - x))
+  return(out)
+}
+
+calculate_tau <- function(x){
+  out <- 1/sd(x)^2
+  return(out)
+}
+
 #CJS_Survival===================================================================
 
 load(cjs_file)
@@ -84,6 +101,25 @@ fpc_dat <- matrix(nrow = length(cpf_means), ncol = 5)
 mpc_dat <- matrix(nrow = length(cpm_means), ncol = 5)
 fpc_dat[,1] <- cp_years_f
 mpc_dat[,1] <- cp_years_m
+p_cjs <- matrix(NA, nrow = length(cp_years), ncol = 8)
+p_cjs[,1] <- cp_years 
+p_cjs[,3] <- c(rep(1, length(cp_years_f)), rep(2, length(cp_years_m)))
+p_cjs[,4] <- cp_raw %>% 
+  map(logit) %>%
+  map(mean) %>%
+  unlist()
+p_cjs[,5] <- cp_raw %>% 
+  map(logit) %>%
+  map(calculate_tau) %>%
+  unlist()
+p_cjs[,7] <- cp_raw %>%
+  map(logit) %>%
+  map(quantile, 0.025) %>%
+  unlist()
+p_cjs[,8] <- cp_raw %>% 
+  map(logit) %>%
+  map(quantile, 0.975) %>%
+  unlist()
 
 load("data//elk_data.Rdata")
 y <- elk_data$cap_tib %>%
@@ -120,6 +156,80 @@ nm.obs <- apply(y *
   (1 - herd), 2, sum, na.rm = T)[-c(1,34)]
 mpc_dat[,4] <- nm.obs / cpm_means
 
+p_cjs[,6] <- c(nf.obs, nm.obs)
+
+#CJS data prep==================================================================
+
+load("data//elk_data.Rdata")
+
+y <- elk_data$cap_tib %>%
+  arrange(id) %>%
+  select(as.character(yr_a:yr_z)) %>%
+  as.matrix()
+
+l <- elk_data$hnt_tib %>%
+  arrange(id) %>%
+  mutate('2021' = 1) %>%
+  select(as.character(yr_a:yr_z)) %>%
+  as.matrix() %>%
+  apply(., 1, function(x) min(which(x != 0)))
+
+w <- elk_data$hnt_tib %>%
+  arrange(id) %>%
+  select(as.character(yr_a:yr_z)) %>%
+  as.matrix() 
+
+y <- w + y # harvests count as observed alive that year (did not die naturally)
+
+male_id <- elk_data$sex_tib %>%
+  arrange(id) %>%
+  mutate(male = as.numeric(Sex == "M")) %>%
+  pull(male)
+
+calf <- elk_data$age_tib %>%
+  arrange(id) %>%
+  select(as.character(yr_a:yr_z)) %>%
+  as.matrix()
+
+herd <- elk_data$hrd_tib %>%
+  arrange(id) %>%
+  select(as.character(yr_a:yr_z)) %>%
+  mutate(across(all_of(as.character(yr_a:yr_z)), ~ (.x != "main")*1)) %>%
+  as.matrix()
+
+gone_elk <- apply(herd, 1, sum, na.rm = T) == ncol(herd)
+unseen_elk <- apply(y, 1, sum) == 0
+f <- apply(y, 1, function(x) min(which(x != 0)))
+weird_elk <- f == l
+rm_elk <- which((gone_elk + unseen_elk + weird_elk) != 0)
+
+y <- y[-rm_elk,]
+l <- l[-rm_elk]
+w <- w[-rm_elk,]
+male_id <- male_id[-rm_elk]
+calf <- calf[-rm_elk,]
+herd <- herd[-rm_elk,]
+f <- f[-rm_elk]
+calf <- (calf == 1) * 1
+calf[is.na(calf)] <- 0
+
+female <- matrix(0, nrow = nrow(calf), ncol = ncol(calf))
+male   <- matrix(0, nrow = nrow(calf), ncol = ncol(calf))
+for(i in 1:length(male_id)){
+  if(male_id[i] == 1){
+    male[i,] <- (1 - calf[i,])
+  }else{
+    female[i,] <- (1 - calf[i,])
+  }
+}
+
+z <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
+l_k <- rep(NA, nrow(y))
+for(i in 1:nrow(y)){
+  l_k[i] <- max(which(y[i,] == 1))
+  z[i, (f[i]):l_k[i]] <- 1
+}
+
 #Ratio_Recruitment==============================================================
 
 load(ratio_file)
@@ -136,6 +246,12 @@ r_ratio[,1] <- ratio_yrs[1]:ratio_yrs[2]
 r_ratio[,4] <- ratio_data[,1]
 r_ratio[,5] <- 1/ratio_data[,2]^2
 r_ratio <- r_ratio[-ratio_removals,]
+
+r_data <- read_csv("data//min_n_handle_summaries.csv") %>%
+  mutate(yr = year - yr_a + 1) %>%
+  select(yr, ca, fe_ad) %>%
+  as.matrix() 
+r_data[33,2] <- 13 # One year there were more calves than cows - fix for binom
 
 #Abundance======================================================================
 
@@ -311,9 +427,6 @@ winter_precip <- get_precip(
 #Cougars========================================================================
 
 cougar_density <- read_csv("data//cougars//cougar_density.csv")
-# stable_density <- mean(cougar_density$density[15:25])
-# cougar_density$density[26:nrow(cougar_density)] <- stable_density
-# cougar_density_scaled <- as.vector(scale(c(cougar_density$density, stable_density)))
 
 y.t <- cougar_density$density[1:25]
 y.ta <- cougar_density$density
@@ -325,18 +438,22 @@ m.cd <- nls(y.t ~ a/(1 + exp(-b * (x.t - c))), start = list(a = 1,
 
 params = coef(m.cd)
 y.t2 <- params[1] / (1 + exp(1-params[2] * (x.ta - params[3])))
-# plot(y.t2, type = "l")
-# points(y.ta)
-cougar_density_scaled <- as.vector(scale(y.t2))
+puma_derived <- as.vector(scale(y.t2))
+
+reconstruction <- read_csv("data//cougars//cougar_density.csv") %>%
+  filter(year < 2016) %>%
+  mutate(n = scale_clean(density)) %>%
+  mutate(method = "reconstruction") %>%
+  select(year, method, n)
 
 blue_mtns <- tibble(
   year = 1994:2021,
   n = c(926,  1058, 1187, 1301, 1393, 1436, 1502, 1590, 1570, 1570, 1592,
         1646, 1640, 1599, 1592, 1596, 1578, 1541, 1532, 1640, 1703, 1724,
         1748, 1760, 1800, 1807, 1849, 1910),
-  Source = "Blue Mountain Estimate"
-  ) %>%
-  mutate(n = scale(n))
+  method = "odfw_estimate"
+) %>%
+  mutate(n = scale_clean(n))
 
 mortalities <- tibble(
   year = 1987:2019,
@@ -344,43 +461,23 @@ mortalities <- tibble(
         125, 142, 149, 168, 140, 165, 177, 171, 158, 162, 169, 164, 135,  94, 
         110, 113, 141, 
         113, 125),
-  Source = "Starkey WMU Mortalities"
-  ) %>%
-  mutate(n = scale(n))
+  method = "mortalities"
+) %>%
+  mutate(n = scale_clean(n))
 
-logistic <- tibble(
-  year = 1988:2021,
-  n = (y.t2 - mean(y.ta)) / sd(y.ta),
-  Source = "Logistic Growth Model"
-  )
+puma_data <- bind_rows(reconstruction, blue_mtns, mortalities)
+full_puma_data <- puma_data %>%
+  group_by(year) %>%
+  summarise(n = mean(n)) %>%
+  ungroup() %>%
+  mutate(method = "group_mean") %>%
+  bind_rows(puma_data) %>%
+  add_row(year = 1988:2021, method = "logistic_regression", n = puma_derived)
 
-reconstruction <- tibble(
-  year = 1988:2020,
-  n = scale(y.ta),
-  Source = "Starkey WMU Reconstruction"
-)
-
-# post_fig_text_size <- 8
-# post_fig_grph_size <- 0.3
-# 
-# cougar_tibble <- bind_rows(blue_mtns, mortalities, logistic, reconstruction)
-# require(ggsci)
-# ggplot(data = cougar_tibble, aes(x = year, y = n, color = Source, shape = Source)) +
-#   geom_line(size = post_fig_grph_size) +
-#   geom_point(size = 0.5) +
-#   theme_classic() +
-#   labs(x = "Year", y = "N cougars (scaled)", title = "Cougar density measures") +
-#   scale_color_jco() +
-#   theme(
-#     legend.position = "bottom",
-#     text = element_text(size = post_fig_text_size)) +
-#   geom_vline(xintercept = 1994, linetype = "dashed") + 
-#   guides(color = guide_legend(nrow = 2, byrow = T))
-# ggsave("figures//cougar_density_plot.png", width = 4, height = 3, units = "in", dpi = 300)
-
-# plot(cougar_density_scaled, type = "l", xlim = c(0, 35), ylim = c(-2,1.5))
-# points(scale(y.ta), col = "blue")
-# points(scale(c(rep(NA, 7), n_cougars)), col = "red")
+puma_mean <- full_puma_data %>% 
+  filter(method == "group_mean") %>%
+  pull(n) %>%
+  scale_clean()
 
 #Density========================================================================
 
@@ -480,7 +577,8 @@ prism <- read_csv("data/climate/prism_data_starkey.csv", skip = 10) %>%
   group_by(year) %>%
   summarise(summer_precip = sum(precip), summer_temp = mean(temp))
 
-#Combine========================================================================
+
+#Adjust min N===================================================================
 
 min_n1 <- matrix(0, nrow = 4, ncol = 2)
 est_n1 <- matrix(0, nrow = 4, ncol = 2)
@@ -507,8 +605,24 @@ est_n1[2,2] <- 55 / 3
 est_n1[3,2] <- 55 / 3
 est_n1[4,2] <- 55 / 3
 
+#Combine========================================================================
+
+
+
 ipm_data <- list(
+  y = y,
+  z = z,
+  male = male,
+  female = female,
+  calf = calf,
+  herd = herd,
+  l = l,
+  f = f,
+  n_ind = nrow(y),
+  cjs_n_male = nf.obs,
+  cjs_n_female = nm.obs,
   s_cjs = cjs_dat,
+  p_cjs = p_cjs,
   r_ratio = r_ratio,
   n_sight_ca = n_sight_ca,
   n_sight_af = n_sight_af,
@@ -532,15 +646,18 @@ ipm_data <- list(
   n_f_p_count = fpc_dat,
   n_m_p_count = mpc_dat,
   ratio_counts = ratio_counts,
-  cougar_density = cougar_density_scaled,
+  puma_derived = puma_derived,
+  puma_mean = puma_mean[-length(puma_mean)],
+  puma_reconstruction = c(scale_clean(cougar_density$density), 0),
   elk_density = scaled_density,
   af_density = scaled_N_AF,
   palmer_index = pdi,
   ndvi_avhrr = ndvi_avhrr,
   ndvi_modis = ndvi_modis,
   min_n1 = min_n1,
-  est_n1 = est_n1
+  est_n1 = est_n1,
+  r_data = r_data[-33,] # this year has more calves than cows
 )
 
-save(ipm_data, file = "data//elk_ipm_data_21apr2023.Rdata")
-
+save(ipm_data, file = "data//elk_ipm_data_14jun2024.Rdata")
+rm(list = ls())
