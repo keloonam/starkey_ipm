@@ -15,7 +15,7 @@ n_year <- 34
 n_i <- 25000
 n_a <- 5000
 n_b <- 10000
-n_c <- 3
+n_c <- 1
 n_t <- 5
 
 #Environment====================================================================
@@ -44,11 +44,11 @@ jags_data <- list(
   # nr         = nrow(ipm_data$r_ratio),
   n_har      = ipm_data$n_hnt,
   min_ad     = ipm_data$min_ad,
-  min_ca     = ipm_data$min_ca,
-  af_count   = ipm_data$n_f_p_count,
-  nn_fc      = nrow(ipm_data$n_f_p_count),
-  am_count   = ipm_data$n_m_p_count,
-  nn_mc      = nrow(ipm_data$n_m_p_count),
+  # min_ca     = ipm_data$min_ca,
+  # af_count   = ipm_data$n_f_p_count,
+  # nn_fc      = nrow(ipm_data$n_f_p_count),
+  # am_count   = ipm_data$n_m_p_count,
+  # nn_mc      = nrow(ipm_data$n_m_p_count),
   cdens      = ipm_data$puma_derived,
   n_adj      = ipm_data$af_density,
   min_n1     = ipm_data$min_n1,

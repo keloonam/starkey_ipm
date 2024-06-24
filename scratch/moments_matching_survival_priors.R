@@ -8,7 +8,7 @@ ilogit <- function(x){
   return(out)
 }
 
-
+# In JAGS, 'dlogis' uses 1/shape, aka variance/tau!!!
 # female 
 rlogis(1000000, 2.528456, 0.3831403) |> ilogit() |> hist(breaks = 100)
 # male
@@ -72,3 +72,6 @@ apply(ms_real_2, 1, sd) %>% mean(); apply(ms_real_2, 1, sd) %>% sd() %>% sd_to_p
 
 
 rnorm(1000000, 0.83, sqrt(1/45.64)) %>% hist()
+
+
+logit(95/100) - 2
