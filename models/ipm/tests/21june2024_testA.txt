@@ -78,7 +78,7 @@ model{
       n_x_l[4,x,t] <- sum(N[3:4,x,t-1]) * S[4,x,t]
       
       for(a in 2:4){
-        Te[a,x,t] <- abs(1 / ((Ne[a,x,t]) * (1 - S[a,x,t])))
+        #Te[a,x,t] <- abs(1 / ((Ne[a,x,t]) * (1 - S[a,x,t])))
         Naug[a,x,t] <- Ne[a,x,t]
         N[a,x,t] <- Naug[a,x,t] - n_har[a,x,t]
       } # a (age)
