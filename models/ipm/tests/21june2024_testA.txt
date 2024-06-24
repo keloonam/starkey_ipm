@@ -4,7 +4,7 @@ model{
 # Use a deterministic model for the population process - 
   # e.g., the expected value is the value actually generated
   # all noise comes from the parameters, not process noise
-
+# This approach means that the truncation of survivala at min N is dropped
 
 # IPM -- Built for the Starkey elk population
   # Kenneth Loonam
@@ -205,8 +205,8 @@ model{
     # _F_ = female, _M_ = male
   # Keeping all of this longhand to facilitate informative priors later on
   S_C_B0 ~ dlogis(0, 1)T(-3, 3)
-  S_F_B0 ~ dlogis(2.53, .38)T(-1, )
-  S_M_B0 ~ dlogis(1.47, .34)T(-1, )
+  S_F_B0 ~ dlogis(2.53, 1/.38)T(-1, )
+  S_M_B0 ~ dlogis(1.47, 1/.34)T(-1, )
  
   S_wt ~ dlogis(0, 1)T(-2, 2) # weather in year t (PDSI, NDVI, rainfall, temperature)
   S_wm ~ dlogis(0, 1)T(-2, 2) # weather in year t - 1
@@ -242,15 +242,15 @@ model{
     # Random effect on year, male/female equal
     S_C_yr[yr] ~ dnorm(0, tau_S_C)T(-3, 3)
     S_C_B_yr[yr] <- S_C_B0 + 
-                      S_wt * clim[yr] + 
-                      S_wm * clim[yr-1] + 
-                      S_dd * n_adj[yr-1] + 
-                      S_cg * cdens[yr] +
-                      S_C_yr[yr]
+      S_wt * clim[yr] + 
+      S_wm * clim[yr-1] + 
+      S_dd * n_adj[yr-1] + 
+      S_cg * cdens[yr] +
+      S_C_yr[yr]
     logit(S[2,1,yr]) <- S_C_B_yr[yr]
     S[2,2,yr] <- S[2,1,yr]
     
-    # Survival from 1.5 to 2.5 years (to age class 3)
+    # Survival from 1.5 or above
     # Separate random effects by year for both males and females
     S_F_yr[yr] ~ dnorm(0, tau_S_F)
     S_M_yr[yr] ~ dnorm(0, tau_S_M)

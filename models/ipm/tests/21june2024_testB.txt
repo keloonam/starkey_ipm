@@ -207,8 +207,8 @@ model{
     # _F_ = female, _M_ = male
   # Keeping all of this longhand to facilitate informative priors later on
   S_C_B0 ~ dlogis(0, 1)T(-3, 3)
-  S_F_B0 ~ dlogis(2.53, .38)T(-1, )
-  S_M_B0 ~ dlogis(1.47, .34)T(-1, )
+  S_F_B0 ~ dlogis(2.53, 1/.38)T(-1, )
+  S_M_B0 ~ dlogis(1.47, 1/.34)T(-1, )
  
   S_wt ~ dlogis(0, 1)T(-2, 2) # weather in year t (PDSI, NDVI, rainfall, temperature)
   S_wm ~ dlogis(0, 1)T(-2, 2) # weather in year t - 1
