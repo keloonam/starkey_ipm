@@ -27,18 +27,13 @@ cjs_removals <- c(
   "survival_af[34]",
   "survival_am[34]",
   "survival_ca[34]",
-  "prob_af[33]",
-  "prob_am[33]",
-  "survival_af[33]",
-  "survival_am[33]",
-  "survival_ca[33]",
   "survival_af[32]",
   "survival_am[32]",
   "survival_ca[32]",
   "survival_af[29]"
 )
-cpf_years <- 1:32
-cpm_years <- 1:32
+cpf_years <- 1:33
+cpm_years <- 1:33
 
 #Environment====================================================================
 
@@ -147,13 +142,13 @@ rm(elk_data)
 nf.obs <- apply(y * 
   (1 - male) * 
   (1 - (calf == 1)) * 
-  (1 - herd), 2, sum, na.rm = T)[-c(1,34)]
+  (1 - herd), 2, sum, na.rm = T)[-c(1)]
 fpc_dat[,4] <- nf.obs / cpf_means
 
 nm.obs <- apply(y * 
   (male) * 
   (1 - (calf == 1)) * 
-  (1 - herd), 2, sum, na.rm = T)[-c(1,34)]
+  (1 - herd), 2, sum, na.rm = T)[-c(1)]
 mpc_dat[,4] <- nm.obs / cpm_means
 
 p_cjs[,6] <- c(nf.obs, nm.obs)
@@ -481,7 +476,7 @@ puma_mean <- full_puma_data %>%
 
 #Density========================================================================
 
-load("results//ipm_result_14mar2023_R_null.Rdata")
+load("results//ipm//ipm_result_14mar2023_R_null.Rdata")
 scaled_density <- as.numeric(scale(summary(rslt)$statistics[104:137,1]))
 scaled_N_AF <- as.numeric(scale(summary(rslt)$statistics[36:69,1]))
 rm(rslt)

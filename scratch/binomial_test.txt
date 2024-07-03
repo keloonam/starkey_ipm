@@ -1,0 +1,7 @@
+model{
+  for(i in 1:obs){
+    N[i] ~ dnorm(100, 0.0001)T(0,)
+    No[i] <- round(N[i])
+    count[i] ~ dbin(p[i], No[i])
+  }
+}
