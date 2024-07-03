@@ -1,0 +1,6 @@
+model{
+  N ~ dnorm(100, 0.0001)T(0,)
+  No <- round(N)
+  f <- No - count
+  f ~ dnegbin(p, count)
+}
