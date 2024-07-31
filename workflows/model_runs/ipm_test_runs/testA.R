@@ -5,18 +5,18 @@
 #Variables======================================================================
 
 # Specify the model
-model_file <- "models//ipm//tests//25june2024_testA.txt"
-save_file <- "results//ipm//tests//25june2024_rsltA1.rds"
+model_file <- "models//ipm//tests//08july2024_testA.txt"
+save_file <- "results//ipm//tests//25july_rsltA1.rds"
 
 # Loop dimension parameters
 n_year <- 34
 
 # JAGS control parameters
 n_i <- 500000
-n_a <- 10000
-n_b <- 500000
-n_c <- 3
-n_t <- 20
+n_a <- 100000
+n_b <- 0
+n_c <- 1
+n_t <- 1000
 
 #Environment====================================================================
 
@@ -192,7 +192,7 @@ jgs_mdl <- jags.model(
   n.adapt = n_a
 )
 
-update(jgs_mdl, n.iter = n_b*2)
+# update(jgs_mdl, n.iter = n_i*2)
 
 rslt <- coda.samples(
   jgs_mdl,
