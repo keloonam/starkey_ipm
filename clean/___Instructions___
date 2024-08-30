@@ -19,7 +19,6 @@
     +Sex
     +BirthDate
     +DeathDate
-  -Select "Detail"
   -When viewing query, go to External Data > Excel
   -Finish export to excel, open file in excel, save as a csv
   -Place the csv in the "data" folder of the R Project

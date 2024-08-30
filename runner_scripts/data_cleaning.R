@@ -15,3 +15,15 @@ source("workflows//data_prep//handling.R")
 
 # Prepare cjs data
 yr_range <- c(1988, 2023)
+capture_handling_data <- "data//capture_handling_data.rds"
+source("workflows//data_prep//cjs_data_prep.R")
+
+# Clean CJS results
+# This requires running the cjs model runner script at least once
+# "runner_scripts//run_cjs.R"
+results_file <- "results//cjs_2024-08-30.rds"
+# This option toggles removal of years with questionable estimates
+# The years flagged for removal have known causes for bad estimates, such as:
+  # individuals removed without ids recorded
+  # rare mortality event from elk getting caught out of feedgrounds in bad snow
+remove_bad_years <- T
