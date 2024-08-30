@@ -6,14 +6,14 @@
 
 # Specify the model
 model_file <- "models//ipm//tests//08july2024_testA.txt"
-save_file <- "results//ipm//tests//25july_rsltA1.rds"
+save_file <- "results//ipm//tests//31july_rsltA3.rds"
 
 # Loop dimension parameters
 n_year <- 34
 
 # JAGS control parameters
-n_i <- 500000
-n_a <- 100000
+n_i <- 5000000
+n_a <- 500000
 n_b <- 0
 n_c <- 1
 n_t <- 1000

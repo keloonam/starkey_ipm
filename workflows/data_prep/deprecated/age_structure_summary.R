@@ -5,8 +5,8 @@
 #Variables======================================================================
 
 calf <- 1
-young <- 2
-prime <- 3:13
+young <- 2:3
+prime <- 4:13
 old <- 14
 yr_a <- 1988
 yr_z <- 2021
@@ -14,7 +14,7 @@ yr_z <- 2021
 #Packages=======================================================================
 
 require(dplyr); require(lubridate); require(ggplot2); require(purrr)
-require(readr)
+require(readr); require(tidyr)
 
 #Build Data=====================================================================
 
@@ -48,12 +48,16 @@ for(t in 1:ncol(adt)){
   }
 }
 
+tot <- colSums(adt[-1,])
+yng <- colSums(adt[young,], na.rm = T) / tot
+prm <- colSums(adt[prime,], na.rm = T) / tot
+old <- colSums(adt[old:nrow(adt),], na.rm = T) / tot
 rd <- tibble(
   year = 1988:2021,
-  total = colSums(adt[-1,]),
-  young = colSums(adt[young,], na.rm = T) / total,
+  total = tot,
+  young = yng,
   prime = colSums(adt[prime,], na.rm = T) / total,
-  old = colSums(adt[old:nrow(adt),], na.rm = T) / total
+  old = old
 ) %>%
   filter(year >= 1990) %>%
   pivot_longer(cols = c(young, prime, old))
