@@ -95,12 +95,12 @@ calf[is.na(calf)] <- 0
 f <- apply(y, 1, function(x) min(which(x != 0)))
 weird_elk <- f == l
 
-y <- y[-weird_elk,]
-l <- l[-weird_elk]
-w <- w[-weird_elk,]
-male <- male[-weird_elk]
-calf <- calf[-weird_elk,]
-herd <- herd[-weird_elk,]
+y <- y[-which(weird_elk == T),]
+l <- l[-which(weird_elk == T)]
+w <- w[-which(weird_elk == T),]
+male <- male[-which(weird_elk == T)]
+calf <- calf[-which(weird_elk == T),]
+herd <- herd[-which(weird_elk == T),]
 
 z <- matrix(NA, nrow = nrow(y), ncol = ncol(y))
 l_k <- rep(NA, nrow(y))
@@ -154,3 +154,10 @@ rslt <- nimbleMCMC(
 
 save(rslt, file = result_file)
 mcmcplots::mcmcplot(rslt)
+
+
+
+
+
+
+

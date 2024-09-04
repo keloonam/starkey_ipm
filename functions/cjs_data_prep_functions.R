@@ -5,7 +5,7 @@ find_removals <- function(data_list, yr_range){
   
   never_captured <- data_list$capture_history %>%
     select(id, as.character(yr_range[1]:yr_range[2])) %>%
-    mutate(n_caps = rowSums(across(where(is.numeric)))) %>%
+    mutate(n_caps = rowSums(across(where(is.numeric)), na.rm = T)) %>%
     filter(n_caps == 0) %>%
     pull(id)
   
@@ -15,7 +15,7 @@ find_removals <- function(data_list, yr_range){
       across(
         as.character(yr_range[1]:yr_range[2]), 
         function(x)as.numeric(x == "main"))) %>%
-    mutate(n_main = rowSums(across(where(is.numeric)))) %>%
+    mutate(n_main = rowSums(across(where(is.numeric)), na.rm = T)) %>%
     filter(n_main == 0) %>%
     pull(id)
   
