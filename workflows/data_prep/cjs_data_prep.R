@@ -21,7 +21,7 @@ hy <- to_matrix(
   removals = ids_to_remove
 )
 
-y <- (y + hy) > 0
+y <- ((y + hy) > 0)*1
 
 f <- find_first_value_position(y)
 
