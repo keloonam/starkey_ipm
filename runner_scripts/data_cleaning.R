@@ -28,6 +28,11 @@ results_file <- "results//cjs_rslt_06sep2024.rds"
 remove_bad_years <- T
 source("workflows//data_prep//cjs_summarize_results.R")
 
+# Prepare recruitment data
+yr_range <- c(1988, 2023)
+capture_handling_data <- "data//capture_handling_data.rds"
+source("workflows//data_prep//recruitment_data_prep.R")
+
 # Clean Recruitment results
 # This requires running the recruitment model runner script at least once
 # runner_scripts//run_recruitment.R

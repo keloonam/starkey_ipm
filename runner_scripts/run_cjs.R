@@ -20,7 +20,9 @@ params <- c(
   "survival_am", 
   "survival_ca",
   "prob_af",
-  "prob_am"
+  "prob_am",
+  "post_diff_mn",
+  "post_diff_sd"
 )
 
 # Run it

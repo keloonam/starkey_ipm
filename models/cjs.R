@@ -49,6 +49,22 @@ code <- nimbleCode({
     } #t
   } #i
   
+  #Goodness of Fit==============================================================
+  for(i in 1:nind){
+    for(t in (f[i]+1):l[i]){
+      y_new[i,t] ~ dbern(mu2[i,t])
+    }
+    yi_mean[i] <- mean(y[i,(f[i]+1):l[i]])
+    yi_new_mean[i] <- mean(y_new[i,(f[i]+1):l[i]])
+  }
+  odt_mean <- mean(yi_mean[1:nind])
+  ndt_mean <- mean(yi_new_mean[1:nind])
+  odt_sd <- sd(yi_mean[1:nind])
+  ndt_sd <- sd(yi_new_mean[1:nind])
+  
+  post_diff_mn <- odt_mean - ndt_mean
+  post_diff_sd <- odt_sd - ndt_sd
+  
   #Values=======================================================================
   for(t in 1:nocc){
     logit(survival_af[t]) <- bs0[t]

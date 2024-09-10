@@ -19,9 +19,9 @@ find_removals <- function(data_list, yr_range){
     filter(n_main == 0) %>%
     pull(id)
   
-  f <- to_matrix_wo_filter(dtlist$capture_history, yr_range = yr_range) %>%
+  f <- to_matrix_wo_filter(data_list$capture_history, yr_range = yr_range) %>%
     find_first_value_position()
-  l <- to_matrix_wo_filter(dtlist$harvest_year, yr_range = yr_range) %>%
+  l <- to_matrix_wo_filter(data_list$harvest_year, yr_range = yr_range) %>%
     find_first_value_position()
   
   first_is_terminal <- data_list$capture_history$id[f==l]
