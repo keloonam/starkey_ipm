@@ -4,7 +4,7 @@
 
 #Packages=======================================================================
 require(dplyr); require(tidyr); require(purrr); require(readr)
-require(lubridate)
+require(lubridate); require(nimble)
 
 # Clean the capture and handling data
 ah_fp <- "data//animal_handling.csv" # file path for animal handling csv
@@ -21,9 +21,13 @@ source("workflows//data_prep//cjs_data_prep.R")
 # Clean CJS results
 # This requires running the cjs model runner script at least once
 # "runner_scripts//run_cjs.R"
-results_file <- "results//cjs_2024-08-30.rds"
+results_file <- "results//cjs_rslt_06sep2024.rds"
 # This option toggles removal of years with questionable estimates
 # The years flagged for removal have known causes for bad estimates, such as:
-  # individuals removed without ids recorded
-  # rare mortality event from elk getting caught out of feedgrounds in bad snow
+  # e.g. individuals removed without ids recorded
 remove_bad_years <- T
+source("workflows//data_prep//cjs_summarize_results.R")
+
+# Clean Recruitment results
+# This requires running the recruitment model runner script at least once
+# runner_scripts//run_recruitment.R

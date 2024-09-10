@@ -1,0 +1,11 @@
+code <- nimbleCode({
+  # Priors
+  for(t in 1:n_years){
+    R[t] ~ dunif(0,1)
+  } # t
+  
+  # Model
+  for(t in 1:n_years){
+    n_calf[t] ~ dbinom(R[t], n_cow[t])
+  } # t
+})

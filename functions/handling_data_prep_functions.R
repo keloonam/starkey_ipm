@@ -17,8 +17,8 @@ build_herd_history <- function(targ_id, full_data, start_year, end_year){
   }
   
   first_obs <- which.min(is.na(herd_id$herd)) # records position of first non-NA
-  if(first_obs > 1){ # fill back one year, didn't come from nowhere
-    herd_id$herd[first_obs - 1] <- herd_id$herd[first_obs]
+  if(first_obs > 1){ # fill backwards, didn't come from nowhere
+    herd_id$herd[1:(first_obs - 1)] <- herd_id$herd[first_obs]
   }
   
   for(i in first_obs:nrow(herd_id)){
@@ -96,8 +96,11 @@ build_age_history <- function(targ_id, full_data, start_yr, end_yr){
       age_history[birth_t:length(age_history)] <- 1 # 1s from birth onward
     }
     age_history <- cumsum(age_history) # age is cumulative sum
-    age_history[age_history == 0] <- NA # switch pre-birth back to NA
+   
   }
+  age_history[which(is.na(age_history))] <- 0 # switch NAs to 0 >>>
+  # this is never used to determine if individual exists, so just needs to 
+  # have a non NA value for nimble and not give use a false calf ever
   
   out <- c(targ_id, age_history) # combine with id
   names(out) <- c("id", start_yr:end_yr) # name the "columns"
