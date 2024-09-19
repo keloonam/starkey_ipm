@@ -32,3 +32,4 @@ vignettes/*.pdf
 *.rds
 *.png
 *.pdf
+/data/

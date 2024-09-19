@@ -88,7 +88,8 @@ known_alive_tib <- map( # apply over all ids in full data
   full_data = rd,
   start_yr = start_year, 
   end_yr = end_year
-) %>% bind_rows() %>% arrange(id)
+) %>% bind_rows() %>% arrange(id) %>%
+  mutate(across(2:ncol(.), as.numeric))
 
 #Prep_sex_tibble================================================================
 

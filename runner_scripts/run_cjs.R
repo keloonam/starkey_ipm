@@ -20,7 +20,9 @@ params <- c(
   "survival_am", 
   "survival_ca",
   "prob_af",
-  "prob_am"
+  "prob_am",
+  "post_diff_mn",
+  "post_diff_sd"
 )
 
 # Run it
@@ -31,7 +33,7 @@ rslt <- nimbleMCMC(
   monitors    = params,
   inits       = cd$initial_values,
   niter       = 25000,
-  nburnin     = 10000,
+  nburnin     = 1000,
   nchains     = 3,
   progressBar = T,
   summary     = F,

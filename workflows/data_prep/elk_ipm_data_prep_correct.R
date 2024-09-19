@@ -363,7 +363,7 @@ mean_ann_temp <- monthly_temp %>%
   group_by(Year) %>%
   summarise(temp = mean(Starkey_HQ_temp_C)) %>%
   mutate(temp = scale(temp))
-ann_temp <- rep(0, n_yrs)
+ann_temp <- rep(0, 36)
 for(i in 1:nrow(mean_ann_temp)){
   ann_temp[mean_ann_temp$Year[i] - 1987] <- mean_ann_temp$temp[i]
 }
@@ -567,8 +567,8 @@ prism <- read_csv("data/climate/prism_data_starkey.csv", skip = 10) %>%
   mutate(year = as.numeric(year)) %>%
   mutate(month = as.numeric(month)) %>%
   select(year, month, precip, temp) %>%
-  filter(year > 1987 & year < 2022) %>%
-  filter(month %in% c(7, 8, 9)) %>%
+  filter(year >= 1987) %>%
+  filter(month %in% c(5, 6, 7, 8, 9)) %>%
   group_by(year) %>%
   summarise(summer_precip = sum(precip), summer_temp = mean(temp))
 

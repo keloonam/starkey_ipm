@@ -3,10 +3,10 @@
 # August 2024
 
 # Load packages
-require(nimble); require(lubridate)
+require(nimble)
 
 # Specify results location
-result_file <- "results//recruitment_rslt_06sep2024.rds"
+result_file <- "results//recruitment_rslt_10sep2024.rds"
 
 # Load the data
 cd <- readRDS("data//recruitment_data.rds")
@@ -16,7 +16,7 @@ source("models//recruitment.R")
 
 # Set trace monitors
 params <- c(
-
+  "R", "mn_c_diff", "sd_c_diff"
 )
 
 # Run it
