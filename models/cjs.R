@@ -45,6 +45,7 @@ code <- nimbleCode({
     for(t in (f[i]+1):l[i]){
       y_new[i,t] ~ dbern(mu2[i,t])
     }
+<<<<<<< HEAD
     obs_i_sum[i] <- sum(y[i,(f[i]+1):l[i]])
     sim_i_sum[i] <- sum(y_new[i,(f[i]+1):l[i]])
     dif_i_sum[i] <- sim_i_sum[i] - obs_i_sum[i]
@@ -52,6 +53,18 @@ code <- nimbleCode({
   
   post_diff_mn <- mean(dif_i_sum[1:nind])
   post_diff_sd <- sd(dif_i_sum[1:nind])
+=======
+    yi_mean[i] <- mean(y[i,(f[i]+1):l[i]])
+    yi_new_mean[i] <- mean(y_new[i,(f[i]+1):l[i]])
+  }
+  odt_mean <- mean(yi_mean[1:nind])
+  ndt_mean <- mean(yi_new_mean[1:nind])
+  odt_sd <- sd(yi_mean[1:nind])
+  ndt_sd <- sd(yi_new_mean[1:nind])
+  
+  post_diff_mn <- odt_mean - ndt_mean
+  post_diff_sd <- odt_sd - ndt_sd
+>>>>>>> b314fd8fbb98759f75b140fc66abffc05af3bf33
   
   #Values=======================================================================
   for(t in 1:nocc){
