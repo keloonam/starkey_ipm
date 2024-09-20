@@ -60,20 +60,3 @@ source("workflows//data_prep//misc_data_prep.R")
 # It also references multiple .csvs and will fail without those
 # This script is also entirely optional if you are not using covariates
 source("workflows//data_prep//covariate_data_prep.R")
-
-# Prepare the full IPM data
-year_range <- 1988:2023
-max_age <- 25
-climate_cov <- "pdi_growing" # pdi_growing, pdi_september, temp, precip, ndvi
-# PDI = palmer drought index
-# Temp, precip, and ndvi are means over may-september
-puma_cov <- "pd_logis" # pd_recon, pd_morts, pd_odfwe, pd_logis
-# Recon = reconstruction
-# Morts = mortalities
-# ODFWE = regression estimate from ODWF
-# logis = logistic growth model build from reconstruction
-# only logis covers the fully 1987 to 2023 timeframe currently
-source("workflows//data_prep//ipm_data_bundling.R")
-
-# Prepare the IPM initial values
-source("workflows//data_prep//ipm_build_inits.R")

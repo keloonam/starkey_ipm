@@ -16,34 +16,49 @@ for(t in 2:nyr){
 
   ########## Recruitment  Process ##########
   for(x in 1:2){
-    N[1,x,t] <- R[t] * sum(NL[2:max_age,1,t]) * 0.5
-    NL[1,x,t] <- R[t] * sum(NL[2:max_age,1,t]) * 0.5
+    ### Expected value ###
+    N_C_Exp[x,t] <- R[t] * N[2,1,t]  * 0.5
+    ### Tau (for normal approximation of binomial) ###
+    N_C_Tau[x,t] <- 1 / (N_C_Exp[x,t] * (1 - R[t]))
+    ### Recruitment Process ###
+    N[1,x,t] ~ dnorm(N_C_Exp[x,t], N_C_Tau[x,t])T(n_min[1,x,t], )
   } # x
   
   ########## Survival Process ##########
   for(x in 1:2){
-    N_ADDED[1,x,t] <- n_c_added[x,t]
-    for(a in 2:max_age){
-      PROPORTION[a,x,t] <- N[a-1,x,t-1] / sum(N[2:max_age,x,t-1])
-      N_ADDED[a,x,t] <- n_a_added[x,t] * PROPORTION[a,x,t]
-      N_AUGUST[a,x,t] <- (N[a-1,x,t-1] + N_ADDED[a-1,x,t]) * S[a,x,t]
-      HARVEST[a,x,t] <- n_har[x,t] * PROPORTION[a,x,t]
-      N[a,x,t] <- N_AUGUST[a,x,t] - HARVEST[a,x,t]
-      NL[a,x,t] <- N[a-1,x,t-1] * S[a,x,t]
-    } # a (age)
+    for(a in 1:2){
+      ##### Survive to August #####
+      ### Expected Value ###
+      N_A_Exp[a,x,t] <- (N[a,x,t-1] + n_added[a,x,t]) * S[a,x,t]
+      ### Tau (for normal approximation of binomial) ###
+      N_A_Tau[a,x,t] <- 1 / (N_A_Exp[a,x,t] * (1 - S[a,x,t]))
+      ### Age-split minimum known alive (based on estimated age ratios) ###
+      n_exp_min[a,x,t] <- n_min[2,x,t] * N_A_Exp[a,x,t] / sum(N_A_Exp[1:2,x,t])
+      ### Survival process ###
+      N_A_Obs[a,x,t] ~ dnorm(N_A_Exp[a,x,t], N_A_Tau[a,x,t])T(n_exp_min[a,x,t],)
+    } # a
+    ##### Harvest #####
+    N_August[x,t] <- sum(N_A_Obs[1:2,x,t])
+    N[2,x,t] <- N_August[x,t] - n_har[x,t]
   } # x (sex)
   
-  ########## Abundance Tracking #########
-  NF[t] <- sum(N[2:max_age, 1, t])
-  NM[t] <- sum(N[2:max_age, 2, t])
-  NC[t] <- sum(N[1, 1:2, t])
+  ########## Abundance Tracking ##########
+  NF[t] <- N[2,1,t]
+  NM[t] <- N[2,2,t]
+  NC[t] <- sum(N[1,1:2,t])
   NT[1,t] <- NC[t]
   NT[2,t] <- NF[t]
   NT[3,t] <- NM[t]
   Ntot[t] <- NC[t] + NF[t] + NM[t]
-  LAMBDA[t] <- sum(NL[1:max_age, 1:2, t]) / Ntot[t-1]
+  
+  ########## Calculate Lambda ##########
+  L_calf[t] <- N[2,1,t-1] * R[t]
+  for(x in 1:2){
+    L_adult[x,t] <- N[1,x,t-1] * S[1,x,t] + N[2,x,t-1] * S[2,x,t]
+  }
+  LAMBDA[t] <- (L_calf[t] + sum(L_adult[1:2,t])) / Ntot[t-1]
 } # t (year)  
-# MEAN_LAMBDA <- prod(LAMBDA[2:nyr])^(1/(nyr-1))
+#MEAN_LAMBDA <- prod(LAMBDA[2:nyr])^(1/(nyr-1))
 
 
 ########################################
@@ -74,8 +89,8 @@ for(i in 1:nr){
 } # i (observation row)
 
 ########## Count Observations ##########
-for(asc in 1:3){
-  sd_c[asc] ~ dnorm(0, 0.00001)T(0,1)
+for(asc in 1:3){ # separate random effect for each age/sex class (asc)
+  sd_c[asc] ~ dnorm(0, 0.0001)T(0, )
   tau_c[asc] <- 1 / (sd_c[asc]^2)
 }
 for(i in 1:nc){
@@ -135,12 +150,11 @@ for(t in 2:nyr){
   SF_YR[t] ~ dnorm(0, tau_SF)
   SM_YR[t] ~ dnorm(0, tau_SM)
   
-  logit(SC[t]) <- SC_B0 +
+  logit(SC[t]) <- SC_B0 + SC_YR[t]
     #SC_WT * clim[t] +
     #SC_WM * clim[t-1] +
     #SC_CG * puma[t] +
-    #SC_DD * nelk[t] +
-    SC_YR[t]
+    #SC_DD * nelk[t]
   logit(SF[t]) <- SF_B0 + SF_YR[t]
   logit(SM[t]) <- SM_B0 + SM_YR[t]
   
@@ -165,6 +179,9 @@ for(x in 1:2){ # x
   } # a
 } # x
 Ntot[1] <- sum(N[1:max_age,1:2,1])
+NF[1] <- N[2,1,1]
+NM[1] <- N[2,2,1]
+NC[1] <- sum(N[1,1:2,1])
 ###############################
 ########## Model End ##########
 ###############################

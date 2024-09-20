@@ -32,26 +32,25 @@ puma <- covariates %>%
 #   filter(yr %in% year_range) %>%
 #   pull(nelk)
 
-n_c_added <- misc_data$n_mov %>%
+n_added_tibble <- misc_data$n_mov %>%
   filter(yr %in% year_range) %>%
-  filter(age == "ca") %>%
-  select(yr, sex, n_moved) %>%
-  pivot_wider(names_from = sex, values_from = n_moved) %>%
+  select(yr, age, sex, n_moved) %>%
+  pivot_wider(names_from = c(sex, age), values_from = n_moved) %>%
   full_join(edt) %>% 
   arrange(yr) %>%
-  replace_na(list(yr = 0, f = 0, m = 0, fake_data = 0)) %>%
-  select(f,m) %>%
-  as.matrix() %>% t()
-n_a_added <- misc_data$n_mov %>%
-  filter(yr %in% year_range) %>%
-  filter(age == "ad") %>%
-  select(yr, sex, n_moved) %>%
-  pivot_wider(names_from = sex, values_from = n_moved) %>%
-  full_join(edt) %>% 
-  arrange(yr) %>%
-  replace_na(list(yr = 0, f = 0, m = 0, fake_data = 0)) %>%
-  select(f,m) %>%
-  as.matrix() %>% t()
+  replace_na(list(
+    yr = 0, 
+    f_ad = 0, 
+    m_ad = 0, 
+    f_ca = 0, 
+    m_ca = 0, 
+    fake_data = 0)) %>%
+  select(f_ad, m_ad, f_ca, m_ca)
+n_added_array <- array(0, dim = c(2,2,length(year_range)))
+n_added_array[1,1,] <- n_added_tibble$f_ca
+n_added_array[1,2,] <- n_added_tibble$m_ca
+n_added_array[2,1,] <- n_added_tibble$f_ad
+n_added_array[2,2,] <- n_added_tibble$m_ad
 
 n_har <- misc_data$n_har %>%
   filter(yr %in% year_range) %>%
@@ -63,6 +62,12 @@ n_har <- misc_data$n_har %>%
   replace_na(list(yr = 0, f = 0, m = 0, fake_data = 0)) %>%
   select(f,m) %>%
   as.matrix() %>% t()
+
+n_min <- array(0, dim = c(2,2,length(year_range)))
+n_min[1,1,] <- misc_data$n_min$calf/2
+n_min[1,1,] <- misc_data$n_min$calf/2
+n_min[2,1,] <- misc_data$n_min$female
+n_min[2,2,] <- misc_data$n_min$male
 
 est_n <- abundance %>%
   mutate(yr = year - (year_range[1] - 1)) %>%
@@ -117,9 +122,9 @@ est_n1[2:max_age,2] <- 55 / (max_age - 1)
 dtlist <- list(
   nyr = length(year_range),
   max_age = max_age,
-  n_c_added = n_c_added, 
-  n_a_added = n_a_added, 
+  n_added = n_added_array, 
   n_har = n_har,
+  n_min = n_min,
   est_n = est_n,
   est_bs = est_bs,
   est_br = est_br,
