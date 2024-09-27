@@ -6,13 +6,13 @@
 require(nimble); require(lubridate)
 
 # Specify results location
-result_file <- "results//cjs_rslt_06sep2024.rds"
+result_file <- "results//cjs_rslt_24sep2024.rds"
 
 # Load the data
 cd <- readRDS("data//cjs_data.rds")
 
 # Load the model
-source("models//cjs.R")
+source("models//survival.R")
 
 # Set trace monitors
 params <- c(
@@ -21,8 +21,8 @@ params <- c(
   "survival_ca",
   "prob_af",
   "prob_am",
-  "post_diff_mn",
-  "post_diff_sd"
+  "pp_mean_difference",
+  "pp_sd_difference"
 )
 
 # Run it
@@ -32,9 +32,10 @@ rslt <- nimbleMCMC(
   data        = cd$data,
   monitors    = params,
   inits       = cd$initial_values,
-  niter       = 25000,
-  nburnin     = 1000,
+  niter       = 10000,
+  nburnin     = 5000,
   nchains     = 3,
+  thin        = 5,
   progressBar = T,
   summary     = F,
   check       = F

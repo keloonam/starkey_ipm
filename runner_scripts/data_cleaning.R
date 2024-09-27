@@ -21,16 +21,14 @@ source("workflows//data_prep//cjs_data_prep.R")
 # Clean CJS results
 # This requires running the cjs model runner script at least once
 # "runner_scripts//run_cjs.R"
-results_file <- "results//cjs_rslt_06sep2024.rds"
+results_file <- "Not here!!!"
 # This option toggles removal of years with questionable estimates
 # The years flagged for removal have known causes for bad estimates, such as:
   # e.g. individuals removed without ids recorded
-remove_bad_years <- T
+remove_bad_years <- bob_throws_errors
 source("workflows//data_prep//cjs_summarize_results.R")
 
 # Prepare recruitment data
-yr_range <- c(1988, 2023)
-capture_handling_data <- "data//capture_handling_data.rds"
 source("workflows//data_prep//recruitment_data_prep.R")
 
 # Clean Recruitment results
@@ -53,6 +51,8 @@ capture_handling_data <- "data//capture_handling_data.rds"
 cjs_data <- "data//cjs_data.rds"
 cjs_results_summary <- "results//cjs_summary.rds"
 yr_range <- c(1988, 2023)
+feedground_counts <- "data//min_n_handle_summaries.csv"
+management_moves <- "data//mov_data_handle_summaries.csv"
 source("workflows//data_prep//misc_data_prep.R")
 
 # Prepare the covariate data

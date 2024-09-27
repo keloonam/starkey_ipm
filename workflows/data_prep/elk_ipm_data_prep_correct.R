@@ -116,7 +116,7 @@ p_cjs[,8] <- cp_raw %>%
   map(quantile, 0.975) %>%
   unlist()
 
-load("data//elk_data.Rdata")
+load("data//deprecated//elk_data.Rdata")
 y <- elk_data$cap_tib %>%
   arrange(id) %>%
   select(as.character(start_year:end_year)) %>%

@@ -1,0 +1,189 @@
+model{
+# Starkey Elk IPM
+# Unless otherwise specified, these organizational rules apply:
+  # Papameters to estimate are UPPERCASE
+  # Date is lowercase
+  # Indexing follows [age, sex, year] 
+    # When in doubt, remember alphabetical order
+    # Age index represents year of life
+      # e.g. 1 >> born in previous spring, aka, in first year of life
+    # Sex: 1 = Female, 2 = Male
+
+###################################
+########## Process Model ##########
+###################################
+for(t in 2:nyr){
+
+  ########## Recruitment  Process ##########
+  for(x in 1:2){
+    ### Expected value ###
+    N_C_Exp[x,t] <- R[t] * N[2,1,t]  * 0.5
+    ### Tau (for normal approximation of binomial) ###
+    N_C_Tau[x,t] <- 1 / (N_C_Exp[x,t] * (1 - R[t]))
+    ### Recruitment Process ###
+    N[1,x,t] ~ dnorm(N_C_Exp[x,t], N_C_Tau[x,t])T(n_min[1,x,t], )
+  } # x
+  
+  ########## Survival Process ##########
+  for(x in 1:2){
+    for(a in 1:2){
+      ##### Survive to August #####
+      ### Expected Value ###
+      N_A_Exp[a,x,t] <- (N[a,x,t-1] + n_added[a,x,t]) * S[a,x,t]
+      ### Tau (for normal approximation of binomial) ###
+      N_A_Tau[a,x,t] <- 1 / (N_A_Exp[a,x,t] * (1 - S[a,x,t]))
+      ### Age-split minimum known alive (based on estimated age ratios) ###
+      n_exp_min[a,x,t] <- n_min[2,x,t] * N_A_Exp[a,x,t] / sum(N_A_Exp[1:2,x,t])
+      ### Survival process ###
+      N_A_Obs[a,x,t] ~ dnorm(N_A_Exp[a,x,t], N_A_Tau[a,x,t])T(n_exp_min[a,x,t],)
+    } # a
+    ##### Harvest #####
+    N_August[x,t] <- sum(N_A_Obs[1:2,x,t])
+    N[2,x,t] <- N_August[x,t] - n_har[x,t]
+  } # x (sex)
+  
+  ########## Abundance Tracking ##########
+  NF[t] <- N[2,1,t]
+  NM[t] <- N[2,2,t]
+  NC[t] <- sum(N[1,1:2,t])
+  NT[1,t] <- NC[t]
+  NT[2,t] <- NF[t]
+  NT[3,t] <- NM[t]
+  Ntot[t] <- NC[t] + NF[t] + NM[t]
+  
+  ########## Calculate Lambda ##########
+  L_calf[t] <- N[2,1,t-1] * R[t]
+  for(x in 1:2){
+    L_adult[x,t] <- N[1,x,t-1] * S[1,x,t] + N[2,x,t-1] * S[2,x,t]
+  }
+  LAMBDA[t] <- (L_calf[t] + sum(L_adult[1:2,t])) / Ntot[t-1]
+} # t (year)  
+#MEAN_LAMBDA <- prod(LAMBDA[2:nyr])^(1/(nyr-1))
+
+
+########################################
+########## Observation Models ##########
+########################################
+# Data are indexed by row (i), with one observation per row
+# The columns for the data follow [class, year, mean, tau]
+  # Class follows:
+    # 1 = calves
+    # 2 = females
+    # 3 = males
+  # data[i,2] = year ith row applies to
+  # data[i,3] = mean of estimate from ith row
+
+########## Abundance Obsrvations ##########
+for(i in 1:nn){
+  est_n[i,3] ~ dnorm(NT[est_n[i,1],est_n[i,2]], est_n[i,4])T(0,)
+} # i (observation row)
+
+########## Survival Observations ##########
+for(i in 1:ns){
+  est_bs[i,3] ~ dnorm(ST[est_bs[i,1],est_bs[i,2]], est_bs[i,4])
+} # i (observation row)
+
+########## Recruitment Observations ##########
+for(i in 1:nr){
+  est_br[i,3] ~ dnorm(RT[est_br[i,2]], est_br[i,4])
+} # i (observation row)
+
+########## Count Observations ##########
+for(asc in 1:3){ # separate random effect for each age/sex class (asc)
+  sd_c[asc] ~ dnorm(0, 0.0001)T(0, )
+  tau_c[asc] <- 1 / (sd_c[asc]^2)
+}
+for(i in 1:nc){
+  cjs_c[i,3] ~ dnorm(NT[cjs_c[i,1], cjs_c[i,2]], tau_c[cjs_c[i,1]]) 
+} # i (observation row)
+
+#####################################
+########## Priors and GLMs ##########
+#####################################
+
+########## Recruitment ##########
+# Random Effects
+sd_R ~ dnorm(0, 0.25)T(0, 5)
+tau_R <- 1/sd_R^2
+
+# Fixed Effects
+R_B0 ~ dlogis(0, 1)T(-2, 2)
+R_WT ~ dlogis(0, 1)T(-2, 2)
+R_WM ~ dlogis(0, 1)T(-2, 2)
+R_CG ~ dlogis(0, 1)T(-2, 2)
+R_DD ~ dlogis(0, 1)T(-2, 2)
+
+# GLM
+for(t in 2:nyr){
+  R_YR[t] ~ dnorm(0, tau_R)T(-2, 2)
+  logit(R[t]) <- R_B0 + R_YR[t] +
+    R_WT * clim[t] +
+    R_WM * clim[t-1] +
+    R_CG * puma[t] +
+    R_DD * nelk[t]
+  RT[t] <- logit(R[t])
+} # t (year)
+  
+########## Survival ##########
+# Random Effects
+sd_SC ~ dnorm(0, 0.25)T(0, 5)
+sd_SF ~ dnorm(0.83, 45.64)T(0, 5)
+sd_SM ~ dnorm(0.84, 33.50)T(0, 5)
+
+tau_SC <- 1/sd_SC^2
+tau_SF <- 1/sd_SF^2
+tau_SM <- 1/sd_SM^2
+  
+# Fixed Effects
+SC_B0 ~ dlogis(0, 1)T(-3, 3)
+SF_B0 ~ dlogis(2.53, 1/.38)T(-1, )
+SM_B0 ~ dlogis(1.47, 1/.34)T(-1, )
+
+SC_WT ~ dlogis(0, 1)T(-2, 2)
+SC_WM ~ dlogis(0, 1)T(-2, 2)
+SC_CG ~ dlogis(0, 1)T(-2, 2)
+SC_DD ~ dlogis(0, 1)T(-2, 2)
+
+# GLMs
+for(t in 2:nyr){
+  SC_YR[t] ~ dnorm(0, tau_SC)T(-3, 3)
+  SF_YR[t] ~ dnorm(0, tau_SF)
+  SM_YR[t] ~ dnorm(0, tau_SM)
+  
+  logit(SC[t]) <- SC_B0 + SC_YR[t] +
+    SC_WT * clim[t] +
+    SC_WM * clim[t-1] +
+    SC_CG * puma[t] +
+    SC_DD * nelk[t]
+  logit(SF[t]) <- SF_B0 + SF_YR[t]
+  logit(SM[t]) <- SM_B0 + SM_YR[t]
+  
+  S[1,1,t] <- SC[t]
+  S[1,2,t] <- SC[t]
+  for(a in 2:max_age){
+    S[a,1,t] <- SF[t]
+    S[a,2,t] <- SM[t]
+  }
+  ST[1,t] <- logit(SC[t])
+  ST[2,t] <- logit(SF[t])
+  ST[3,t] <- logit(SM[t])
+} # t (year)
+
+######################################## 
+########## Starting Abundance ##########
+########################################
+for(x in 1:2){ # x
+  for(a in 1:max_age){ # a
+    N[a,x,1] ~ dnorm(est_n1[a,x], 0.0001)T(0,250)
+    NL[a,x,1] <- N[a,x,1]
+  } # a
+} # x
+Ntot[1] <- sum(N[1:max_age,1:2,1])
+NF[1] <- N[2,1,1]
+NM[1] <- N[2,2,1]
+NC[1] <- sum(N[1,1:2,1])
+###############################
+########## Model End ##########
+###############################
+
+}

@@ -5,6 +5,11 @@ sd_to_tau <- function(x){
   return(1/(x^2))
 }
 
+scl <- function(x){
+  out <- (x - mean(x)) / sd(x)
+  return(out)
+}
+
 #Empty_tibble===================================================================
 
 edt <- tibble(
@@ -14,7 +19,7 @@ edt <- tibble(
 
 #Load_the_data==================================================================
 
-covariates <- readRDS("data//scaled_covariates.rds")
+covariates <- readRDS("data//unscaled_covariates.rds")
 misc_data <- readRDS("data//misc_data.rds")
 recruitment <- readRDS("results//recruitment_summary.rds")
 survival <- readRDS("results//cjs_summary.rds")
@@ -24,18 +29,21 @@ abundance <- read_csv("data//elk_abundance_ipm_ready.csv")
 
 clim <- covariates %>%
   filter(yr %in% year_range) %>%
-  pull(climate_cov)
+  pull(climate_cov) %>%
+  scl()
 puma <- covariates %>%
   filter(yr %in% year_range) %>%
-  pull(puma_cov)
-# nelk <- covariates %>%
-#   filter(yr %in% year_range) %>%
-#   pull(nelk)
+  pull(puma_cov) %>%
+  scl()
+nelk <- covariates %>%
+  filter(yr %in% year_range) %>%
+  pull(nelk) %>%
+  scl()
 
 n_added_tibble <- misc_data$n_mov %>%
-  filter(yr %in% year_range) %>%
-  select(yr, age, sex, n_moved) %>%
-  pivot_wider(names_from = c(sex, age), values_from = n_moved) %>%
+  filter(year %in% year_range) %>%
+  mutate(yr = year) %>%
+  select(-year) %>%
   full_join(edt) %>% 
   arrange(yr) %>%
   replace_na(list(
@@ -45,12 +53,12 @@ n_added_tibble <- misc_data$n_mov %>%
     f_ca = 0, 
     m_ca = 0, 
     fake_data = 0)) %>%
-  select(f_ad, m_ad, f_ca, m_ca)
+  select(fe_ad, ma_ad, ma_ca, fe_ca)
 n_added_array <- array(0, dim = c(2,2,length(year_range)))
-n_added_array[1,1,] <- n_added_tibble$f_ca
-n_added_array[1,2,] <- n_added_tibble$m_ca
-n_added_array[2,1,] <- n_added_tibble$f_ad
-n_added_array[2,2,] <- n_added_tibble$m_ad
+n_added_array[1,1,] <- n_added_tibble$fe_ca
+n_added_array[1,2,] <- n_added_tibble$ma_ca
+n_added_array[2,1,] <- n_added_tibble$fe_ad
+n_added_array[2,2,] <- n_added_tibble$ma_ad
 
 n_har <- misc_data$n_har %>%
   filter(yr %in% year_range) %>%
@@ -65,7 +73,7 @@ n_har <- misc_data$n_har %>%
 
 n_min <- array(0, dim = c(2,2,length(year_range)))
 n_min[1,1,] <- misc_data$n_min$calf/2
-n_min[1,1,] <- misc_data$n_min$calf/2
+n_min[1,2,] <- misc_data$n_min$calf/2
 n_min[2,1,] <- misc_data$n_min$female
 n_min[2,2,] <- misc_data$n_min$male
 
@@ -104,12 +112,13 @@ est_br <- recruitment %>%
 
 cjs_c <- misc_data$count %>%
   mutate(yr = yr - (year_range[1] - 1)) %>%
+  mutate(cnt = count / prob) %>%
   mutate(class = case_when(
     sex == "f" & age == "ad" ~ 2,
     sex == "c" & age == "ca" ~ 1,
     sex == "m" & age == "ad" ~ 3
   )) %>%
-  select(class, yr, count, prob) %>%
+  select(class, yr, cnt) %>%
   arrange(yr, class) %>%
   as.matrix()
 
@@ -135,7 +144,7 @@ dtlist <- list(
   nc = nrow(cjs_c),
   clim = clim,
   puma = puma,
-  nelk = rep(0, length(year_range)),
+  nelk = nelk,
   est_n1 = est_n1
 )
 

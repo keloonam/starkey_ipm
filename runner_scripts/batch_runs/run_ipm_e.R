@@ -8,7 +8,7 @@ require(tidyverse); require(rjags); require(mcmcplots)
 # Prepare the full IPM data
 year_range <- 1988:2023
 max_age <- 2
-climate_cov <- "pdi_september" 
+climate_cov <- "spei_3m" 
   # Choose from:
     # pdi_growing, pdi_september, temp, precip, ndvi, or spei_(1,3,6,12,24,48)m
 puma_cov <- "pd_full_mean" 
@@ -21,15 +21,15 @@ source("workflows//data_prep//ipm_build_inits.R")
 
 #Variables======================================================================
 # Specify the model and save location for the results
-model_file <- "models//ipm_1.0.txt"
-save_file <- "results//submission_2//ipm_null.rds"
+model_file <- "models//ipm_1.1.txt"
+save_file <- "results//submission_2//ipm_1.0_fullmean_spei3m.rds"
 
 # JAGS control parameters
-n_i <- 100000
-n_a <- 1000
-n_b <- 10000
+n_i <- 1000000
+n_a <- 10000
+n_b <- 100000
 n_c <- 3
-n_t <- 1
+n_t <- 100
 
 #Data_prep======================================================================
 jags_data <- readRDS("data//ipm_data.rds")
@@ -56,7 +56,7 @@ jgs_mdl <- jags.model(
 
 update(jgs_mdl, n.iter = n_b)
 
-new_res <- coda.samples(
+rslt <- coda.samples(
   jgs_mdl,
   variable.names = params,
   n.iter = n_i,
@@ -66,7 +66,7 @@ new_res <- coda.samples(
 cat("From start to end of this model run,")
 tictoc::toc()
 
-mcmcplots::mcmcplot(new_res)
+mcmcplots::mcmcplot(rslt)
 
 
-saveRDS(new_res, file = save_file)
+saveRDS(rslt, file = save_file)

@@ -7,19 +7,18 @@ logit <- function(x){
 }
 
 #Load Results===================================================================
-yrs <- readRDS(recruitment_data)$constants$years
-rs <- readRDS(results_file) %>%
+yrs <- readRDS("data//recruitment_data.rds")$constants$years
+rs <- readRDS("results//recruitment_rslt_10sep2024.rds") %>%
   map(as_tibble) %>%
   bind_rows() %>%
   select(grep("R", names(.))) %>%
   set_names(as.character(yrs)) %>%
   pivot_longer(cols = 1:ncol(.), names_to = "yr", values_to = "r") %>%
-  mutate(rb0 = logit(r)) %>%
   group_by(yr) %>%
-  summarise(mn = mean(rb0), sd = sd(rb0)) %>%
+  summarise(mn = mean(r), tau = 1/sd(r)^2) %>%
   ungroup() %>%
   mutate(yr = as.numeric(yr))
 
 #Cleanup========================================================================
-saveRDS(rs, "results//recruitment_summary.rds")
+saveRDS(rs, "s2//recruitment_summary.rds")
 rm(list = ls())
