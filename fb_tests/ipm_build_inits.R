@@ -1,7 +1,9 @@
 # Build the initial values for the ipm based on the data
-dtlist <- readRDS("data//ipm_data.rds")
-inits <- list(
+dtlist <- jags_data
+
+jags_inits <- list(
   sd_R = 0.1,
+  R_B0 = 0,
   R_YR = c(NA, rep(0, dtlist$nyr-1)),
   sd_SC = 0.1,
   sd_SF = 0.1,
@@ -13,6 +15,3 @@ inits <- list(
   SF_YR = c(NA, rep(0, dtlist$nyr-1)),
   SM_YR = c(NA, rep(0, dtlist$nyr-1))
 )
-
-saveRDS(inits, "data//ipm_inits.rds")
-rm(list = ls()[-which(ls() == "yr_range")])

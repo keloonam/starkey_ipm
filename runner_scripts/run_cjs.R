@@ -6,7 +6,7 @@
 require(nimble); require(lubridate)
 
 # Specify results location
-result_file <- "results//cjs_rslt_24sep2024.rds"
+result_file <- "results//cjs_rslt.rds"
 
 # Load the data
 cd <- readRDS("data//cjs_data.rds")
@@ -32,8 +32,8 @@ rslt <- nimbleMCMC(
   data        = cd$data,
   monitors    = params,
   inits       = cd$initial_values,
-  niter       = 10000,
-  nburnin     = 5000,
+  niter       = 50000,
+  nburnin     = 15000,
   nchains     = 3,
   thin        = 5,
   progressBar = T,
@@ -42,4 +42,5 @@ rslt <- nimbleMCMC(
 )  
 
 saveRDS(rslt, file = result_file)
-mcmcplots::mcmcplot(rslt)
+# mcmcplots::mcmcplot(rslt)
+rm(list = ls()[-which(ls() == "yr_range")])

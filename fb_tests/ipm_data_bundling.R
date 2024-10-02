@@ -1,4 +1,11 @@
 # Build the full IPM data
+#Sourcing=======================================================================
+
+source("fb_tests//cjs_data_prep.R")
+source("fb_tests//recruitment_data_prep.R")
+source("fb_tests//misc_data_prep.R")
+climate_cov <- "spei_12m"
+puma_cov <- "pd_full_mean"
 #Functions======================================================================
 
 sd_to_tau <- function(x){
@@ -19,27 +26,15 @@ edt <- tibble(
 
 #Load_the_data==================================================================
 
-covariates <- readRDS("data//unscaled_covariates.rds")
-misc_data <- readRDS("data//misc_data.rds")
-recruitment <- readRDS("results//recruitment_summary.rds")
-survival <- readRDS("results//cjs_summary.rds")
-abundance <- read_csv("data//elk_abundance_ipm_ready.csv")
-n1_estimates <- readRDS("results//n1_estimates.rds")
-
+covariates <- readRDS("data//unscaled_covariates.rds") %>%
+  filter(yr %in% yr_range)
+misc_data <- readRDS("fb_tests//misc_data.rds")
+recruitment <- readRDS("fb_tests//recruitment_data.rds") 
+survival <- readRDS("fb_tests//cjs_data.rds")
+abundance <- read_csv("data//elk_abundance_ipm_ready.csv") %>%
+  filter(year %in% yr_range)
+n1_estimates <- readRDS("fb_tests//n1_estimates.rds")
 #Pull_and_transform=============================================================
-
-clim <- covariates %>%
-  filter(yr %in% yr_range) %>%
-  pull(climate_cov) %>%
-  scl()
-puma <- covariates %>%
-  filter(yr %in% yr_range) %>%
-  pull(puma_cov) %>%
-  scl()
-nelk <- covariates %>%
-  filter(yr %in% yr_range) %>%
-  pull(nelk) %>%
-  scl()
 
 n_added_tibble <- misc_data$n_mov %>%
   filter(year %in% yr_range) %>%
@@ -73,20 +68,12 @@ n_har <- misc_data$n_har %>%
   as.matrix() %>% t()
 
 n_min <- array(0, dim = c(2,2,length(yr_range)))
-n_min[1,1,] <- misc_data$n_min %>%
-  filter(yr %in% yr_range) %>%
-  pull(calf) %>%
-  (function(x)x/2)
-n_min[1,2,] <- n_min[1,1,]
-n_min[2,1,] <- misc_data$n_min %>%
-  filter(yr %in% yr_range) %>%
-  pull(female)
-n_min[2,2,] <- misc_data$n_min %>%
-  filter(yr %in% yr_range) %>%
-  pull(male)
+n_min[1,1,] <- misc_data$n_min$calf/2
+n_min[1,2,] <- misc_data$n_min$calf/2
+n_min[2,1,] <- misc_data$n_min$female
+n_min[2,2,] <- misc_data$n_min$male
 
 est_n <- abundance %>%
-  filter(year %in% yr_range) %>%
   mutate(yr = year - (yr_range[1] - 1)) %>%
   mutate(class = case_when(
     age == 1 ~ 1,
@@ -96,32 +83,7 @@ est_n <- abundance %>%
   select(class, yr, mean, tau) %>%
   as.matrix()
 
-est_bs <- bind_rows(survival) %>%
-  filter(yr %in% yr_range[-c(1, length(yr_range)-1, length(yr_range))]) %>%
-  filter(var %in% c("bsf", "bsc", "bsm")) %>%
-  mutate(yr = as.numeric(yr) - (yr_range[1] - 1)) %>%
-  mutate(class = case_when(
-    var == "bsf" ~ 2,
-    var == "bsc" ~ 1,
-    var == "bsm" ~ 3
-  )) %>%
-  mutate(tau = sd_to_tau(sd)) %>%
-  select(class, yr, mn, tau) %>%
-  arrange(yr, class) %>%
-  as.matrix()
-
-est_br <- recruitment %>%
-  filter(yr %in% yr_range) %>%
-  mutate(class = 0) %>%
-  mutate(yr = as.numeric(yr) - (yr_range[1] - 1)) %>%
-  mutate(tau = sd_to_tau(sd)) %>%
-  select(class, yr, mn, tau) %>%
-  arrange(yr) %>%
-  filter(yr > 1) %>%
-  as.matrix()
-
 cjs_c <- misc_data$count %>%
-  filter(yr %in% yr_range) %>%
   mutate(yr = yr - (yr_range[1] - 1)) %>%
   mutate(cnt = count / prob) %>%
   mutate(class = case_when(
@@ -132,6 +94,11 @@ cjs_c <- misc_data$count %>%
   select(class, yr, cnt) %>%
   arrange(yr, class) %>%
   as.matrix()
+
+rec_dt <- matrix(NA, nrow = recruitment$constants$n_years, ncol = 3)
+rec_dt[,1] <- recruitment$constants$years - (yr_range[1] - 1)
+rec_dt[,2] <- recruitment$data$n_calf
+rec_dt[,3] <- recruitment$data$n_cow
 
 est_n1 <- matrix(100, nrow = 2, ncol = 2)
 est_n1[1,] <- n1_estimates %>%
@@ -145,27 +112,41 @@ est_n1[2,2] <- n1_estimates %>%
   filter(yr == yr_range[1]) %>%
   pull(male)
 
+clim <- covariates %>%
+  filter(yr %in% yr_range) %>%
+  pull(climate_cov) %>%
+  scl()
+puma <- covariates %>%
+  filter(yr %in% yr_range) %>%
+  pull(puma_cov) %>%
+  scl()
+nelk <- covariates %>%
+  filter(yr %in% yr_range) %>%
+  pull(nelk) %>%
+  scl()
 
 #Bundle=========================================================================
-dtlist <- list(
+jags_data <- list(
   nyr = length(yr_range),
   n_added = n_added_array, 
   n_har = n_har,
   n_min = n_min,
   est_n = est_n,
-  est_bs = est_bs,
-  est_br = est_br,
   cjs_c = cjs_c, #[class,year,mean,tau]
   nn = nrow(est_n),
-  ns = nrow(est_bs),
-  nr = nrow(est_br),
   nc = nrow(cjs_c),
+  est_n1 = est_n1,
+  nind = survival$constants$nind,
+  l = survival$constants$l,
+  f = survival$constants$f,
+  y = survival$data$y,
+  z = survival$data$z,
+  m = survival$data$m,
+  h = survival$data$h,
+  c = survival$data$c,
+  rec_dt = rec_dt,
+  ny_r = nrow(rec_dt),
   clim = clim,
   puma = puma,
-  nelk = nelk,
-  est_n1 = est_n1
+  nelk = nelk
 )
-
-#Clean-up=======================================================================
-saveRDS(dtlist, "data//ipm_data.rds")
-rm(list = ls()[which(ls() != "yr_range")])

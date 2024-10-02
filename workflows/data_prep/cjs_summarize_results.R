@@ -14,16 +14,16 @@ rm_bad_yrs <- function(x){
 }
 
 #Load the results===============================================================
-rslt <- readRDS(results_file) %>%
+rslt <- readRDS("results//cjs_rslt.rds") %>%
   map(as_tibble) %>%
   bind_rows()
 
 #Capture Probability============================================================
 fp_logit <- rslt %>%
   select(grep("prob_af", names(.))) %>%
-  set_names(as.character(1989:2024)) %>%
+  set_names(as.character(yr_range + 1)) %>%
   pivot_longer(cols = 1:ncol(.), names_to = "yr", values_to = "val") %>%
-  filter(yr %in% as.character(1989:2022)) %>%
+  filter(yr %in% as.character(yr_range + 1)) %>%
   mutate(val = logit(val)) %>%
   group_by(yr) %>%
   summarise(mn = mean(val), sd = sd(val)) %>%
@@ -31,9 +31,9 @@ fp_logit <- rslt %>%
   mutate(var = "bpf")
 mp_logit <- rslt %>%
   select(grep("prob_am", names(.))) %>%
-  set_names(as.character(1989:2024)) %>%
+  set_names(as.character(yr_range + 1)) %>%
   pivot_longer(cols = 1:ncol(.), names_to = "yr", values_to = "val") %>%
-  filter(yr %in% as.character(1989:2022)) %>%
+  filter(yr %in% as.character(yr_range + 1)) %>%
   mutate(val = logit(val)) %>%
   group_by(yr) %>%
   summarise(mn = mean(val), sd = sd(val)) %>%
@@ -43,9 +43,9 @@ mp_logit <- rslt %>%
 #Survival=======================================================================
 fs_logit <- rslt %>%
   select(grep("survival_af", names(.))) %>%
-  set_names(as.character(1989:2024)) %>%
+  set_names(as.character(yr_range + 1)) %>%
   pivot_longer(cols = 1:ncol(.), names_to = "yr", values_to = "val") %>%
-  filter(yr %in% as.character(1989:2022)) %>%
+  filter(yr %in% as.character(yr_range + 1)) %>%
   mutate(val = logit(val)) %>%
   group_by(yr) %>%
   summarise(mn = mean(val), sd = sd(val)) %>%
@@ -53,9 +53,9 @@ fs_logit <- rslt %>%
   mutate(var = "bsf")
 ms_logit <- rslt %>%
   select(grep("survival_am", names(.))) %>%
-  set_names(as.character(1989:2024)) %>%
+  set_names(as.character(yr_range + 1)) %>%
   pivot_longer(cols = 1:ncol(.), names_to = "yr", values_to = "val") %>%
-  filter(yr %in% as.character(1989:2022)) %>%
+  filter(yr %in% as.character(yr_range + 1)) %>%
   mutate(val = logit(val)) %>%
   group_by(yr) %>%
   summarise(mn = mean(val), sd = sd(val)) %>%
@@ -63,9 +63,9 @@ ms_logit <- rslt %>%
   mutate(var = "bsm")
 cs_logit <- rslt %>%
   select(grep("survival_ca", names(.))) %>%
-  set_names(as.character(1989:2024)) %>%
+  set_names(as.character(yr_range + 1)) %>%
   pivot_longer(cols = 1:ncol(.), names_to = "yr", values_to = "val") %>%
-  filter(yr %in% as.character(1989:2022)) %>%
+  filter(yr %in% as.character(yr_range + 1)) %>%
   mutate(val = logit(val)) %>%
   group_by(yr) %>%
   summarise(mn = mean(val), sd = sd(val)) %>%
@@ -81,9 +81,9 @@ rslt_summary <- list(
   pm_logit = mp_logit
 )
 
-if(remove_bad_years == T){
-  rslt_summary <- map(rslt_summary, rm_bad_yrs)
-}
+
+rslt_summary <- map(rslt_summary, rm_bad_yrs)
+
 
 saveRDS(rslt_summary, "results//cjs_summary.rds")
-rm(list = ls())
+rm(list = ls()[-which(ls() == "yr_range")])

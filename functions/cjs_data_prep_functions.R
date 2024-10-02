@@ -4,16 +4,16 @@
 find_removals <- function(data_list, yr_range){
   
   never_captured <- data_list$capture_history %>%
-    select(id, as.character(yr_range[1]:yr_range[2])) %>%
+    select(id, as.character(yr_range)) %>%
     mutate(n_caps = rowSums(across(where(is.numeric)), na.rm = T)) %>%
     filter(n_caps == 0) %>%
     pull(id)
   
   never_in_mains <- data_list$herd_assignment %>%
-    select(id, as.character(yr_range[1]:yr_range[2])) %>%
+    select(id, as.character(yr_range)) %>%
     mutate(
       across(
-        as.character(yr_range[1]:yr_range[2]), 
+        as.character(yr_range), 
         function(x)as.numeric(x == "main"))) %>%
     mutate(n_main = rowSums(across(where(is.numeric)), na.rm = T)) %>%
     filter(n_main == 0) %>%
@@ -44,7 +44,7 @@ find_first_value_position <- function(history_matrix){
 to_matrix_wo_filter <- function(x, yr_range){
   x %>%
     arrange(id) %>%
-    select(as.character(yr_range[1]:yr_range[2])) %>%
+    select(as.character(yr_range)) %>%
     as.matrix() %>%
     return()
 }
@@ -53,7 +53,7 @@ to_matrix <- function(x, yr_range, removals){
   x %>%
     arrange(id) %>%
     filter(id %!in% removals) %>%
-    select(as.character(yr_range[1]:yr_range[2])) %>%
+    select(as.character(yr_range)) %>%
     as.matrix() %>%
     return()
 }

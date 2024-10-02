@@ -58,6 +58,8 @@ for(t in 2:nyr){
   }
   LAMBDA[t] <- (L_calf[t] + sum(L_adult[1:2,t])) / Ntot[t-1]
 } # t (year)  
+#MEAN_LAMBDA <- prod(LAMBDA[2:nyr])^(1/(nyr-1))
+
 
 ########################################
 ########## Observation Models ##########
@@ -77,13 +79,33 @@ for(i in 1:nn){
 } # i (observation row)
 
 ########## Survival Observations ##########
-for(i in 1:ns){
-  est_bs[i,3] ~ dnorm(ST[est_bs[i,1],est_bs[i,2]], est_bs[i,4])
-} # i (observation row)
+for(i in 1:nind){
+  for(t in f[i]:(l[i]-1)){
+    # Probabilities 
+    p[i,t] <- PM[t+1] *    m[i]  * (1-c[i,t]) * (1-h[i,t]) +
+              PF[t+1] * (1-m[i]) * (1-c[i,t]) * (1-h[i,t]) +
+              PC[t+1] *               c[i,t]  * (1-h[i,t]) +
+              PH[t+1] *                            h[i,t]  
+    s[i,t] <- SM[t+1] *    m[i]  * (1-c[i,t]) * (1-h[i,t]) +
+              SF[t+1] * (1-m[i]) * (1-c[i,t]) * (1-h[i,t]) +
+              SC[t+1] *               c[i,t]  * (1-h[i,t]) +
+              SH[t+1] *                            h[i,t]  
+  }
+  for(t in (f[i]+1):l[i]){
+    # State Process -------- alive >>> z = 1
+    z[i,t] ~ dbern(mu1[i,t])
+    mu1[i,t] <- s[i,t-1] * z[i,t-1]
+    
+    # Observation Process -- seen >>> y = 1
+    y[i,t] ~ dbern(mu2[i,t])
+    mu2[i,t] <- p[i,t-1] * z[i,t]
+  }
+}
 
 ########## Recruitment Observations ##########
-for(i in 1:nr){
-  est_br[i,3] ~ dnorm(RT[est_br[i,2]], est_br[i,4])
+# Data columns follow year, calf, cow
+for(i in 1:ny_r){
+  rec_dt[i,2] ~ dbinom(R[rec_dt[i,1]], rec_dt[i,3])
 } # i (observation row)
 
 ########## Count Observations ##########
@@ -119,7 +141,6 @@ for(t in 2:nyr){
     R_WM * clim[t-1] +
     R_CG * puma[t] +
     R_DD * nelk[t]
-  RT[t] <- logit(R[t])
 } # t (year)
   
 ########## Survival ##########
@@ -155,14 +176,39 @@ for(t in 2:nyr){
     SC_DD * nelk[t]
   logit(SF[t]) <- SF_B0 + SF_YR[t]
   logit(SM[t]) <- SM_B0 + SM_YR[t]
+  SH[t] ~ dunif(0, 1)
   
   S[1,1,t] <- SC[t]
   S[1,2,t] <- SC[t]
   S[2,1,t] <- SF[t]
   S[2,2,t] <- SM[t]
-  ST[1,t] <- logit(SC[t])
-  ST[2,t] <- logit(SF[t])
-  ST[3,t] <- logit(SM[t])
+} # t (year)
+
+########## Detection Probability ##########
+# Random Effects
+sd_PC ~ dnorm(0, 0.25)T(0, 5)
+sd_PF ~ dnorm(0, 0.25)T(0, 5)
+sd_PM ~ dnorm(0, 0.25)T(0, 5)
+
+tau_PC <- 1/sd_PC^2
+tau_PF <- 1/sd_PF^2
+tau_PM <- 1/sd_PM^2
+  
+# Fixed Effects
+PC_B0 ~ dlogis(0, 1)
+PF_B0 ~ dlogis(0, 1)
+PM_B0 ~ dlogis(0, 1)
+
+# GLMs
+for(t in 2:nyr){
+  PC_YR[t] ~ dnorm(0, tau_PC)
+  PF_YR[t] ~ dnorm(0, tau_PF)
+  PM_YR[t] ~ dnorm(0, tau_PM)
+  
+  logit(PC[t]) <- PC_B0 + PC_YR[t]
+  logit(PF[t]) <- PF_B0 + PF_YR[t]
+  logit(PM[t]) <- PM_B0 + PM_YR[t]
+  PH[t] ~ dunif(0, 1)
 } # t (year)
 
 ######################################## 
@@ -170,7 +216,7 @@ for(t in 2:nyr){
 ########################################
 for(x in 1:2){ # x
   for(a in 1:2){ # a
-    N[a,x,1] ~ dnorm(est_n1[a,x], 0.0001)T(0,250)
+    N[a,x,1] ~ dnorm(est_n1[a,x], 0.0001)T(0,500)
     NL[a,x,1] <- N[a,x,1]
   } # a
 } # x
@@ -185,5 +231,4 @@ NT[3,1] <- NM[1]
 ###############################
 ########## Model End ##########
 ###############################
-
 }

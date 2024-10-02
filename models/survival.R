@@ -7,31 +7,20 @@ code <- nimbleCode({
     # time varying effects on
     # detection probability (p), and survival probability (s)
     # including intercepts (0), males (m), and calves (c)
-    p0[t] ~ dunif(0, 1)
-    pm[t] ~ dunif(0, 1)
-    s0[t] ~ dunif(0, 1)
-    sm[t] ~ dunif(0, 1)
-    sc[t] ~ dunif(0, 1)
-    
-    bp0[t] <- logit(p0[t])
-    bpm[t] <- logit(pm[t])
-    bs0[t] <- logit(s0[t])
-    bsm[t] <- logit(sm[t])
-    bsc[t] <- logit(sc[t])
+    bp0[t] ~ dlogis(0, 1)
+    bpm[t] ~ dlogis(0, 1)
+    bs0[t] ~ dlogis(0, 1)
+    bsm[t] ~ dlogis(0, 1)
+    bsc[t] ~ dlogis(0, 1)
+    bsh[t] ~ dlogis(0, 1)
+    bph[t] ~ dlogis(0, 1)
   }
-  
-  # Fixed effects of non-main study herd (h) on p and s
-  sh ~ dunif(0, 1)
-  ph ~ dunif(0, 1)
-  
-  bsh <- logit(sh)
-  bph <- logit(ph)
   
   for(i in 1:nind){
     for(t in f[i]:l[i]){
       # probabilities to actually use
-      logit(p[i,t]) <- bp0[t] + bpm[t]*m[i]*(1-c[i,t]) + bph*h[i,t]
-      logit(s[i,t]) <- bs0[t] + bsm[t]*m[i]*(1-c[i,t]) + bsh*h[i,t] + 
+      logit(p[i,t]) <- bp0[t] + bpm[t]*m[i]*(1-c[i,t]) + bph[t]*h[i,t]
+      logit(s[i,t]) <- bs0[t] + bsm[t]*m[i]*(1-c[i,t]) + bsh[t]*h[i,t] + 
         bsc[t]*c[i,t]
     } #i
   } #t

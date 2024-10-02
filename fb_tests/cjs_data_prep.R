@@ -3,9 +3,9 @@
 # August 2024
 
 #Environment====================================================================
-
+require(tidyverse)
 source("functions//cjs_data_prep_functions.R")
-dtlist <- readRDS(capture_handling_data)
+dtlist <- readRDS("data//capture_handling_data.rds")
 
 ids_to_remove <- find_removals(
   data_list = dtlist, 
@@ -68,13 +68,15 @@ full_cjs_data <- list(
     c = calf
   ),
   initial_values = list(
-    bsm = runif(nocc, -1, 1),
-    bsc = runif(nocc, -1, 1),
-    bpm = runif(nocc, -1, 1),
-    bsh = runif(nocc, -1, 1),
-    bph = runif(nocc, -1, 1)
+    sf = runif(nocc, 0, 1),
+    sm = runif(nocc, 0, 1),
+    sc = runif(nocc, 0, 1),
+    pf = runif(nocc, 0, 1),
+    pm = runif(nocc, 0, 1),
+    sh = runif(1, 0, 1),
+    ph = runif(1, 0, 1)
   )
 )
 
-saveRDS(full_cjs_data, "data//cjs_data.rds")
+saveRDS(full_cjs_data, "fb_tests//cjs_data.rds")
 rm(list = ls()[-which(ls() == "yr_range")])
