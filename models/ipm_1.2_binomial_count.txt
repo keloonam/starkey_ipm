@@ -58,8 +58,6 @@ for(t in 2:nyr){
   }
   LAMBDA[t] <- (L_calf[t] + sum(L_adult[1:2,t])) / Ntot[t-1]
 } # t (year)  
-#MEAN_LAMBDA <- prod(LAMBDA[2:nyr])^(1/(nyr-1))
-
 
 ########################################
 ########## Observation Models ##########
@@ -89,12 +87,8 @@ for(i in 1:nr){
 } # i (observation row)
 
 ########## Count Observations ##########
-for(asc in 1:3){ # separate random effect for each age/sex class (asc)
-  sd_c[asc] ~ dnorm(0, 0.0001)T(0, )
-  tau_c[asc] <- 1 / (sd_c[asc]^2)
-}
 for(i in 1:nc){
-  cjs_c[i,3] ~ dnorm(NT[cjs_c[i,1], cjs_c[i,2]], tau_c[cjs_c[i,1]]) 
+  cjs_c_be[i,3] ~ dnorm(NT[cjs_c_be[i,1], cjs_c_be[i,2]] * cjs_c_be[i,4], cjs_c_be[i,5]) 
 } # i (observation row)
 
 #####################################
@@ -160,10 +154,8 @@ for(t in 2:nyr){
   
   S[1,1,t] <- SC[t]
   S[1,2,t] <- SC[t]
-  for(a in 2:max_age){
-    S[a,1,t] <- SF[t]
-    S[a,2,t] <- SM[t]
-  }
+  S[2,1,t] <- SF[t]
+  S[2,2,t] <- SM[t]
   ST[1,t] <- logit(SC[t])
   ST[2,t] <- logit(SF[t])
   ST[3,t] <- logit(SM[t])
@@ -173,15 +165,19 @@ for(t in 2:nyr){
 ########## Starting Abundance ##########
 ########################################
 for(x in 1:2){ # x
-  for(a in 1:max_age){ # a
+  for(a in 1:2){ # a
     N[a,x,1] ~ dnorm(est_n1[a,x], 0.0001)T(0,250)
     NL[a,x,1] <- N[a,x,1]
   } # a
 } # x
-Ntot[1] <- sum(N[1:max_age,1:2,1])
+Ntot[1] <- sum(N[1:2,1:2,1])
 NF[1] <- N[2,1,1]
 NM[1] <- N[2,2,1]
 NC[1] <- sum(N[1,1:2,1])
+NT[1,1] <- NC[1]
+NT[2,1] <- NF[1]
+NT[3,1] <- NM[1]
+
 ###############################
 ########## Model End ##########
 ###############################

@@ -14,7 +14,7 @@ source("functions//handling_data_prep_functions.R")
 source("workflows//data_prep//handling.R")
 
 # Prepare cjs data
-yr_range <- c(1988, 2023)
+yr_range <- 1988:2023
 capture_handling_data <- "data//capture_handling_data.rds"
 source("workflows//data_prep//cjs_data_prep.R")
 
@@ -50,7 +50,7 @@ source("workflows//data_prep//recruitment_summarize_results.R")
 capture_handling_data <- "data//capture_handling_data.rds"
 cjs_data <- "data//cjs_data.rds"
 cjs_results_summary <- "results//cjs_summary.rds"
-yr_range <- c(1988, 2023)
+yr_range <- 1988:2023
 feedground_counts <- "data//min_n_handle_summaries.csv"
 management_moves <- "data//mov_data_handle_summaries.csv"
 source("workflows//data_prep//misc_data_prep.R")

@@ -133,6 +133,20 @@ cjs_c <- misc_data$count %>%
   arrange(yr, class) %>%
   as.matrix()
 
+cjs_c_binomial_error <- misc_data$count %>%
+  filter(yr %in% yr_range) %>%
+  mutate(yr = yr - (yr_range[1] - 1)) %>%
+  mutate(cnt = count / prob) %>%
+  mutate(tau = 1/(count * (1-prob))) %>%
+  mutate(class = case_when(
+    sex == "f" & age == "ad" ~ 2,
+    sex == "c" & age == "ca" ~ 1,
+    sex == "m" & age == "ad" ~ 3
+  )) %>%
+  select(class, yr, count, prob, tau) %>%
+  arrange(yr, class) %>%
+  as.matrix()
+
 est_n1 <- matrix(100, nrow = 2, ncol = 2)
 est_n1[1,] <- n1_estimates %>%
   filter(yr == yr_range[1]) %>%
@@ -163,7 +177,8 @@ dtlist <- list(
   clim = clim,
   puma = puma,
   nelk = nelk,
-  est_n1 = est_n1
+  est_n1 = est_n1,
+  cjs_c_be = cjs_c_binomial_error
 )
 
 #Clean-up=======================================================================

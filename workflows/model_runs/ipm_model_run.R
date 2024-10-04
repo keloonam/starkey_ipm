@@ -5,17 +5,17 @@
 #Variables======================================================================
 
 # Specify the model
-model_file <- "models//ipm//ipm_test_18jun2024.txt"
-save_file <- "results//ipm_test_18june2024_result.Rdata"
+model_file <- "models//ipm//ipm_first_submission_version.txt"
+save_file <- "results//amiinsane.Rdata"
 
 # Loop dimension parameters
 n_year <- 34
 
 # JAGS control parameters
-n_i <- 50000
-n_a <- 100
-n_b <- 10000
-n_c <- 1
+n_i <- 500000
+n_a <- 1000
+n_b <- 100000
+n_c <- 2
 n_t <- 5
 
 #Environment====================================================================
@@ -27,9 +27,9 @@ load("data//elk_ipm_data_14jun2024.Rdata")
 #Data_prep======================================================================
 
 jags_data <- list(
-  # s_cjs      = ipm_data$s_cjs,
+  s_cjs      = ipm_data$s_cjs,
   p_cjs      = ipm_data$p_cjs,
-  # r_ratio    = ipm_data$r_ratio,
+  r_ratio    = ipm_data$r_ratio,
   n_sight_ca = ipm_data$n_sight_ca,
   n_sight_am = ipm_data$n_sight_am,
   n_sight_af = ipm_data$n_sight_af,
@@ -40,8 +40,8 @@ jags_data <- list(
   nn_af      = nrow(ipm_data$n_sight_af),
   nn_am      = nrow(ipm_data$n_sight_am),
   nn_count   = nrow(ipm_data$p_cjs),
-  # ns         = nrow(ipm_data$s_cjs),
-  # nr         = nrow(ipm_data$r_ratio),
+  ns         = nrow(ipm_data$s_cjs),
+  nr         = nrow(ipm_data$r_ratio),
   n_har      = ipm_data$n_hnt,
   min_ad     = ipm_data$min_ad,
   min_ca     = ipm_data$min_ca,
@@ -53,18 +53,18 @@ jags_data <- list(
   n_adj      = ipm_data$af_density,
   min_n1     = ipm_data$min_n1,
   est_n1     = ipm_data$est_n1,
-  clim       = ipm_data$palmer_index,
-  y          = ipm_data$y,
-  z          = ipm_data$z,
-  f          = ipm_data$f,
-  l          = ipm_data$l,
-  calf       = ipm_data$calf,
-  male       = ipm_data$male,
-  female     = ipm_data$female,
-  herd       = ipm_data$herd,
-  n_ind      = ipm_data$n_ind,
-  n_R_data   = nrow(ipm_data$r_data),
-  r_data     = ipm_data$r_data
+  clim       = ipm_data$palmer_index
+  # y          = ipm_data$y,
+  # z          = ipm_data$z,
+  # f          = ipm_data$f,
+  # l          = ipm_data$l,
+  # calf       = ipm_data$calf,
+  # male       = ipm_data$male,
+  # female     = ipm_data$female,
+  # herd       = ipm_data$herd,
+  # n_ind      = ipm_data$n_ind,
+  # n_R_data   = nrow(ipm_data$r_data),
+  # r_data     = ipm_data$r_data
   # NF_ct      = ipm_data$cjs_n_female,
   # NM_ct      = ipm_data$cjs_n_male
 )
@@ -87,9 +87,9 @@ inits <- function(){
   out <- list(
     init_N = N,
     R_B0 = R,
-    S_C_B0 = S_C_B0,
-    S_F_B0 = S_F_B0,
-    S_M_B0 = S_M_B0
+    S_C_B0_ps = 0.9,
+    S_F_B0_ps = 0.9,
+    S_M_B0_ps = 0.9
   )
   return(out)
 }
@@ -99,13 +99,12 @@ initial_values <- inits()
 params = c(
   "N_tot",
   "R",
-  "S_f",
-  "S_m",
-  "S_c",
+  "survival_af",
+  "aurvival_am",
+  "survival_ca",
   "N_f",
   "N_c",
   "N_m",
-  "N_lam",
   "R_B0",
   "R_wt",
   "R_wm",
@@ -118,29 +117,9 @@ params = c(
   "S_cg",
   "lambda",
   "LAMBDA_mean",
-  "pop_r",
-  "mean_pop_r",
-  "R_mean",
-  "S_F_mean",
-  "S_M_mean",
-  "S_C_mean",
   # "sd_afcount",
   # "sd_amcount",
-  "sd_R",
-  "S_C_B0",
-  "S_F_B0",
-  "S_M_B0",
-  "sd_S_C",
-  "sd_S_M",
-  "sd_S_F",
-  # "PF",
-  # "PM"
-  "P",
-  "exp_ct",
-  "tau_ct",
-  "Ne",
-  "Te",
-  "Naug"
+  "sd_R"
 )
 
 #Model==========================================================================
