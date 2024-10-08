@@ -62,9 +62,9 @@ o_l_pdi <- ggplot(data = o_l, aes(x = pdi, y = mci)) +
   geom_hline(yintercept = 0) +
   theme_classic() +
   labs(
-    x = "PDI scaled", 
+    x = "SPEI scaled", 
     y = "Pregnancy residual", 
-    title = "Old lactating - PDI") +
+    title = "Old lactating - SPEI") +
   theme(text = element_text(size = resid_fig_text_size))
 
 o_n_pdi <- ggplot(data = o_n, aes(x = pdi, y = mci)) +
@@ -74,9 +74,9 @@ o_n_pdi <- ggplot(data = o_n, aes(x = pdi, y = mci)) +
   geom_hline(yintercept = 0) +
   theme_classic() +
   labs(
-    x = "PDI scaled", 
+    x = "SPEI scaled", 
     y = "Pregnancy residual", 
-    title = "Old nonlactating - PDI") +
+    title = "Old nonlactating - SPEI") +
   theme(text = element_text(size = resid_fig_text_size))
 
 p_l_pdi <- ggplot(data = p_l, aes(x = pdi, y = mci)) +
@@ -86,9 +86,9 @@ p_l_pdi <- ggplot(data = p_l, aes(x = pdi, y = mci)) +
   geom_hline(yintercept = 0) +
   theme_classic() +
   labs(
-    x = "PDI scaled", 
+    x = "SPEI scaled", 
     y = "Pregnancy residual", 
-    title = "Prime lactating - PDI") +
+    title = "Prime lactating - SPEI") +
   theme(text = element_text(size = resid_fig_text_size))
 
 p_n_pdi <- ggplot(data = p_n, aes(x = pdi, y = mci)) +
@@ -98,9 +98,9 @@ p_n_pdi <- ggplot(data = p_n, aes(x = pdi, y = mci)) +
   geom_hline(yintercept = 0) +
   theme_classic() +
   labs(
-    x = "PDI scaled", 
+    x = "SPEI scaled", 
     y = "Pregnancy residual", 
-    title = "Prime nonlactating - PDI") +
+    title = "Prime nonlactating - SPEI") +
   theme(text = element_text(size = resid_fig_text_size))
 
 y_n_pdi <- ggplot(data = y_n, aes(x = pdi, y = mci)) +
@@ -110,9 +110,9 @@ y_n_pdi <- ggplot(data = y_n, aes(x = pdi, y = mci)) +
   geom_hline(yintercept = 0) +
   theme_classic() +
   labs(
-    x = "PDI scaled", 
+    x = "SPEI scaled", 
     y = "Pregnancy residual", 
-    title = "Young nonlactating - PDI") +
+    title = "Young nonlactating - SPEI") +
   theme(text = element_text(size = resid_fig_text_size))
 
 plot_grid(
@@ -352,12 +352,15 @@ names(yd_ed_line) <- c("val", "lci", "mci", "uci")
 yd_ed_line$val <- yd_ed_line$val * 0.9238554 + 2.993542
 
 #Point_data_prep================================================================
-
+pdi_mn_now <- r_cov_dat$PDSI %>% mean()
+pdi_sd_now <- r_cov_dat$PDSI %>% sd()
+elk_mn_now <- n_af %>% pull(mean_density) %>% mean()
+elk_sd_now <- n_af %>% pull(mean_density) %>% sd()
 point_data_all <- rd %>% 
   mutate(yr = yr - 1988) %>%
   left_join(., cov_dat) %>%
-  mutate(pdi = pdi * 1.784047 - 1.238529) %>%
-  mutate(elk = elk * 0.9238554 + 2.993542)
+  mutate(pdi = pdi * pdi_sd_now + pdi_mn_now) %>%
+  mutate(elk = elk * elk_sd_now + elk_mn_now)
 
 p_all_point_dat <- nimble_results %>%
   map(as_tibble) %>%
@@ -408,7 +411,7 @@ pd_ed_marg_plot <- ggplot(data = pd_ed_line, aes(x = val, y = mci)) +
     title = "Non-lactating, prime-aged", # bquote("d1 (0.70)")
   ) + 
   theme(text = element_text(size = marg_fig_text_size)) +
-  xlim(1, 4.8) + ylim(0, 1) 
+  xlim(0.6, 5.1) + ylim(0, 1) 
 
 od_ed_marg_plot <- ggplot(data = od_ed_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = "#bbbbbb") +
@@ -426,7 +429,7 @@ od_ed_marg_plot <- ggplot(data = od_ed_line, aes(x = val, y = mci)) +
     title = "Non-lactating, old", # bquote("d1 (0.70)")
   ) + 
   theme(text = element_text(size = marg_fig_text_size)) +
-  xlim(1, 4.8) + ylim(0, 1) 
+  xlim(0.6, 5.1) + ylim(0, 1) 
 
 ol_ed_marg_plot <- ggplot(data = ol_ed_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = "#bbbbbb") +
@@ -444,7 +447,7 @@ ol_ed_marg_plot <- ggplot(data = ol_ed_line, aes(x = val, y = mci)) +
     title = "Lactating, old", # bquote("d1 (0.70)")
   ) + 
   theme(text = element_text(size = marg_fig_text_size)) +
-  xlim(1, 4.8) + ylim(0, 1) 
+  xlim(0.6, 5.1) + ylim(0, 1) 
 
 yd_ed_marg_plot <- ggplot(data = yd_ed_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = "#bbbbbb") +
@@ -462,7 +465,7 @@ yd_ed_marg_plot <- ggplot(data = yd_ed_line, aes(x = val, y = mci)) +
     title = "Non-lactating, young", # bquote("d1 (0.70)")
   ) + 
   theme(text = element_text(size = marg_fig_text_size)) +
-  xlim(1, 4.8) + ylim(0, 1) 
+  xlim(0.6, 5.1) + ylim(0, 1) 
 
 pd_pdi_marg_plot <- ggplot(data = pd_pt_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = "#bbbbbb") +
@@ -476,11 +479,11 @@ pd_pdi_marg_plot <- ggplot(data = pd_pt_line, aes(x = val, y = mci)) +
   ) +
   theme_classic() +
   labs(
-    x = "PDI", 
+    x = "SPEI", 
     y = NULL, 
     title = "Non-lactating, prime-aged") +
   theme(text = element_text(size = marg_fig_text_size)) +
-  xlim(-4.65, 2.3) + ylim(0, 1)
+  xlim(-2.3, 2) + ylim(0, 1)
 
 od_pdi_marg_plot <- ggplot(data = od_pt_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = "#bbbbbb") +
@@ -494,11 +497,11 @@ od_pdi_marg_plot <- ggplot(data = od_pt_line, aes(x = val, y = mci)) +
   ) +
   theme_classic() +
   labs(
-    x = "PDI", 
+    x = "SPEI", 
     y = NULL, 
     title = "Non-lactating, old") +
   theme(text = element_text(size = marg_fig_text_size)) +
-  xlim(-4.65, 2.3) + ylim(0, 1)
+  xlim(-2.3, 2) + ylim(0, 1)
 
 ol_pdi_marg_plot <- ggplot(data = ol_pt_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = "#bbbbbb") +
@@ -512,11 +515,11 @@ ol_pdi_marg_plot <- ggplot(data = ol_pt_line, aes(x = val, y = mci)) +
   ) +
   theme_classic() +
   labs(
-    x = "PDI", 
+    x = "SPEI", 
     y = NULL, 
     title = "Lactating, old") +
   theme(text = element_text(size = marg_fig_text_size)) +
-  xlim(-4.65, 2.3) + ylim(0, 1)
+  xlim(-2.3, 2) + ylim(0, 1)
 
 yd_pdi_marg_plot <- ggplot(data = yd_pt_line, aes(x = val, y = mci)) +
   geom_ribbon(aes(ymin = lci, ymax = uci), fill = "#bbbbbb") +
@@ -530,11 +533,11 @@ yd_pdi_marg_plot <- ggplot(data = yd_pt_line, aes(x = val, y = mci)) +
   ) +
   theme_classic() +
   labs(
-    x = "PDI", 
+    x = "SPEI", 
     y = NULL, 
     title = "Non-lactating, young") +
   theme(text = element_text(size = marg_fig_text_size)) +
-  xlim(-4.65, 2.3) + ylim(0, 1)
+  xlim(-2.3, 2) + ylim(0, 1)
 
 require(cowplot)
 

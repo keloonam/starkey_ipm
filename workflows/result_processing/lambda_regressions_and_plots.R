@@ -5,52 +5,43 @@
 #Environment====================================================================
 require(dplyr); require(ggplot2); require(ggsci); require(rjags)
 require(cowplot); require(tidyr); require(purrr)
-load("results//ipm_result_21apr2023_R&S_pdi.Rdata")
-load("data//elk_ipm_data_21apr2023.Rdata")
+rslt <- readRDS("s2//results//ipmrs_27sep2025_null.rds")
+ipm_data <- readRDS("s2//ipm_data_25sep2024.rds")
 
-cg_sd    <- 0.8404219
-cg_mn    <- 1.403528
-pdi_sd   <- 1.784047
-pdi_mn   <- -1.238529
-ed_sd    <- 0.9238554
-ed_mn    <- 2.993542
+cg_sd    <- 0.6785147
+cg_mn    <- 1.557668
+pdi_sd   <- 1.053721
+pdi_mn   <- -0.5349762
+ed_sd    <- 1.054264
+ed_mn    <- 3.122297
 #Data Prep======================================================================
 lambda_df <- rslt %>%
   map(., as_tibble) %>%
   bind_rows() %>%
-  select(contains("lambda")) %>%
-  select(-1)
-ed_df <- rslt %>%
-  map(., as_tibble) %>%
-  bind_rows() %>%
-  select(contains("N_tot")) %>%
-  select(-34)
-ed <- ipm_data$elk_density[-34]
-cd <- ipm_data$cougar_density[-1]
-pdi <- ipm_data$palmer_index[-1]
-pdi_lag <- ipm_data$palmer_index[-34]
-sca_df <- rslt %>%
-  map(., as_tibble) %>%
-  bind_rows() %>%
-  select(contains("survival_ca"))
+  select(contains("lambda"))
+
+ed <- scl(n_af$mean_density)
+ed <- ed[-36]
+cd <- s_cov_dat$`Cougar Index` %>% scl()
+pdi <- ipm_data$spei12[-1]
+pdi_lag <- ipm_data$spei12[-36]
 
 lam_quant <- lambda_df %>%
   map(quantile, probs = c(0.025, 0.5, 0.975)) %>%
   bind_rows() %>%
   mutate(
-    year = 2:34,
+    year = 2:36,
     ed = ed,
     cd = cd,
     pdi = pdi,
     pdi_lag = pdi_lag)
 
 lam_mean <- unlist(map(lambda_df, mean))
-ed_mean <- unlist(map(ed_df, mean))
 
 #Analysis=======================================================================
 
 ### Lambda ###
-ed <- as.numeric(scale(ed_mean))
+# ed <- as.numeric(scale(ed_mean))
 glm1 <- glm(
   lam_mean ~ cd + pdi + pdi_lag + ed, 
   family = gaussian(link = "log")
@@ -59,7 +50,7 @@ summary(glm1)
 glm1_res <- tibble(
   Covariate = c("Cougar density", "PSDI", "PSDI lag", "Elk density"),
   Estimate = glm1$coefficients[2:5],
-  std_err = c(0.025076, 0.023162, 0.024546, 0.026398)
+  std_err = c(0.020308, 0.017206, 0.016766, 0.021645)
 ) %>%
   mutate(LCI = Estimate - std_err * 1.96) %>%
   mutate(UCI = Estimate + std_err * 1.96)
@@ -179,7 +170,7 @@ cougar_marg_plot <- ggplot(data = lam_cg_line, aes(x = val, y = mci)) +
     title = "A - Puma density") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  xlim(0, 2.12)
+  xlim(0, 2.2)
 
 # PDI lag
 pdilag_marg_plot <- ggplot(data = lam_pdilag_line, aes(x = val, y = mci)) +
@@ -196,12 +187,12 @@ pdilag_marg_plot <- ggplot(data = lam_pdilag_line, aes(x = val, y = mci)) +
   ) +
   theme_classic() +
   labs(
-    x = "PDI (t-1)", 
+    x = "SPEI (t-1)", 
     y = "Lambda", 
-    title = "D - PDI prior year") + 
+    title = "D - SPEI prior year") + 
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  xlim(-3.7, 2.3)
+  xlim(-2.3, 2)
 
 # PDI
 pdi_marg_plot <- ggplot(data = lam_pdi_line, aes(x = val, y = mci)) +
@@ -215,12 +206,12 @@ pdi_marg_plot <- ggplot(data = lam_pdi_line, aes(x = val, y = mci)) +
   ) +
   theme_classic() +
   labs(
-    x = "PDI (t)", 
+    x = "SPEI (t)", 
     y = "Lambda", 
-    title = "C - Summer PDI") + 
+    title = "C - SPEI") + 
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  xlim(-4.65, 2.3)
+  xlim(-2.3, 2)
 
 # ED
 ed_marg_plot <- ggplot(data = lam_ed_line, aes(x = val, y = mci)) +
@@ -234,24 +225,24 @@ ed_marg_plot <- ggplot(data = lam_ed_line, aes(x = val, y = mci)) +
   ) +
   theme_classic() +
   labs(
-    x = bquote('Females km'^-2), 
+    x = bquote('Elk km'^-2), 
     y = "Lambda", 
     title = "B - Elk Density") + 
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
-  xlim(1, 4.8)
+  xlim(0.8, 5.1)
 
 plot_grid(
   cougar_marg_plot, ed_marg_plot, pdi_marg_plot,pdilag_marg_plot,
   align = "v", 
   ncol = 2,
   label_size = 2)
-ggsave(
-  "figures//lambda_marginal_plots_fig.png", 
-  width = 4, 
-  height = 4, 
-  units = "in", 
-  dpi = 300)
+# ggsave(
+#   "figures//lambda_marginal_plots_fig.png", 
+#   width = 4, 
+#   height = 4, 
+#   units = "in", 
+#   dpi = 300)
 
 #residual plots=================================================================
 
@@ -291,9 +282,9 @@ resid_lam_wt <- ggplot(data = lam_residuals, aes(x = wt, y = residual)) +
   theme_classic() +
   geom_hline(yintercept = 0) +
   labs(
-    x = "PDI (year t)", 
+    x = "SPEI (year t)", 
     y = "Lambda residual", 
-    title = "C - PDSI residuals") +
+    title = "C - SPEI residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
 resid_lam_wm <- ggplot(data = lam_residuals, aes(x = wm, y = residual)) +
@@ -301,9 +292,9 @@ resid_lam_wm <- ggplot(data = lam_residuals, aes(x = wm, y = residual)) +
   theme_classic() +
   geom_hline(yintercept = 0) +
   labs(
-    x = "PDSI (year - 1)", 
+    x = "SPEI (year - 1)", 
     y = "Lambda residual", 
-    title = "D - PDSI (year - 1) residuals") +
+    title = "D - SPEI (year - 1) residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
 plot_grid(

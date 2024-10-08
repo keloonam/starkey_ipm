@@ -1,4 +1,4 @@
-require(tidyverse); require(rjags)
+require(tidyverse); require(rjags); require(cowplot)
 pull_cl_cov_name <- function(x){
   y <- x[3] %>%
     strsplit(".", fixed = T)
@@ -42,7 +42,7 @@ covariate_summaries <- all_frs %>%
   ))
 
 # Plot Recruitment Covariates
-covariate_summaries %>%
+recruitment_covariates <- covariate_summaries %>%
   filter(parameter == "recruitment") %>%
   filter(cl_cov != "null") %>%
   ggplot(aes(x = cl_cov, y = median, color = Covariate)) +
@@ -50,10 +50,17 @@ covariate_summaries %>%
     aes(ymax = ucri, ymin = lcri),
     position = position_dodge2(width = 0.3)) +
   geom_hline(yintercept = 0, linetype = "33") +
-  theme_classic()
+  theme_classic() +
+  xlab("Model") + ylab("Estimate") + labs(title = "Recruitment covariates") +
+  scale_color_discrete(
+    labels = c("Puma density", "Elk density", "Climate (t-1)", "Climate (t)")
+  ) +
+  scale_x_discrete(
+    labels = c("NDVI", "PDSI", "Precipitation", "SPEI 12", "SPEI 3", "SPEI 6",
+               "Temperature")
+  )
 
-# Plot Survival Covariates
-covariate_summaries %>%
+survival_covariates <- covariate_summaries %>%
   filter(parameter == "survival") %>%
   filter(cl_cov != "null") %>%
   ggplot(aes(x = cl_cov, y = median, color = Covariate)) +
@@ -61,8 +68,18 @@ covariate_summaries %>%
     aes(ymax = ucri, ymin = lcri),
     position = position_dodge2(width = 0.3)) +
   geom_hline(yintercept = 0, linetype = "33") +
-  theme_classic()
-
+  theme_classic() +
+  xlab("Model") + ylab("Estimate") + labs(title = "Calf survival covariates") +
+  scale_color_discrete(
+    labels = c("Puma density", "Elk density", "Climate (t-1)", "Climate (t)")
+  ) +
+  scale_x_discrete(
+    labels = c("NDVI", "PDSI", "Precipitation", "SPEI 12", "SPEI 3", "SPEI 6",
+               "Temperature")
+  )
+plot_grid(recruitment_covariates, survival_covariates, nrow = 2, ncol = 1)
+ggsave("figures//covariate_comparison.png", dpi = 600, units = "cm", width = 18,
+       height = 12)
 recruitment_summaries <- all_frs %>%
   select(cl_cov, grep("R\\[", names(.))) %>%
   setNames(c("cl_cov", 1989:2023)) %>%
@@ -99,6 +116,18 @@ survival_af_summaries <- all_frs %>%
     ucri = quantile(val, 0.95)
   ) %>%
   ungroup()
+survival_am_summaries <- all_frs %>%
+  select(cl_cov, grep("survival_am", names(.))) %>%
+  setNames(c("cl_cov", 1989:2023)) %>%
+  pivot_longer(cols = 2:ncol(.), names_to = "yr", values_to = "val") %>%
+  mutate(yr = as.numeric(yr)) %>%
+  group_by(cl_cov, yr) %>%
+  summarize(
+    lcri = quantile(val, 0.05),
+    median = quantile(val, 0.5),
+    ucri = quantile(val, 0.95)
+  ) %>%
+  ungroup()
 lambda_summaries <- all_frs %>%
   select(cl_cov, grep("lambda", names(.))) %>%
   setNames(c("cl_cov", 1989:2023)) %>%
@@ -124,5 +153,32 @@ N_summaries <- all_frs %>%
   ) %>%
   ungroup()
 
-ggplot(recruitment_summaries, aes(x = yr, y = median, color = cl_cov)) +
-  geom_line()
+cs <- ggplot(survival_ca_summaries, aes(x = yr, y = median, color = cl_cov)) +
+  geom_line() +
+  xlab(NULL) + ylab("Calf Survival") +
+  theme_classic() +
+  theme(legend.position = "none", axis.text.x = element_blank())
+fs <- ggplot(survival_af_summaries, aes(x = yr, y = median, color = cl_cov)) +
+  geom_line() +
+  xlab(NULL) + ylab("Female Survival") +
+  theme_classic() +
+  theme(legend.position = "none", axis.text.x = element_blank())
+re <- ggplot(recruitment_summaries, aes(x = yr, y = median, color = cl_cov)) +
+  geom_line() +
+  xlab(NULL) + ylab("Recruitment") +
+  theme_classic() +
+  theme(legend.position = "none", axis.text.x = element_blank())
+nt <- ggplot(N_summaries, aes(x = yr, y = median, color = cl_cov)) +
+  geom_line() +
+  xlab("Year") + ylab("Abundance") +
+  theme_classic() +
+  scale_color_discrete(
+    labels = c("NDVI", "NULL", "PDSI", "Precipitation", "SPEI 12m", "SPEI 3m",
+               "SPEI 6m", "Temperature"),
+    name = "Covariate"
+  ) +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 2))
+plot_grid(cs, fs, re, nt, nrow = 4, ncol = 1, rel_heights = c(2,2,2,3))
+ggsave("figures//covariate_demographic_comparison.png", width = 18, height = 18,
+       units = "cm", dpi = 600)

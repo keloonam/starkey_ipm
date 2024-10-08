@@ -23,7 +23,7 @@ fp_logit <- rslt %>%
   select(grep("prob_af", names(.))) %>%
   set_names(as.character(yr_range + 1)) %>%
   pivot_longer(cols = 1:ncol(.), names_to = "yr", values_to = "val") %>%
-  filter(yr %in% as.character(yr_range + 1)) %>%
+  filter(yr %in% as.character(yr_range[-length(yr_range)] + 1)) %>%
   mutate(val = logit(val)) %>%
   group_by(yr) %>%
   summarise(mn = mean(val), sd = sd(val)) %>%
@@ -33,7 +33,7 @@ mp_logit <- rslt %>%
   select(grep("prob_am", names(.))) %>%
   set_names(as.character(yr_range + 1)) %>%
   pivot_longer(cols = 1:ncol(.), names_to = "yr", values_to = "val") %>%
-  filter(yr %in% as.character(yr_range + 1)) %>%
+  filter(yr %in% as.character(yr_range[-length(yr_range)] + 1)) %>%
   mutate(val = logit(val)) %>%
   group_by(yr) %>%
   summarise(mn = mean(val), sd = sd(val)) %>%
@@ -45,7 +45,7 @@ fs_logit <- rslt %>%
   select(grep("survival_af", names(.))) %>%
   set_names(as.character(yr_range + 1)) %>%
   pivot_longer(cols = 1:ncol(.), names_to = "yr", values_to = "val") %>%
-  filter(yr %in% as.character(yr_range + 1)) %>%
+  filter(yr %in% as.character(yr_range[-length(yr_range)] + 1)) %>%
   mutate(val = logit(val)) %>%
   group_by(yr) %>%
   summarise(mn = mean(val), sd = sd(val)) %>%
@@ -55,7 +55,7 @@ ms_logit <- rslt %>%
   select(grep("survival_am", names(.))) %>%
   set_names(as.character(yr_range + 1)) %>%
   pivot_longer(cols = 1:ncol(.), names_to = "yr", values_to = "val") %>%
-  filter(yr %in% as.character(yr_range + 1)) %>%
+  filter(yr %in% as.character(yr_range[-length(yr_range)] + 1)) %>%
   mutate(val = logit(val)) %>%
   group_by(yr) %>%
   summarise(mn = mean(val), sd = sd(val)) %>%
@@ -65,7 +65,7 @@ cs_logit <- rslt %>%
   select(grep("survival_ca", names(.))) %>%
   set_names(as.character(yr_range + 1)) %>%
   pivot_longer(cols = 1:ncol(.), names_to = "yr", values_to = "val") %>%
-  filter(yr %in% as.character(yr_range + 1)) %>%
+  filter(yr %in% as.character(yr_range[-length(yr_range)] + 1)) %>%
   mutate(val = logit(val)) %>%
   group_by(yr) %>%
   summarise(mn = mean(val), sd = sd(val)) %>%

@@ -9,8 +9,8 @@ require(dplyr); require(ggplot2); require(ggsci); require(rjags)
 require(cowplot); require(tidyr); require(purrr)
 
 # Results to load
-load("results//ipm_result_21apr2023_R&S_pdi.Rdata")
-load("data//elk_ipm_data_21apr2023.Rdata")
+rslt <- readRDS("s2//results//ipmrs_27sep2025_spei12.rds")
+ipm_data <- readRDS("s2//ipm_data_25sep2024.rds")
 preg <- readRDS("results//pregnancy_analysis_7jul2023.rds")
 
 # Derived result summaries
@@ -23,7 +23,7 @@ q[which(dimnames(q)[[1]] %in% c("R_mean", "S_C_mean", "S_F_mean", "S_M_mean","LA
 # Abundance
 n_ca <- q[grep("N_c", dimnames(q)[[1]]), c(1,3,5)] %>%
   as_tibble() %>%
-  mutate(year = sort(rep(1988:2021))) %>%
+  mutate(year = sort(rep(1988:2023))) %>%
   group_by(year) %>%
   summarise(
     lci = sum(`2.5%`),
@@ -34,7 +34,7 @@ n_ca <- q[grep("N_c", dimnames(q)[[1]]), c(1,3,5)] %>%
 
 n_af <- q[grep("N_f", dimnames(q)[[1]]), c(1,3,5)] %>%
   as_tibble() %>%
-  mutate(year = sort(rep(1988:2021))) %>%
+  mutate(year = sort(rep(1988:2023))) %>%
   group_by(year) %>%
   summarise(
     lci = sum(`2.5%`),
@@ -45,7 +45,7 @@ n_af <- q[grep("N_f", dimnames(q)[[1]]), c(1,3,5)] %>%
 
 n_am <- q[grep("N_m", dimnames(q)[[1]]), c(1,3,5)] %>%
   as_tibble() %>%
-  mutate(year = sort(rep(1988:2021))) %>%
+  mutate(year = sort(rep(1988:2023))) %>%
   group_by(year) %>%
   summarise(
     lci = sum(`2.5%`),
@@ -66,9 +66,9 @@ n_tot <- bind_rows(n_ca, n_af, n_am) %>%
 abundance <- bind_rows(n_ca, n_af, n_am, n_tot)
 
 # Recruitment
-r_dat <- q[c(grep("R", dimnames(q)[[1]]))[1:33], c(1,3,5)] %>%
+r_dat <- q[c(grep("R", dimnames(q)[[1]]))[1:35], c(1,3,5)] %>%
   as_tibble() %>%
-  mutate(year = sort(rep(1989:2021))) %>%
+  mutate(year = sort(rep(1989:2023))) %>%
   group_by(year) %>%
   summarise(
     lci = sum(`2.5%`),
@@ -78,9 +78,9 @@ r_dat <- q[c(grep("R", dimnames(q)[[1]]))[1:33], c(1,3,5)] %>%
   mutate(class = "Recruitment")
 
 # Survival
-sf_dat <- q[c(grep("survival_af", dimnames(q)[[1]]))[1:34], c(1,3,5)] %>%
+sf_dat <- q[c(grep("survival_af", dimnames(q)[[1]])), c(1,3,5)] %>%
   as_tibble() %>%
-  mutate(year = sort(rep(1988:2021))) %>%
+  mutate(year = sort(rep(1989:2023))) %>%
   group_by(year) %>%
   summarise(
     lci = sum(`2.5%`),
@@ -89,9 +89,9 @@ sf_dat <- q[c(grep("survival_af", dimnames(q)[[1]]))[1:34], c(1,3,5)] %>%
   ) %>%
   mutate(class = "Survival - Female")
 
-sm_dat <- q[c(grep("survival_am", dimnames(q)[[1]]))[1:34], c(1,3,5)] %>%
+sm_dat <- q[c(grep("survival_am", dimnames(q)[[1]])), c(1,3,5)] %>%
   as_tibble() %>%
-  mutate(year = sort(rep(1988:2021))) %>%
+  mutate(year = sort(rep(1989:2023))) %>%
   group_by(year) %>%
   summarise(
     lci = sum(`2.5%`),
@@ -100,9 +100,9 @@ sm_dat <- q[c(grep("survival_am", dimnames(q)[[1]]))[1:34], c(1,3,5)] %>%
   ) %>%
   mutate(class = "Survival - Male")
 
-sc_dat <- q[c(grep("survival_ca", dimnames(q)[[1]]))[1:33], c(1,3,5)] %>%
+sc_dat <- q[c(grep("survival_ca", dimnames(q)[[1]]))[1:35], c(1,3,5)] %>%
   as_tibble() %>%
-  mutate(year = sort(rep(1989:2021))) %>%
+  mutate(year = sort(rep(1989:2023))) %>%
   group_by(year) %>%
   summarise(
     lci = sum(`2.5%`),
@@ -111,9 +111,9 @@ sc_dat <- q[c(grep("survival_ca", dimnames(q)[[1]]))[1:33], c(1,3,5)] %>%
   ) %>%
   mutate(class = "Calf Survival") 
 
-lam_dat <- q[c(grep("lambda", dimnames(q)[[1]]))[1:33], c(1,3,5)] %>%
+lam_dat <- q[c(grep("lambda", dimnames(q)[[1]]))[1:35], c(1,3,5)] %>%
   as_tibble() %>%
-  mutate(year = sort(rep(1989:2021))) %>%
+  mutate(year = sort(rep(1989:2023))) %>%
   group_by(year) %>%
   summarise(
     lci = sum(`2.5%`),
@@ -127,14 +127,14 @@ dem_dat <- bind_rows(r_dat, sc_dat, sm_dat, sf_dat)
 # Covariates
 cov_dat <- tibble(
   covariate = c(
-    rep("PDSI", 34), 
-    rep("Cougar Index", 34), 
-    rep("Female Density", 34)),
+    rep("PDSI", 36), 
+    rep("Cougar Index", 36), 
+    rep("Female Density", 36)),
   value = c(
-    ipm_data$palmer_index, 
-    ipm_data$cougar_density, 
-    ipm_data$af_density),
-  year = c(1988:2021, 1988:2021, 1988:2021)
+    ipm_data$spei12, 
+    ipm_data$cdens, 
+    ipm_data$nelk),
+  year = c(1988:2023, 1988:2023, 1988:2023)
 )
 
 cov_post <- rslt %>%
@@ -165,16 +165,16 @@ expit <- function(x){
 }
 
 #####
-high_cg <- expit(eff_post$R_B0 + 0.81*eff_post$R_cg)
-low_cg  <- expit(eff_post$R_B0 - 1.6*eff_post$R_cg)
-mean_cg <- expit(eff_post$R_B0)
-cg_recruit <- tibble(
-  Cougars = c(rep("High Density", length(high_cg)), 
-              rep("Low Density", length(low_cg)),
-              rep("Mean Density", length(mean_cg))
-  ),
-  Recruitment = c(high_cg, low_cg, mean_cg)
-)
+# high_cg <- expit(eff_post$R_B0 + 0.81*eff_post$R_cg)
+# low_cg  <- expit(eff_post$R_B0 - 1.6*eff_post$R_cg)
+# mean_cg <- expit(eff_post$R_B0)
+# cg_recruit <- tibble(
+#   Cougars = c(rep("High Density", length(high_cg)), 
+#               rep("Low Density", length(low_cg)),
+#               rep("Mean Density", length(mean_cg))
+#   ),
+#   Recruitment = c(high_cg, low_cg, mean_cg)
+# )
 #####
 x <- seq(-3, 3, length.out = 1000)
 
@@ -334,37 +334,45 @@ dem_cov <- ggplot(
 cov_fig_text_size <- 11.5
 cov_fig_grph_size <- .3
 
-cougar_density <-  c(0.01488078, 0.02357929, 0.03727105, 0.05868712, 0.09185758,
-                     0.14245975, 0.21789379, 0.32656447, 0.47564394, 0.66700050,
-                     0.89270325, 1.13381699, 1.36561612, 1.56693693, 1.72693078,
-                     1.84534320, 1.92844249, 1.98460714, 2.02160885, 2.04557683,
-                     2.06093241, 2.07070110, 2.07688772, 2.08079464, 2.08325745,
-                     2.08480819, 2.08578392, 2.08639759, 2.08678343, 2.08702598,
-                     2.08717844, 2.08727427, 2.08733449, 2.08737234)
+cougar_density <-  c(
+  0.14336299, 0.19115066, 0.23893832, 0.14336299, 0.23893832, 0.38230132,
+  0.40671006, 0.67690686, 0.92058393, 1.21493542, 1.38220093, 1.60460137, 1.81466363,
+  1.99925826, 2.01422234, 2.01290939, 2.15601154, 2.10612837, 2.12870926, 1.98718091,
+  1.99400648, 1.99400648, 1.99689322, 1.94568843, 2.13999536, 1.89817030, 1.87585895,
+  1.97222552, 1.89214465, 1.81652433, 1.89162295, 1.90606533, 2.03551633, 2.00821406,
+  1.90843904, 1.62328685
+)
 cougar_dat <- tibble(
-  year = 1988:2021,
+  year = 1988:2023,
   cougar_density = cougar_density
 )
 starkey_area_km2 <- 77.382817
 n_af <- n_af %>%
   mutate(mean_density = mean / starkey_area_km2)
-pdi_real_scale <- c(
-  -3.12,  0.04, -1.84, -1.07, -2.44, -0.38, -2.89,  2.19,  1.06,  0.01,  1.88, 
-  -2.03, -2.10, -3.49, -3.08, -2.90,  1.12, -1.07, -0.85, -3.56, -0.60, -0.82,
-   2.29, -1.16, -1.19,  1.61, -1.26, -2.85, -3.56, -2.00, -2.30, -0.46, -0.76,
-  -4.53)
+pdi_real_scale <- read_csv("data//climate//spei.csv") %>%
+  mutate(dt = my(DATA)) %>%
+  mutate(yr = year(dt)) %>%
+  mutate(mn = month(dt)) %>%
+  mutate(spei_1m = SPEI_1) %>%
+  mutate(spei_3m = SPEI_3) %>%
+  mutate(spei_6m = SPEI_6) %>%
+  mutate(spei_12m = SPEI_12) %>%
+  mutate(spei_24m = SPEI_24) %>%
+  mutate(spei_48m = SPEI_48) %>%
+  filter(yr > 1987 & yr < 2024) %>%
+  filter(mn == 9) %>%
+  select(yr, spei_1m, spei_3m, spei_6m, spei_12m, spei_24m, spei_48m) %>%
+  arrange(yr) %>%
+  pull(spei_12m)
 pdi_dat <- tibble(
-  year = 1988:2021,
+  year = 1988:2023,
   pdi = pdi_real_scale
 )
 
 net_management <- tibble(
-  year = rep(1988:2021, 2),
-  n_mov = c(apply(ipm_data$n_ad_add - abs(ipm_data$n_ad_rem), 2, sum) +
-            apply(ipm_data$n_ca_add - abs(ipm_data$n_ca_rem), 2, sum),
-            (ipm_data$n_ad_add - abs(ipm_data$n_ad_rem))[1,] +
-            (ipm_data$n_ca_add - abs(ipm_data$n_ca_rem))[1,]),
-  class = c(rep("total", 34), rep("females", 34))
+  year = 1988:2023,
+  n_mov = apply(ipm_data$n_a_mov + ipm_data$n_c_mov, 2, sum),
+  class = c(rep("total", 36))
 )
 
 cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", 
@@ -376,7 +384,7 @@ elk_density <- ggplot(
   geom_line(size = cov_fig_grph_size, color = cbbPalette[2]) +
   geom_point(size = cov_fig_grph_size * 2) +
   theme_classic() +
-  labs(title = "a - Elk density", y = bquote('Females km'^-2), x = "Year") +
+  labs(title = "a - Elk density", y = bquote('Elk km'^-2), x = "Year") +
   xlim(1988, NA) +
   scale_color_jco()
 puma_density <- ggplot(
@@ -404,7 +412,7 @@ pdi_plot <- ggplot(
   geom_line(size = cov_fig_grph_size, color = cbbPalette[8]) +
   geom_point(size = cov_fig_grph_size * 2) +
   theme_classic() +
-  labs(title = "d - Palmer index", y = "PDI", x = "Year") +
+  labs(title = "d - SPEI (12 month)", y = "SPEI", x = "Year") +
   xlim(1988, NA) +
   scale_color_jco()
 
@@ -477,7 +485,7 @@ pdilag_marg_plot <- ggplot(data = r_pm_ln, aes(x = val, y = mci)) +
   ) +
   theme_classic() +
   labs(
-    x = "PDI (t-1)", 
+    x = "SPEI (t-1)", 
     y = NULL, 
     title = bquote(D - PDI[t-1])) +
   scale_color_jco() +
@@ -498,7 +506,7 @@ pdi_marg_plot <- ggplot(data = r_pt_ln, aes(x = val, y = mci)) +
   ) +
   theme_classic() +
   labs(
-    x = "PDI (t)", 
+    x = "SPEI (t)", 
     y = "Calves/Female", 
     title = bquote(C - PDI[t])) +
   scale_color_jco() +
@@ -529,14 +537,14 @@ ed_marg_plot <- ggplot(data = r_ed_ln, aes(x = val, y = mci)) +
 
 # plot_grid(
 #   cougar_marg_plot, ed_marg_plot, pdi_marg_plot, pdilag_marg_plot,
-#   align = "v", 
+#   align = "v",
 #   ncol = 2,
 #   label_size = 2)
 # ggsave(
-#   "figures//recruitment_marginal_plots_fig.png", 
-#   width = 4, 
-#   height = 4, 
-#   units = "in", 
+#   "figures//recruitment_marginal_plots_fig.png",
+#   width = 4,
+#   height = 4,
+#   units = "in",
 #   dpi = 300)
 
 #Residual plots recruitment=====================================================
@@ -566,6 +574,7 @@ for(i in 1:nrow(eff_post)){
 
 full_r_dat <- r_residual_post %>%
   as_tibble() %>%
+  select(1:35) %>%
   map(quantile, probs = c(0.025, 0.5, 0.975)) %>%
   bind_rows() %>%
   mutate(
@@ -610,9 +619,9 @@ resid_r_wt <- ggplot(data = full_r_dat, aes(x = PDSI, y = resid_mci)) +
   geom_hline(yintercept = 0) +
   theme_classic() +
   labs(
-    x = "PDI scaled (t)", 
+    x = "SPEI scaled (t)", 
     y = "Recruitment residual", 
-    title = "c - PDI residuals") +
+    title = "c - SPEI residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
 resid_r_wm <- ggplot(data = full_r_dat, aes(x = `PDSI_lag`, y = resid_mci)) +
@@ -622,22 +631,22 @@ resid_r_wm <- ggplot(data = full_r_dat, aes(x = `PDSI_lag`, y = resid_mci)) +
   geom_hline(yintercept = 0) +
   theme_classic() +
   labs(
-    x = "PDI scaled (t-1)", 
+    x = "SPEI scaled (t-1)", 
     y = "Recruitment residual", 
-    title = "d - PDI (t-1) residuals") +
+    title = "d - SPEI (t-1) residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
-# plot_grid(
-#   resid_r_cg, resid_r_ed, resid_r_wt, resid_r_wm, 
-#   align = "v", 
-#   ncol = 2,
-#   label_size = 2)
-# ggsave(
-#   "figures//recruitment_residuals_plots_fig.png", 
-#   width = 4, 
-#   height = 4, 
-#   units = "in", 
-#   dpi = 300)
+plot_grid(
+  resid_r_cg, resid_r_ed, resid_r_wt, resid_r_wm,
+  align = "v",
+  ncol = 2,
+  label_size = 2)
+ggsave(
+  "figures//recruitment_residuals_plots_fig.png",
+  width = 4,
+  height = 4,
+  units = "in",
+  dpi = 300)
 
 #Survival_data==================================================================
 s_cov_post <- rslt %>%
@@ -664,10 +673,10 @@ s_eff_post <- rslt %>%
   map(as_tibble) %>%
   bind_rows() %>%
   pivot_longer(1:ncol(.), names_to = "parameter") %>%
-  filter(parameter %in% c("S_cg", "S_C_mean", "S_dd", "S_wm", "S_wt")) %>%
+  filter(parameter %in% c("S_cg", "S_C_B0_ps", "S_dd", "S_wm", "S_wt")) %>%
   mutate(id = sort(rep(1:(nrow(.)/5), 5))) %>%
   pivot_wider(id_cols = id, names_from = parameter) %>%
-  mutate(S_B0 = logit(S_C_mean))
+  mutate(S_B0 = logit(S_C_B0_ps))
 
 #####
 x <- seq(-3, 3, length.out = 1000)
@@ -767,7 +776,7 @@ s_cougar_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
-  xlim(0, 2.12)
+  xlim(0, 2.2)
 
 # PDI Lag
 s_pdilag_marg_plot <- ggplot(data = s_pm_line, aes(x = val, y = mci)) +
@@ -782,13 +791,13 @@ s_pdilag_marg_plot <- ggplot(data = s_pm_line, aes(x = val, y = mci)) +
   ) +
   theme_classic() +
   labs(
-    x = "PDI (t-1)", 
+    x = "SPEI (t-1)", 
     y = NULL, 
-    title = "d - PDI prior year") +
+    title = "d - SPEI prior year") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
-  xlim(-3.7, 2.3)
+  xlim(-2.5, 2.3)
 
 # PDI
 s_pdi_marg_plot <- ggplot(data = s_pt_line, aes(x = val, y = mci)) +
@@ -803,13 +812,13 @@ s_pdi_marg_plot <- ggplot(data = s_pt_line, aes(x = val, y = mci)) +
   ) +
   theme_classic() +
   labs(
-    x = "PDI (t)", 
+    x = "SPEI (t)", 
     y = "Calf survival", 
-    title = "c - PDI current year") +
+    title = "c - SPEI current year") +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
-  xlim(-4.65, 2.3)
+  xlim(-2.5, 2.3)
 
 # Elk Density Lag
 s_ed_marg_plot <- ggplot(data = s_ed_line, aes(x = val, y = mci)) +
@@ -830,11 +839,11 @@ s_ed_marg_plot <- ggplot(data = s_ed_line, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * 1.1)) +
-  xlim(1, 4.8)
+  xlim(0.59, 5.25)
 
 # plot_grid(
 #   s_cougar_marg_plot, s_ed_marg_plot, s_pdi_marg_plot, s_pdilag_marg_plot,
-#   align = "v", 
+#   align = "v",
 #   ncol = 2,
 #   label_size = 2)
 # ggsave(
@@ -912,9 +921,9 @@ resid_s_wt <- ggplot(data = full_s_dat, aes(x = PDSI, y = resid_mci)) +
   geom_hline(yintercept = 0) +
   theme_classic() +
   labs(
-    x = "PDI scaled (t)", 
+    x = "SPEI scaled (t)", 
     y = "Recruitment residual", 
-    title = "c - PDI residuals") +
+    title = "c - SPEI residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
 resid_s_wm <- ggplot(data = full_s_dat, aes(x = `PDI_lag`, y = resid_mci)) +
@@ -924,22 +933,22 @@ resid_s_wm <- ggplot(data = full_s_dat, aes(x = `PDI_lag`, y = resid_mci)) +
   geom_hline(yintercept = 0) +
   theme_classic() +
   labs(
-    x = "PDI scaled (t-1)", 
+    x = "SPEI scaled (t-1)", 
     y = "Recruitment residual", 
-    title = "d - PDI (t-1) residuals") +
+    title = "d - SPEI (t-1) residuals") +
   theme(text = element_text(size = resid_fig_text_size))
 
-# plot_grid(
-#   resid_s_cg, resid_s_ed, resid_s_wt, resid_s_wm, 
-#   align = "v", 
-#   ncol = 2,
-#   label_size = 2)
-# ggsave(
-#   "figures//survival_residuals_plots_fig.png", 
-#   width = 4, 
-#   height = 4, 
-#   units = "in", 
-#   dpi = 300)
+plot_grid(
+  resid_s_cg, resid_s_ed, resid_s_wt, resid_s_wm,
+  align = "v",
+  ncol = 2,
+  label_size = 2)
+ggsave(
+  "figures//survival_residuals_plots_fig.png",
+  width = 4,
+  height = 4,
+  units = "in",
+  dpi = 300)
 
 #Plot Assembly==================================================================
 
@@ -949,6 +958,25 @@ tit_mult <- .9
 point_mult <- .5
 label_color <- "#dddddd"
 label_mult <- 0.3
+
+puma_lx <- 0.15
+spei_lx <- -2.25
+nelk_lx <- 0.85
+
+recr_ly <- 0.105
+surv_ly <- 0.045
+lamb_ly <- 0.59
+preg_ly <- 0.25
+
+xlim_puma <- c(0.1, 2.2)
+xlim_spei <- c(-2.3, 2)
+xlim_nelk <- c(0.8, 5.1)
+
+ylim_recr <- c(0.07, 0.81)
+ylim_surv <- c(0, 1)
+ylim_lamb <- c(0.55, 1.4)
+ylim_preg <- c(0.2, 1)
+
 ##### Recruitment #####
 r_color_1 <- "#0033FF"
 r_color_2 <- "#00CCFF"
@@ -971,12 +999,12 @@ r_cougar_marg_plot <- ggplot(data = r_cg_ln, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_blank(), axis.text = element_blank()) +
-  xlim(0, 2.12) + ylim(0.12, 0.81) +
+  xlim(xlim_puma) + ylim(ylim_recr) +
   annotate(
     geom = "label", 
-    label = "P(d) = 0.99", 
-    x = .05, 
-    y = 0.155, 
+    label = "P(d) = 0.96", 
+    x = puma_lx, 
+    y = recr_ly, 
     hjust = 0,
     vjust = 0.5,
     size = marg_fig_text_size * label_mult,
@@ -1002,12 +1030,12 @@ r_pdilag_marg_plot <- ggplot(data = r_pm_ln, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_blank(), axis.text = element_blank()) +
-  xlim(-3.7, 2.3) + ylim(0.12, 0.81) +
+  xlim(xlim_spei) + ylim(ylim_recr) +
   annotate(
     geom = "label", 
-    label = "P(d) = 0.92", 
-    x = -3.65, 
-    y = 0.155, 
+    label = "P(d) = 0.99", 
+    x = spei_lx, 
+    y = recr_ly, 
     hjust = 0,
     vjust = 0.5,
     size = marg_fig_text_size * label_mult,
@@ -1033,12 +1061,12 @@ r_pdi_marg_plot <- ggplot(data = r_pt_ln, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_blank(), axis.text = element_blank()) +
-  xlim(-4.65, 2.3) + ylim(0.12, 0.81) +
+  xlim(xlim_spei) + ylim(ylim_recr) +
   annotate(
     geom = "label", 
-    label = "P(d) = 0.58", 
-    x = -4.6, 
-    y = 0.155, 
+    label = "P(d) = 0.59", 
+    x = spei_lx, 
+    y = recr_ly, 
     hjust = 0,
     vjust = 0.5,
     size = marg_fig_text_size * label_mult,
@@ -1065,12 +1093,12 @@ r_ed_marg_plot <- ggplot(data = r_ed_ln, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_blank(), axis.text.x.bottom = element_blank()) +
-  xlim(1, 4.8) + ylim(0.12, 0.81) +
+  xlim(xlim_nelk) + ylim(ylim_recr) +
   annotate(
     geom = "label", 
-    label = "P(d) = 0.44", 
-    x = 1.05, 
-    y = 0.155, 
+    label = "P(d) = 0.08", 
+    x = nelk_lx, 
+    y = recr_ly, 
     hjust = 0,
     vjust = 0.5,
     size = marg_fig_text_size * label_mult,
@@ -1100,12 +1128,12 @@ s_cougar_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_blank(), axis.text = element_blank()) +
-  xlim(0, 2.12) + ylim(0.14, 1) +
+  xlim(xlim_puma) + ylim(ylim_surv) +
   annotate(
     geom = "label", 
-    label = "P(d) = 0.99", 
-    x = .05, 
-    y = 0.185, 
+    label = "P(d) = 0.97", 
+    x = puma_lx, 
+    y = surv_ly, 
     hjust = 0,
     vjust = 0.5,
     size = marg_fig_text_size * label_mult,
@@ -1132,12 +1160,12 @@ s_pdilag_marg_plot <- ggplot(data = s_pm_line, aes(x = val, y = mci)) +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_blank(),
         axis.text = element_blank()) +
-  xlim(-3.7, 2.3) + ylim(0.14, 1) +
+  xlim(xlim_spei) + ylim(ylim_surv) +
   annotate(
     geom = "label", 
-    label = "P(d) = 0.66", 
-    x = -3.65, 
-    y = 0.185, 
+    label = "P(d) = 0.91", 
+    x = spei_lx, 
+    y = surv_ly, 
     hjust = 0,
     vjust = 0.5,
     size = marg_fig_text_size * label_mult,
@@ -1164,12 +1192,12 @@ s_pdi_marg_plot <- ggplot(data = s_pt_line, aes(x = val, y = mci)) +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_blank(),
         axis.text = element_blank()) +
-  xlim(-4.65, 2.3) + ylim(0.14, 1) +
+  xlim(xlim_spei) + ylim(ylim_surv) +
   annotate(
     geom = "label", 
     label = "P(d) = 0.39", 
-    x = -4.6, 
-    y = 0.185, 
+    x = -2.25, 
+    y = 0.045, 
     hjust = 0,
     vjust = 0.5,
     size = marg_fig_text_size * label_mult,
@@ -1196,12 +1224,12 @@ s_ed_marg_plot <- ggplot(data = s_ed_line, aes(x = val, y = mci)) +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_blank(),
         axis.text.x.bottom = element_blank()) +
-  xlim(1, 4.8) + ylim(0.14, 1) +
+  xlim(xlim_nelk) + ylim(ylim_surv) +
   annotate(
     geom = "label", 
-    label = "P(d) = 0.84", 
-    x = 1.05, 
-    y = 0.185, 
+    label = "P(d) = 0.85", 
+    x = nelk_lx, 
+    y = surv_ly, 
     hjust = 0,
     vjust = 0.5,
     size = marg_fig_text_size * label_mult,
@@ -1233,12 +1261,12 @@ l_cougar_marg_plot <- ggplot(data = lam_cg_line, aes(x = val, y = mci)) +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_blank(),
         axis.text = element_blank()) +
-  xlim(0, 2.12) + ylim(0.5955, 1.4) +
+  xlim(xlim_puma) + ylim(ylim_lamb) +
   annotate(
     geom = "label", 
-    label = "p = 0.01", 
-    x = 0.05, 
-    y = 0.635, 
+    label = "p = 0.47", 
+    x = puma_lx, 
+    y = lamb_ly, 
     hjust = 0,
     vjust = 0.5,
     size = marg_fig_text_size * label_mult,
@@ -1268,12 +1296,12 @@ l_pdilag_marg_plot <- ggplot(data = lam_pdilag_line, aes(x = val, y = mci)) +
   theme(plot.title = element_blank(),
         axis.text.x.bottom = element_blank(),
         axis.text.y.left = element_blank()) +
-  xlim(-3.7, 2.3)+ ylim(0.5955, 1.4) +
+  xlim(xlim_spei) + ylim(ylim_lamb) +
   annotate(
     geom = "label", 
-    label = "p = 0.52", 
-    x = -3.65, 
-    y = 0.635, 
+    label = "p < 0.01", 
+    x = spei_lx, 
+    y = lamb_ly, 
     hjust = 0,
     vjust = 0.5,
     size = marg_fig_text_size * label_mult,
@@ -1299,12 +1327,12 @@ l_pdi_marg_plot <- ggplot(data = lam_pdi_line, aes(x = val, y = mci)) +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_blank(),
         axis.text = element_blank()) +
-  xlim(-4.65, 2.3)+ ylim(0.5955, 1.4) +
+  xlim(xlim_spei) + ylim(ylim_lamb) +
   annotate(
     geom = "label", 
-    label = "p = 0.29", 
-    x = -4.6, 
-    y = 0.635, 
+    label = "p = 0.18", 
+    x = spei_lx, 
+    y = lamb_ly, 
     hjust = 0,
     vjust = 0.5,
     size = marg_fig_text_size * label_mult,
@@ -1330,12 +1358,12 @@ l_ed_marg_plot <- ggplot(data = lam_ed_line, aes(x = val, y = mci)) +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_blank(),
         axis.text.x.bottom = element_blank()) +
-  xlim(1, 4.8)+ ylim(0.5955, 1.4) +
+  xlim(xlim_nelk)+ ylim(ylim_lamb) +
   annotate(
     geom = "label", 
-    label = "p = 0.18", 
-    x = 1.05, 
-    y = 0.635, 
+    label = "p = 0.91", 
+    x = nelk_lx, 
+    y = lamb_ly, 
     hjust = 0,
     vjust = 0.5,
     size = marg_fig_text_size * label_mult,
@@ -1358,19 +1386,19 @@ p_pdi_marg_plot <- ggplot(data = p_pt_line, aes(x = val, y = mci)) +
   ) +
   theme_classic() +
   labs(
-    x = bquote(PDI[t]), 
+    x = bquote(SPEI[t]), 
     y = NULL, 
     title = NULL) + #bquote("d2 (0.97)")) + 
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size),
         axis.text.y.left = element_blank()) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(-4.65, 2.3) + ylim(0.25, 1) +
+  xlim(xlim_spei) + ylim(ylim_preg) +
   annotate(
     geom = "label", 
-    label = "P(d) = 0.97", 
-    x = -4.6, 
-    y = 0.30, 
+    label = "P(d) = 0.98", 
+    x = spei_lx, 
+    y = preg_ly, 
     hjust = 0,
     vjust = 0.5,
     size = marg_fig_text_size * label_mult,
@@ -1397,12 +1425,12 @@ p_ed_marg_plot <- ggplot(data = p_ed_line, aes(x = val, y = mci)) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(1, 4.8) + ylim(0.25, 1) +
+  xlim(xlim_nelk) + ylim(ylim_preg) +
   annotate(
     geom = "label", 
-    label = "P(d) = 0.70", 
-    x = 1.05, 
-    y = 0.3, 
+    label = "P(d) = 0.45", 
+    x = nelk_lx, 
+    y = preg_ly, 
     hjust = 0,
     vjust = 0.5,
     size = marg_fig_text_size * label_mult,
@@ -1420,20 +1448,20 @@ p_cougar_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
   theme(text = element_text(size = marg_fig_text_size),
         axis.text.y.left = element_blank()) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult)) +
-  xlim(0, 2.12) + ylim(0.25, 1)
+  xlim(xlim_puma) + ylim(ylim_preg)
 
 #Pregnancy PDI Lag==============================================================
 p_pdilag_marg_plot <- ggplot(data = s_cg_line, aes(x = val, y = mci)) +
   theme_classic() +
   labs(
-    x = bquote(PDI[t-1]), 
+    x = bquote(SPEI[t-1]), 
     y = NULL, 
     title = NULL) +
   scale_color_jco() +
   theme(text = element_text(size = marg_fig_text_size)) +
   theme(plot.title = element_text(size = marg_fig_text_size * tit_mult),
         axis.text.y.left = element_blank()) +
-  xlim(-3.7, 2.3) + ylim(0.25, 1)
+  xlim(xlim_spei) + ylim(ylim_preg)
 
 # save(
 #   s_cg_line, 

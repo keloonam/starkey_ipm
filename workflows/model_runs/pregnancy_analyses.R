@@ -20,15 +20,18 @@ require(tidyverse); require(nimble)
 rd <- read.csv("data//pregnancy_rates.csv") %>%
   as_tibble()
 
-load("data//elk_ipm_data_21apr2023.Rdata")
+ipm_data <- readRDS("s2//ipm_data_25sep2024.rds")
 
 source("models//misc//pregnancy.R")
+nelk_now <- n_af %>% filter(year %in% 1989:2021) %>% pull(mean_density) %>% scl()
 
+nelk_now_sd <- n_af %>% filter(year %in% 1989:2021) %>% pull(mean_density) %>% sd()
+nelk_now_mn <- n_af %>% filter(year %in% 1989:2021) %>% pull(mean_density) %>% mean()
 #Prep data======================================================================
-
+pdi_now_sd <- 
 cov_dat <- tibble(
-  pdi = ipm_data$palmer_index[2:34],
-  elk = ipm_data$elk_density[2:34],
+  pdi = ipm_data$spei12[2:34],
+  elk = nelk_now,
   yr  = (1989:2021) - 1988
 )
 
@@ -135,12 +138,18 @@ row_keep <- rd %>%
   mutate(keep = (lactating == T) * (age_class == "prime")) %>%
   pull(keep)
 
+preg_years_to_pull <- rd %>% 
+  filter(row_keep == T) %>%
+  left_join(., cov_dat) %>% pull(yr)
+nelk_from_preg_years <- n_af %>%
+  filter(year %in% preg_years_to_pull) %>%
+  pull(mean_density)
 point_data <- rd %>% 
   mutate(yr = yr - 1988) %>%
   filter(row_keep == T) %>%
   left_join(., cov_dat) %>%
-  mutate(pdi = pdi * 1.784047 - 1.238529) %>%
-  mutate(elk = elk * 0.9238554 + 2.993542)
+  mutate(pdi = pdi * 1.054813 - 0.5071725) %>%
+  mutate(elk = nelk_from_preg_years)
 
 p_point_dat <- nimble_results %>%
   map(as_tibble) %>%
@@ -158,7 +167,7 @@ p_point_dat <- nimble_results %>%
 
 row_names <- dimnames(nimble_results[[1]])[[2]]
 
-cov_dat <- nimble_results %>%
+cov_dat_problem_child <- nimble_results %>%
   map(as_tibble) %>%
   bind_rows() %>%
   map(quantile, probs = c(.025, .5, .975)) %>%
@@ -284,7 +293,7 @@ for(i in 1:length(x)){
 }
 p_pt_line <- as_tibble(p_pt_line)
 names(p_pt_line) <- c("val", "lci", "mci", "uci")
-p_pt_line$val <- p_pt_line$val * 1.784047 - 1.238529
+p_pt_line$val <- p_pt_line$val * sd(pdi_dat$pdi) + mean(pdi_dat$pdi)
 
 # PDSI t marginal plot data
 p_ed_line <- matrix(data = NA, nrow = length(x), ncol = 4)
@@ -295,9 +304,9 @@ for(i in 1:length(x)){
 }
 p_ed_line <- as_tibble(p_ed_line)
 names(p_ed_line) <- c("val", "lci", "mci", "uci")
-p_ed_line$val <- p_ed_line$val * 0.9238554 + 2.993542
+p_ed_line$val <- p_ed_line$val * sd(n_af$mean_density) + mean(n_af$mean_density)
 
-ggplot(cov_dat, aes(x = covariate, y = med, color = age, shape = lactating)) +
+ggplot(cov_dat_problem_child, aes(x = covariate, y = med, color = age, shape = lactating)) +
   geom_pointrange(aes(ymin = lci, ymax = uci), position = position_dodge(width = .5)) +
   theme(legend.title = element_blank()) +
   labs(x = "", y = "Covariate value", title = "Effects on pregnancy rates") +

@@ -104,21 +104,34 @@ puma$pd_trim_mean <- puma %>%
   select(yr, recon, odfwe) %>%
   mutate(pd_trim_mean = rowMeans(.[,c(2:3)], na.rm = T)) %>%
   pull(pd_trim_mean)
-# puma %>%
-#   mutate(
-#     recon = scl_rb(pd_reconstruction, c(asi[1], asi[length(asi)])),
-#     morts = scl_rb(pd_mortalities, c(asi[1], asi[length(asi)])),
-#     odfwe = scl_rb(pd_odfw_est, c(asi[1], asi[length(asi)])),
-#     logis = scl_rb(pd_logistic, c(asi[1], asi[length(asi)])),
-#     fullm = pd_full_mean,
-#     trimm = pd_trim_mean
-#   ) %>%
-#   select(yr, recon, odfwe, morts, logis, fullm, trimm) %>%
-#   pivot_longer(cols = 2:7, names_to = "Source", values_to = "Density") %>%
-#   filter(Source %in% c("fullm", "recon", "odfwe", "logis")) %>%
-#   filter(!is.na(Density)) %>%
-#   ggplot(aes(x = yr, y = Density, color = Source)) +
-#   geom_line()
+cbp <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", 
+         "#D55E00", "#CC79A7")
+puma %>%
+  mutate(
+    recon = scl_rb(pd_reconstruction, c(asi[1], asi[length(asi)])),
+    morts = scl_rb(pd_mortalities, c(asi[1], asi[length(asi)])),
+    odfwe = scl_rb(pd_odfw_est, c(asi[1], asi[length(asi)])),
+    logis = scl_rb(pd_logistic, c(asi[1], asi[length(asi)])),
+    fullm = pd_full_mean,
+    trimm = pd_trim_mean
+  ) %>%
+  select(yr, recon, odfwe, morts, logis, fullm, trimm) %>%
+  pivot_longer(cols = 2:7, names_to = "Source", values_to = "Density") %>%
+  filter(Source %in% c("fullm", "recon", "odfwe", "logis")) %>%
+  filter(!is.na(Density)) %>%
+  ggplot(aes(x = yr, y = Density, color = Source, shape = Source)) +
+  geom_line() +
+  geom_point() +
+  xlab("Year") + ylab("N puma (scaled)") + 
+  labs(title = "Puma density measures") +
+  theme_classic() +
+  scale_color_manual(values = cbp) +
+  geom_vline(xintercept = 1994, linetype = 2) +
+  scale_color_discrete(name = NULL, labels = c("Mean", "Logistic growth", "ODFW Blue Mountain Estimate", "Starkey Reconstruction")) +
+  scale_shape_discrete(name = NULL, labels = c("Mean", "Logistic growth", "ODFW Blue Mountain Estimate", "Starkey Reconstruction")) +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 2))
+ggsave("figures//puma_covariates.png", dpi = 600, width = 14, height = 9, units = "cm")
 
 #NDVI===========================================================================
 
