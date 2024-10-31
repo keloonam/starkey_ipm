@@ -22,6 +22,7 @@ nimble_code <- nimble::nimbleCode({
     b_lac_yng[t] ~ dnorm(b_lac_yng_mean, sd = b_lac_yng_sd)
     b_lac_old[t] ~ dnorm(b_lac_old_mean, sd = b_lac_old_sd)
     logit(preg_young[t]) <- b0[t] + b_yng[t]
+    logit(a_preg_lac_prime[t]) <- b0[t] + b_lac_prm[t]
   }
   bden_dry_prm ~ dlogis(0, 1)
   bden_dry_yng ~ dlogis(0, 1)

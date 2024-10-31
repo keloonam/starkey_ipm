@@ -74,7 +74,7 @@ fdt <- list(
   am_count = odt$n_m_p_count,
   nn_fc = nrow(odt$n_f_p_count),
   nn_mc = nrow(odt$n_m_p_count),
-  cdens = scl(covariates$pd_full_mean[-1]),
+  cdens = scl(covariates$pd_logistic[-1]),
   pdsi = scl(covariates$pdi_growing[-1]),
   precip = scl(covariates$mm_precip[-1]),
   temp = scl(covariates$temp_mean[-1]),
@@ -86,5 +86,5 @@ fdt <- list(
   min_n1 = odt$min_n1,
   est_n1 = odt$est_n1
 )
-saveRDS(fdt, "s2//ipm_data_25sep2024.rds")
+saveRDS(fdt, "s2//ipm_data_09oct2024.rds")
 rm(list = ls())

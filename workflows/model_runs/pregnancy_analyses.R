@@ -5,12 +5,12 @@
 #Variables======================================================================
 
 
-niter <- 500000
-nburn <- 100000
+niter <- 50000
+nburn <- 10000
 nthin <- 100
 
 chain <- 3
-save_file <- "results//pregnancy_analysis_3sep2023.rds"
+save_file <- "results//pregnancy_analysis_13oct2024.rds"
 
 #Packages=======================================================================
 
@@ -21,17 +21,14 @@ rd <- read.csv("data//pregnancy_rates.csv") %>%
   as_tibble()
 
 ipm_data <- readRDS("s2//ipm_data_25sep2024.rds")
-
+scl <- function(x){
+  (x-mean(x)) / sd(x)
+}
 source("models//misc//pregnancy.R")
-nelk_now <- n_af %>% filter(year %in% 1989:2021) %>% pull(mean_density) %>% scl()
-
-nelk_now_sd <- n_af %>% filter(year %in% 1989:2021) %>% pull(mean_density) %>% sd()
-nelk_now_mn <- n_af %>% filter(year %in% 1989:2021) %>% pull(mean_density) %>% mean()
 #Prep data======================================================================
-pdi_now_sd <- 
 cov_dat <- tibble(
   pdi = ipm_data$spei12[2:34],
-  elk = nelk_now,
+  elk = ipm_data$nelk[2:34],
   yr  = (1989:2021) - 1988
 )
 
@@ -81,6 +78,7 @@ nimble_inits <- function(){
 }
 
 nimble_monitors <- c(
+  "a_preg_lac_prime",
   "b0_mean",
   "b0_sd",
   "b_yng_mean",
@@ -107,7 +105,7 @@ nimble_monitors <- c(
   "bpdi_lac_old",
   "p",
   "bpdi_lac_old",
-  "rsdl",
+  # "rsdl",
   "preg_young"
 )
 
@@ -154,14 +152,16 @@ point_data <- rd %>%
 p_point_dat <- nimble_results %>%
   map(as_tibble) %>%
   bind_rows() %>%
+  select(grep("a_preg_lac_prime", names(.))) %>%
   map(quantile, probs = c(.025, .5, .975)) %>%
   bind_rows() %>%
-  mutate(model_alias = row_names) %>%
-  mutate(keep = grepl("p\\[", model_alias)) %>%
-  filter(keep == T) %>%
-  mutate(keep = row_keep) %>%
-  filter(keep == T) %>%
-  bind_cols(point_data)
+  set_names("lci", "mci", "uci") %>%
+  mutate(yr = 1989:2021) %>%
+  mutate(spei = cov_dat$pdi) %>%
+  mutate(nelk = cov_dat$elk)
+
+ggplot(p_point_dat, aes(x = nelk, y = mci)) +
+  geom_pointrange(aes(ymax = uci, ymin = lci))
 
 #Clean results==================================================================
 
@@ -350,4 +350,10 @@ prg_dat %>%
     mci = quantile(val, 0.50),
     uci = quantile(val, .975)
     )
-
+np_cov_dat <- preg_rd %>%
+  filter(lactating == TRUE) %>%
+  filter(age_class == "prime") %>%
+  full_join(n_af) %>% 
+  select(yr, lactating, pregnancy_rate, n_observations, age_class, mean_density) %>%
+  filter(!is.na(age_class)) %>%
+  full_join(p_dat)

@@ -15,14 +15,15 @@ add_cl_cov_column <- function(x, cl_cov_name){
     mutate(cl_cov = cl_cov_name) %>%
     return()
 }
-rs_file_names <- paste0("s2//results//", list.files("s2//results"))
+rs_file_names <- paste0("s2//results//", list.files("s2//results"))[c(4,12)]
 cl_covariate_names <- strsplit(rs_file_names, "_") %>%
   map(pull_cl_cov_name) %>%
   unlist()
+pu_covariate_names <- c("Logistic Growth", "Estimate Mean")
 all_frs <- map(rs_file_names, readRDS) %>%
   set_names(cl_covariate_names) %>%
   map(mcmc_to_tibble) %>%
-  map2(.x = ., .y = cl_covariate_names, add_cl_cov_column) %>%
+  map2(.x = ., .y = pu_covariate_names, add_cl_cov_column) %>%
   bind_rows()
 
 covariate_summaries <- all_frs %>%
@@ -53,11 +54,7 @@ recruitment_covariates <- covariate_summaries %>%
   theme_classic() +
   xlab("Model") + ylab("Estimate") + labs(title = "Recruitment covariates") +
   scale_color_discrete(
-    labels = c("Puma density", "Elk density", "Climate (t-1)", "Climate (t)")
-  ) +
-  scale_x_discrete(
-    labels = c("NDVI", "PDSI", "Precipitation", "SPEI 12", "SPEI 3", "SPEI 6",
-               "Temperature")
+    labels = c("Puma density", "Elk density", "SPEI (t-1)", "SPEI (t)")
   )
 
 survival_covariates <- covariate_summaries %>%
@@ -71,14 +68,10 @@ survival_covariates <- covariate_summaries %>%
   theme_classic() +
   xlab("Model") + ylab("Estimate") + labs(title = "Calf survival covariates") +
   scale_color_discrete(
-    labels = c("Puma density", "Elk density", "Climate (t-1)", "Climate (t)")
-  ) +
-  scale_x_discrete(
-    labels = c("NDVI", "PDSI", "Precipitation", "SPEI 12", "SPEI 3", "SPEI 6",
-               "Temperature")
+    labels = c("Puma density", "Elk density", "SPEI (t-1)", "SPEI (t)")
   )
 plot_grid(recruitment_covariates, survival_covariates, nrow = 2, ncol = 1)
-ggsave("figures//covariate_comparison.png", dpi = 600, units = "cm", width = 18,
+ggsave("figures//puma_covariate_comparison.png", dpi = 600, units = "cm", width = 18,
        height = 12)
 recruitment_summaries <- all_frs %>%
   select(cl_cov, grep("R\\[", names(.))) %>%

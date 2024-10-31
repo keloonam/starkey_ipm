@@ -7,9 +7,9 @@
 # Specify the model
 model_file <- "s2//ipm.txt"
 
-climate_variable <- "spei12"
+climate_variable <- "pdsi"
  # pdsi, precip, temp, ndvi, spei3, spei6, spei12
-save_file <- paste0("s2//results//ipmrs_27sep2025_", climate_variable, ".rds")
+save_file <- paste0("s2//results//ipmrs_09oct2025_", climate_variable, ".rds")
 
 # Loop dimension parameters
 n_year <- 36
@@ -24,7 +24,7 @@ n_t <- 100
 #Environment====================================================================
 
 require(tidyverse); require(rjags); require(mcmcplots)
-ipm_data <- readRDS("s2//ipm_data_25sep2024.rds")
+ipm_data <- readRDS("s2//ipm_data_09oct2024.rds")
 
 #Data_prep======================================================================
 jags_data <- list(
