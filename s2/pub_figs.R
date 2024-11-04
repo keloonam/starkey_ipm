@@ -195,28 +195,28 @@ s_cov_dat_scaled <- cov_dat %>%
 cg_lam_dt <- sim_lam(
   fdt = cv_rs_raw, 
   cov = ipm_data$cdens, 
-  length_cov = 100,
+  length_cov = 500,
   r_cov_name = "R_cg",
   s_cov_name = "S_cg")
 # SPEI t-1
 wm_lam_dt <- sim_lam(
   fdt = cv_rs_raw, 
   cov = ipm_data$spei12, 
-  length_cov = 100,
+  length_cov = 500,
   r_cov_name = "R_wm",
   s_cov_name = "S_wm")
 # SPEI
 wt_lam_dt <- sim_lam(
   fdt = cv_rs_raw, 
   cov = ipm_data$spei12, 
-  length_cov = 50,
+  length_cov = 500,
   r_cov_name = "R_wt",
   s_cov_name = "S_wt")
 # Density dependence
 dd_lam_dt <- sim_lam(
   fdt = cv_rs_raw, 
   cov = ipm_data$nelk, 
-  length_cov = 50,
+  length_cov = 500,
   r_cov_name = "R_dd",
   s_cov_name = "S_dd")
 # Pregnancy
@@ -447,24 +447,24 @@ ggsave(
 #Marginal Plot Arguments========================================================
 
 marg_fig_grph_size <- .02
-marg_fig_text_size <- 7
+marg_fig_text_size <- 9
 tit_mult <- .9
 point_mult <- .5
 label_color <- "#dddddd"
 label_mult <- 0.3
 
-puma_lx <- 0.15
-spei_lx <- -2.25
-nelk_lx <- 0.85
+puma_lx <- 0.05
+spei_lx <- -2.35
+nelk_lx <- 0.8
 
 recr_ly <- 0.105
 surv_ly <- 0.045
 lamb_ly <- 0.59
 preg_ly <- 0.25
 
-xlim_puma <- c(0.1, 2.2)
-xlim_spei <- c(-2.3, 2)
-xlim_nelk <- c(0.8, 5.2)
+xlim_puma <- c(0, 2.25)
+xlim_spei <- c(-2.4, 2.1)
+xlim_nelk <- c(0.75, 5.5)
 
 ylim_recr <- c(0.07, 0.81)
 ylim_surv <- c(0, 1)

@@ -113,7 +113,7 @@ build_el_tib <- function(rsn){
 
 
 sim_lam <- function(fdt, cov, length_cov, r_cov_name, s_cov_name){
-  cov_rng <- seq(min(cov) - 0.2, max(cov) + 0.2, length.out = length_cov)
+  cov_rng <- seq(min(cov) - 1, max(cov) + 1, length.out = length_cov)
   lam <- matrix(NA, nrow = nrow(fdt), ncol = length_cov)
   r <- lam
   sf <- lam
