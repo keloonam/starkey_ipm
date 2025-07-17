@@ -74,12 +74,22 @@ calc_marg_line <- function(cov, b0, b1){
 
 
 
-calc_eigen_lambda <- function(fs, r, cs){
+calc_e_lam <- function(fs, r, cs){
   tm <- matrix(0, nrow = 2, ncol = 2)
   tm[1,2] <- r * fs / 2
   tm[2,1] <- cs
   tm[2,2] <- fs
   out <- eigen(tm)$values[1]
+  return(out)
+}
+calc_t_lam <- function(fs, r, cs, nc, nf){
+  tm <- matrix(0, nrow = 2, ncol = 2)
+  tm[1,2] <- r * fs / 2
+  tm[2,1] <- cs
+  tm[2,2] <- fs
+  pm <- matrix(c(nc/2, nf), nrow = 2, ncol = 1)
+  nm <- tm %*% pm
+  out <- sum(nm) / sum(pm)
   return(out)
 }
 
