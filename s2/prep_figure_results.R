@@ -56,7 +56,7 @@ cougar_dat <- tibble(
 )
 starkey_area_km2 <- 77.382817
 n_af_cov <- n_af %>% mutate(year = yr) %>% 
-  mutate(mean_density = mci) %>%
+  mutate(mean_density = mci/starkey_area_km2) %>%
   select(mean_density, year)
 spei_real_scale <- read_csv("data//climate//spei.csv") %>%
   mutate(dt = my(DATA)) %>%
@@ -390,7 +390,7 @@ cougar_dat <- tibble(
 )
 starkey_area_km2 <- 77.382817
 n_af_cov <- n_af %>% mutate(year = yr) %>% 
-  mutate(mean_density = mci) %>%
+  mutate(mean_density = mci / starkey_area_km2) %>%
   select(mean_density, year)
 spei_real_scale <- read_csv("data//climate//spei.csv") %>%
   mutate(dt = my(DATA)) %>%
