@@ -1,0 +1,327 @@
+model{
+  # IPM -- Built for the Starkey elk population
+  # Kenneth Loonam
+  
+  # Parameters to estimate:
+  # R: recruitment
+  # S: survival
+  # N: abundance
+  
+  # indexing follows [age, sex, year] unless otherwise specified
+  # e.g: N[a,x,yr] -- abundance of age class a, sex x, in year yr
+  # ages:
+  #   [1,,]: 0.5 yr -- calf
+  #   [2,,]: 1.5 yr -- subadult
+  #   [3,,]: 2.5 yr -- adult - young
+  #   [4:na,,]: 3.5+yr -- adult - mature
+  # sex:
+  #   [,1,]: female
+  #   [,2,]: male
+  
+  # Estimated parameters are *CAPITALIZED*
+  # Data objects are *lowercase*
+  # Exceptions are intermediate parameters (e.g. random effects)
+  
+  
+  #Process Model================================================================
+  
+  for(yr in 2:n_year){ # yr
+    ##### Recruitment #####
+    # R indexing follows [age,yr]  . . .  males rarely get pregnant
+    # Assumes equal sex ratio from birth to age 0.5 years
+    
+    # N-calves expected to be recruited and the precision of the expectation
+    R[yr] <- S[1,1,yr] * P_BAR[yr]
+    Nex_aug[1,1,yr] <- R[yr] * N_f[yr] * 0.5
+    t_aug[1,1,yr] <- abs(1 / ((Nex_aug[1,1,yr]) * (1 - R[yr])+1))
+    
+    # Draw the number of calves recruited - calves skip harvest survival -
+      # The number expected is drawn from the number of adults post harvest
+    N[1,1,yr] ~ dnorm(Nex_aug[1,1,yr], t_aug[1,1,yr])T(min_ca[yr],)
+    N[1,2,yr] <- N[1,1,yr]
+    
+    ##### Book-keeping #####
+    # approximate proportion of aults in each age class
+    prop_ad[1,1,yr] <- 0
+    prop_ad[1,2,yr] <- 0
+    for(a in 2:(na-1)){
+      prop_ad[a,1,yr] <- N[a-1,1,yr-1] / (N[1,1,yr-1] + N_f[yr-1])
+      prop_ad[a,2,yr] <- N[a-1,2,yr-1] / (N[1,2,yr-1] + N_m[yr-1])
+    }
+    prop_ad[na,1,yr] <- (N[na-1,1,yr-1] + N[na,1,yr-1]) / (N_f[yr-1] + N[1,1,yr-1])
+    prop_ad[na,2,yr] <- (N[na-1,2,yr-1] + N[na,2,yr-1]) / (N_m[yr-1] + N[1,2,yr-1])
+    
+    for(x in 1:2){ # x (sex)
+      # minimum adults and adults moved broken down by age classes 
+        # assumed proportional to corresponding age classes in yr-1
+      for(a in 1:na){
+        min_aug[a,x,yr] <- min_ad[x,yr] * prop_ad[a,x,yr] + n_har[a,x,yr]
+        n_ad_mov[a,x,yr] <- n_a_mov[x,yr] * prop_ad[a,x,yr]
+      } # a (age)
+      
+      ##### Natural Survival #####
+      # Expected number to survive to hunting season
+      # Survive from calf year
+      Nex_aug[2,x,yr] <- (N[1,x,yr-1] + n_c_mov[x,yr]) * S[2,x,yr]
+      t_aug[2,x,yr] <- abs(1 / ((Nex_aug[2,x,yr]) * (1 - S[2,x,yr])+1))
+      # Survive as an adult into the next year
+      for(a in 3:(na-1)){
+        Nex_aug[a,x,yr] <- (N[a-1,x,yr-1] + n_ad_mov[a-1,x,yr]) * S[3,x,yr]
+        t_aug[a,x,yr] <- abs(1 / ((Nex_aug[a,x,yr]) * (1 - S[3,x,yr])+1))
+      }
+      # Survive into final age class (can repeat into this class each year)
+      Nex_aug[na,x,yr] <- (N[na-1,x,yr-1] + N[na,x,yr-1] + n_ad_mov[na-1,x,yr] +
+                           n_ad_mov[na,x,yr]) * S[3,x,yr]
+      t_aug[na,x,yr] <- abs(1 / ((Nex_aug[na,x,yr]) * (1 - S[3,x,yr])+1))
+      
+      # Actually survive to hunting season
+      for(a in 2:na){
+        N_AUG[a,x,yr] ~ dnorm(Nex_aug[a,x,yr], t_aug[a,x,yr])T(min_aug[a,x,yr],)
+      } # a (age)
+      
+      ##### Harvest Survival #####
+      # Expected survival for normal approximation of the binomial
+      # Survive hunting season as 1.5 year-old (spikes)
+      Nex_har[2,x,yr] <- N_AUG[2,x,yr] * H[2,x,yr]
+      t_har[2,x,yr] <- abs(1 / ((Nex_har[2,x,yr]) * (1 - H[2,x,yr])+1))
+      # Survive hunting season as adults (aging already occurred in prior step)
+      for(a in 3:na){
+        Nex_har[a,x,yr] <- N_AUG[a,x,yr] * H[3,x,yr]
+        t_har[a,x,yr] <- abs(1 / ((Nex_har[a,x,yr]) * (1 - H[3,x,yr])+1))
+      }
+      # Actually draw survival
+      for(a in 2:na){
+        # Age at harvest data (n_har)
+        # n_har[a,x,yr] ~ dnorm(Nex_har[a,x,yr], t_har[a,x,yr])
+        N[a,x,yr] <- N_AUG[a,x,yr] - n_har[a,x,yr]
+      } # a (age)
+    } # x (sex)
+    ##### Abundance Assignments #####
+    N_c[yr] <- N[1,1,yr] + N[1,2,yr]
+    N_f_tmp[1,yr] <- 0
+    N_m_tmp[1,yr] <- 0
+    for(ai in 2:na){
+      N_f_tmp[ai,yr] <- N_f_tmp[ai-1,yr] + N[ai,1,yr]
+      N_m_tmp[ai,yr] <- N_m_tmp[ai-1,yr] + N[ai,2,yr]
+    }
+    N_f[yr] <- N_f_tmp[na,yr]
+    N_m[yr] <- N_m_tmp[na,yr]
+    Ntot[yr] <- N_c[yr] + N_f[yr] + N_m[yr]
+  } # yr
+  ##### First Year Abundance Assignments #####
+  N_c[1] <- N[1,1,1] + N[1,2,1]
+  N_f_tmp[1,1] <- 0
+  N_m_tmp[1,1] <- 0
+  for(ai in 2:na){
+    N_f_tmp[ai,1] <- N_f_tmp[ai-1,1] + N[ai,1,1]
+    N_m_tmp[ai,1] <- N_m_tmp[ai-1,1] + N[ai,2,1]
+  }
+  N_f[1] <- N_f_tmp[na,1]
+  N_m[1] <- N_m_tmp[na,1]
+  Ntot[1] <- N_c[1] + N_f[1] + N_m[1]
+  
+  #Observation Models===========================================================
+  
+  # Data are indexed by row (i), with one observation per row
+  # The columns for the data follow [year, age, sex, mean, tau]
+  # data[i,1] = year of ith row of data
+  # data[i,4] = mean (estimate) of ith row of data
+  # For example n_sight[3,4] is the mean sightability for the third observation
+  
+  ##### Abundance #####
+  # Sightability & C/R
+  for(i in 1:nn_ca){
+    n_sight_ca[i,4] ~ dnorm(N_c[n_sight_ca[i,1]], n_sight_ca[i,5])T(0,)
+  }
+  for(i in 1:nn_af){
+    n_sight_af[i,4] ~ dnorm(N_f[n_sight_af[i,1]], n_sight_af[i,5])T(0,)
+  }
+  for(i in 1:nn_am){
+    n_sight_am[i,4] ~ dnorm(N_m[n_sight_am[i,1]], n_sight_am[i,5])T(0,)
+  }
+  
+  sd_afcount ~ dnorm(0, 0.0001)T(0, 100)
+  tau_afcount <- 1/sd_afcount^2
+  for(i in 1:nn_fc){
+    af_count[i,4] ~ dnorm(N_f[af_count[i,1]], tau_afcount)T(0,)
+  }
+  
+  sd_amcount ~ dnorm(0, 0.0001)T(0, 100)
+  tau_amcount <- 1/sd_amcount^2
+  for(i in 1:nn_mc){
+    am_count[i,4] ~ dnorm(N_m[am_count[i,1]], tau_amcount)T(0,)
+  }
+  
+  ##### Natural Survival #####
+  # MSCR - Feedgrounds and harvest
+  for(i in 1:ns){
+    S_rs[i] <- logit(S[s_cjs[i,2], s_cjs[i,3], s_cjs[i,1]])
+    s_cjs[i,4] ~ dnorm(S_rs[i], s_cjs[i,5])
+  }
+  
+  ##### Harvest Survival #####
+  # MSCR - Feedgrounds and harvest
+  for(i in 1:nh){
+    H_rs[i] <- logit(H[h_cjs[i,2], h_cjs[i,3], h_cjs[i,1]])
+    h_cjs[i,4] ~ dnorm(H_rs[i], h_cjs[i,5])
+  }
+  
+  ##### Recruitment #####
+  # Ratio - Feedgrounds
+  for(i in 1:nr){
+    R_rs[i] <- logit(R[r_ratio[i,1]])
+    r_ratio[i,4] ~ dnorm(R_rs[i], r_ratio[i,5])
+  }
+
+  ##### Pregnancy #####
+  # Ratio - Feedgrounds
+  for(i in 1:np){
+    P_rs[i] <- P[p_ratio[i,2],p_ratio[i,1]]
+    p_ratio[i,4] ~ dnorm(P_rs[i], p_ratio[i,5])
+  }
+  
+  #Priors and GLMs==============================================================
+  
+  ##### Pregnancy #####
+  # Covariate effects
+  P_wm ~ dlogis(0, 1) # weather in year t - 1
+  P_cg ~ dlogis(0, 1) # cougar index
+  P_dd ~ dlogis(0, 1) # female elk density in year t - 1
+  P_lr ~ dlogis(0, 1) # proportion of population lactating in fall
+  # Separate rates for young (1), prime (2), and old (3) females
+  for(a in 1:3){
+    # random effect on year
+    P_sd[a] ~ dunif(0,5) # SD and precision for random effect by year
+    P_tau[a] <- 1/P_sd[a]^2
+    
+    P_B0[a] ~ dlogis(0, 1) # Fixed effect of age class:
+    for(yr in 2:n_year){
+      P_Byr[a,yr] ~ dnorm(0, P_tau[a])
+      logit(P[a,yr]) <- P_B0[a] +
+        P_wm * clim[yr-1] +
+        P_dd * n_adj[yr-1] +
+        P_cg * cdens[yr-1] +
+        # P_lr * sum(N[1,1:2,yr-1]) / sum(N[2:na,1,yr-1]) + 
+        P_Byr[a,yr]
+  }} 
+  # Calculate mean pregnancy probability across all non-calf females
+  for(yr in 2:n_year){
+    NF_young[yr] <- N[2,1,yr] + N[3,1,yr]
+    NF_prime[yr] <- N_f[yr] - NF_young[yr] - N[na,1,yr]
+    P_BAR[yr] <- (P[1,yr] * NF_young[yr] + 
+                  P[2,yr] * NF_prime[yr] +
+                  P[3,yr] * N[na,1,yr]) / N_f[yr]
+  }
+
+  ##### Survival #####
+  ##### Neonate Survival #####
+  SN_B0 ~ dlogis(0, 1)
+  SN_sd ~ dunif(0, 5)
+  SN_tau <- 1/SN_sd^2
+  
+  SN_wt ~ dlogis(0, 1)
+  SN_cg ~ dlogis(0, 1)
+  SN_dd ~ dlogis(0, 1)
+  
+  for(yr in 2:n_year){
+    SN_Byr[yr] ~ dnorm(0, SN_tau)
+    logit(SN[yr]) <- SN_B0 +
+      SN_wt * clim[yr] +
+      SN_cg * cdens[yr] +
+      SN_dd * n_adj[yr] +
+      SN_Byr[yr]
+  }
+  
+  ##### Calf Survival #####
+  SC_B0 ~ dlogis(0, 1)
+  SC_sd ~ dunif(0, 5)
+  SC_tau <- 1/SC_sd^2
+  
+  SC_wt ~ dlogis(0, 1)
+  SC_wm ~ dlogis(0, 1)
+  SC_cg ~ dlogis(0, 1)
+  SC_dd ~ dlogis(0, 1)
+  
+  for(yr in 2:n_year){
+    SC_Byr[yr] ~ dnorm(0, SC_tau)
+    logit(SC[yr]) <- SC_B0 +
+      SC_wt * clim[yr] +
+      SC_wm * clim[yr-1] +
+      SC_cg * cdens[yr] +
+      SC_dd * n_adj[yr] +
+      SC_Byr[yr]
+  }
+  
+  ##### Female Survival #####
+  SF_B0 ~ dlogis(0, 1)
+  SF_sd ~ dunif(0, 5)
+  SF_tau <- 1/SF_sd^2
+  
+  SF_wt ~ dlogis(0, 1)
+  SF_wm ~ dlogis(0, 1)
+  SF_cg ~ dlogis(0, 1)
+  SF_dd ~ dlogis(0, 1)
+  
+  for(yr in 2:n_year){
+    SF_Byr[yr] ~ dnorm(0, SF_tau)
+    logit(SF[yr]) <- SF_B0 +
+      SF_wt * clim[yr] +
+      SF_wm * clim[yr-1] +
+      SF_cg * cdens[yr] +
+      SF_dd * n_adj[yr] +
+      SF_Byr[yr]
+  }
+  
+  ##### Male Survival #####
+  SM_B0 ~ dlogis(0, 1)
+  SM_sd ~ dunif(0, 5)
+  SM_tau <- 1/SM_sd^2
+  
+  SM_wt ~ dlogis(0, 1)
+  SM_wm ~ dlogis(0, 1)
+  SM_cg ~ dlogis(0, 1)
+  SM_dd ~ dlogis(0, 1)
+  
+  for(yr in 2:n_year){
+    SM_Byr[yr] ~ dnorm(0, SM_tau)
+    logit(SM[yr]) <- SM_B0 +
+    #  SM_wt * clim[yr] +
+    #  SM_wm * clim[yr-1] +
+    #  SM_cg * cdens[yr] +
+    #  SM_dd * n_adj[yr] +
+      SM_Byr[yr]
+  }
+  
+  ##### Survival Assignments #####
+  for(yr in 2:n_year){
+    for(x in 1:2){
+      S[1,x,yr] <- SN[yr]
+      S[2,x,yr] <- SC[yr]
+    }
+    S[3,1,yr] <- SF[yr]
+    S[3,2,yr] <- SM[yr]
+  }
+  
+  ##### Harvest Probabilities #####
+  for(yr in 2:n_year){
+    H[1,1,yr] <- 0
+    H[1,2,yr] <- 0
+    for(x in 1:2){
+      for(a in 2:3){
+        # harvest_indicator[a,x,yr] ~ dbern(0.5)
+        H0[a,x,yr] ~ dunif(0, 1)
+        H[a,x,yr] <- H0[a,x,yr] # * harvest_indicator[a,x,yr]
+      }
+    }
+  }
+  
+  ##### Abundance -- starting #####
+  # can adjust this later on to take opinions on initial population size
+  # to make informative priors
+  
+  for(x in 1:2){ # x
+    for(a in 1:na){ # a
+      N[a,x,1] ~ dunif(10, 1000)
+    } # a
+  } # x
+}
