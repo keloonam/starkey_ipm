@@ -15,59 +15,39 @@ calculate_final_lambda <- function(tm){
 calculate_lambdas <- function(dt){
   out <- tibble(
     Lf = calculate_final_lambda(dt$tm),
-    Lo = calculate_observed_lambda(dt$tm, dt$nv)
+    Lo = calculate_observed_lambda(dt$tm, dt$nv[1:2])
   )
   return(out)
 }
 
 calculate_pp <- function(
-  b0, bcg, bdd, bwm, byr, cg, dd, wm,
-  use_cg = T,
-  use_dd = T,
-  use_wm = T
+  b0o, b0p, b0y, bdd, bwm, byr, nf, nof, npf, nyf, dd, wm
 ){
-  real_scale <- b0 + bcg*cg*use_cg + bdd*dd*use_dd + bwm*wm*use_wm + byr
-  out <- ilogit(real_scale)
+  pp_old <- ilogit(b0o + bdd*dd + bwm*wm + byr)
+  pp_prm <- ilogit(b0p + bdd*dd + bwm*wm + byr)
+  pp_yng <- ilogit(b0y + bdd*dd + bwm*wm + byr)
+  out <- (pp_old*nof + pp_prm*npf + pp_yng*nyf) / nf
   return(out)
 }
 
 calculate_sn <- function(
-    b0, bcg, bdd, bwt, byr, cg, dd, wt,
-    use_cg = T,
-    use_dd = T,
-    use_wt = T
+    b0, bcg, bdd, byr, cg, dd
 ){
-  real_scale <- b0 + bcg*cg*use_cg + bdd*dd*use_dd + bwt*wt*use_wt + byr
+  real_scale <- b0 + bcg*cg + bdd*dd + byr
   out <- ilogit(real_scale)
   return(out)
 }
 calculate_sc <- function(
-    b0, bcg, bdd, bwm, bwt, byr, cg, dd, wm, wt,
-    use_cg = T,
-    use_dd = T,
-    use_wt = T,
-    use_wm = T
+    b0, bcg, bwm, bwt, byr, cg, wm, wt
 ){
-  real_scale <- b0 + byr + 
-    bcg*cg*use_cg + 
-    bdd*dd*use_dd + 
-    bwt*wt*use_wt + 
-    bwm*wm*use_wm 
+  real_scale <- b0 + byr + bcg*cg + bwt*wt + bwm*wm 
   out <- ilogit(real_scale)
   return(out)
 }
 calculate_sf <- function(
-    b0, bcg, bdd, bwm, bwt, byr, cg, dd, wm, wt,
-    use_cg = T,
-    use_dd = T,
-    use_wt = T,
-    use_wm = T
+    b0, bwm, bwt, byr, wm, wt
 ){
-  real_scale <- b0 + byr + 
-    bcg*cg*use_cg + 
-    bdd*dd*use_dd + 
-    bwt*wt*use_wt + 
-    bwm*wm*use_wm 
+  real_scale <- b0 + byr + bwt*wt + bwm*wm 
   out <- ilogit(real_scale)
   return(out)
 }
@@ -79,78 +59,82 @@ build_elk_tm <- function(PP, SN, SC, SF, H1, H2){
   return(tm)
 }
 build_tm <- function(stpn, rsdt, cvdt, yrx){
+  rs <- rsdt %>% filter(mcmc_step == stpn)
   cv <- cvdt %>% filter(yr == yrx)
-  cg <- cv %>% pull(cg)
+  if("cg" %in% names(cv)){
+    cg <- cv %>% pull(cg)
+  }else{
+    cg <- rs %>% filter(yr == yrx) %>% pull(cges)
+  }
   dd <- cv %>% pull(dd)
   wm <- cv %>% pull(wm)
   wt <- cv %>% pull(wt)
   
-  rs <- rsdt %>% filter(mcmc_step == stpn)
+  
   ppyr <- rs %>% filter(yr == yrx) %>% pull(ppyr)
-  ppcg <- rs %>% filter(!is.na(ppcg)) %>% pull(ppcg)
+  nf <- rs %>% filter(yr == yrx) %>% pull(nf)
+  nof <- rs %>% filter(yr == yrx) %>% pull(nof)
+  npf <- rs %>% filter(yr == yrx) %>% pull(npf)
+  nyf <- rs %>% filter(yr == yrx) %>% pull(nyf)
   ppdd <- rs %>% filter(!is.na(ppdd)) %>% pull(ppdd)
   ppwm <- rs %>% filter(!is.na(ppwm)) %>% pull(ppwm)
-  ppb0 <- rs %>% filter(!is.na(ppb0)) %>% pull(ppb0)
+  ppb0o <- rs %>% filter(!is.na(ppb0o)) %>% pull(ppb0o)
+  ppb0p <- rs %>% filter(!is.na(ppb0p)) %>% pull(ppb0p)
+  ppb0y <- rs %>% filter(!is.na(ppb0y)) %>% pull(ppb0y)
+  
+  
   pp <- calculate_pp(
-    b0 = ppb0, 
-    bcg = ppcg,
+    b0o = ppb0o, 
+    b0p = ppb0p, 
+    b0y = ppb0y, 
     bdd = ppdd,
     bwm = ppwm,
     byr = ppyr,
-    wm = wm,
-    cg = cg,
-    dd = dd)
+    nf  = nf,
+    nof = nof,
+    npf = npf,
+    nyf = nyf,
+    wm  = wm,
+    dd  = dd)
   
   snyr <- rs %>% filter(yr == yrx) %>% pull(snyr)
   sncg <- rs %>% filter(!is.na(sncg)) %>% pull(sncg)
   sndd <- rs %>% filter(!is.na(sndd)) %>% pull(sndd)
-  snwt <- rs %>% filter(!is.na(snwt)) %>% pull(snwt)
   snb0 <- rs %>% filter(!is.na(snb0)) %>% pull(snb0)
   sn <- calculate_sn(
     b0 = snb0, 
     bcg = sncg,
     bdd = sndd,
-    bwt = snwt,
     byr = snyr,
-    wt = wt,
     cg = cg,
     dd = dd)
   
   scyr <- rs %>% filter(yr == yrx) %>% pull(scyr)
   sccg <- rs %>% filter(!is.na(sccg)) %>% pull(sccg)
-  scdd <- rs %>% filter(!is.na(scdd)) %>% pull(scdd)
   scwm <- rs %>% filter(!is.na(scwm)) %>% pull(scwm)
   scwt <- rs %>% filter(!is.na(scwt)) %>% pull(scwt)
   scb0 <- rs %>% filter(!is.na(scb0)) %>% pull(scb0)
   sc <- calculate_sc(
     b0 = scb0, 
     bcg = sccg,
-    bdd = scdd,
     bwt = scwt,
     bwm = scwm,
     byr = scyr,
     wt = wt,
     wm = wm,
-    cg = cg,
-    dd = dd)
+    cg = cg)
   
   sfyr <- rs %>% filter(yr == yrx) %>% pull(sfyr)
-  sfcg <- rs %>% filter(!is.na(sfcg)) %>% pull(sfcg)
-  sfdd <- rs %>% filter(!is.na(sfdd)) %>% pull(sfdd)
   sfwm <- rs %>% filter(!is.na(sfwm)) %>% pull(sfwm)
   sfwt <- rs %>% filter(!is.na(sfwt)) %>% pull(sfwt)
   sfb0 <- rs %>% filter(!is.na(sfb0)) %>% pull(sfb0)
   sf <- calculate_sf(
     b0 = sfb0, 
-    bcg = sfcg,
-    bdd = sfdd,
     bwt = sfwt,
     bwm = sfwm,
     byr = sfyr,
     wt = wt,
-    wm = wm,
-    cg = cg,
-    dd = dd)
+    wm = wm)
   
   sh1 <- rs %>% filter(yr == yrx) %>% mutate(sh1 = 1 - h1) %>% pull(sh1)
   sh2 <- rs %>% filter(yr == yrx) %>% mutate(sh2 = 1 - h2) %>% pull(sh2)

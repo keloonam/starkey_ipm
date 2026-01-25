@@ -1,6 +1,8 @@
 require(tidyverse); require(rjags)
-
-rslt <- readRDS("results//ipm_rslt_17dec2025_spei12.rds") %>%
+tag <- "bst_odfw"
+load_file <- paste0("results//ipm_rslt_05jan2026_", tag, ".rds")
+save_file <- paste0("results//ipm_rslt_summ_lambda_prep_", tag, ".rds")
+rslt <- readRDS(load_file) %>%
   map(as.matrix) %>%
   map(as_tibble) %>%
   bind_rows() %>%
@@ -38,12 +40,17 @@ rslt <- readRDS("results//ipm_rslt_17dec2025_spei12.rds") %>%
     grepl("PB_cg", .$ipm_name) ~ "ppcg",
     grepl("PB_dd", .$ipm_name) ~ "ppdd",
     grepl("PB_wm", .$ipm_name) ~ "ppwm",
-    grepl("P\\[", .$ipm_name) ~ "pp",
-    grepl("P_B0", .$ipm_name) ~ "ppb0",
+    grepl("P_B0\\[1", .$ipm_name) ~ "ppb0y",
+    grepl("P_B0\\[2", .$ipm_name) ~ "ppb0p",
+    grepl("P_B0\\[3", .$ipm_name) ~ "ppb0o",
     grepl("H\\[1,1", .$ipm_name) ~ "h1",
     grepl("H\\[2,1", .$ipm_name) ~ "h2",
-    grepl("N\\[1,1,", .$ipm_name) ~ "nc",
-    grepl("N_f", .$ipm_name) ~ "nf",
+    grepl("N_c\\[", .$ipm_name) ~ "nc",
+    grepl("N_fo", .$ipm_name) ~ "nof",
+    grepl("N_fp", .$ipm_name) ~ "npf",
+    grepl("N_fy", .$ipm_name) ~ "nyf",
+    grepl("N_f\\[", .$ipm_name) ~ "nf",
+    grepl("cdrng\\[", .$ipm_name) ~ "cges",
     T ~ "remove"
   )) %>%
   filter(param != "remove")
@@ -66,10 +73,12 @@ rslt2 <- rslt %>%
   mutate(yr = case_when(
     has_year == F ~ NA,
     param %in% c("scyr", "sfyr", "snyr") ~ pull_yr(., 7),
-    param %in% c("h1", "h2", "nc", "ppyr") ~ pull_yr(., 6),
-    param %in% c("nf") ~ pull_yr(., 4),
+    param %in% c("h1", "h2", "ppyr", "cges") ~ pull_yr(., 6),
+    param %in% c("nof", "nyf", "npf") ~ pull_yr(., 5),
+    param %in% c("nf", "nc") ~ pull_yr(., 4),
     param %in% c("sc", "sf", "sn") ~ pull_yr(., 3),
     param %in% c("pp") ~ pull_yr(., 2)
   )) %>%
   select(mcmc_step, chain, param, yr, value)
-saveRDS(rslt2, "results//ipm_rslt_summ_lambda_prep.rds")
+saveRDS(rslt2, save_file)
+rm(list = ls())

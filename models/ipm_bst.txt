@@ -41,7 +41,7 @@ model{
     N[1,2,yr] <- N[1,1,yr]
     
     ##### Book-keeping #####
-    # approximate proportion of aults in each age class
+    # proportion of adults in each age class
     prop_ad[1,1,yr] <- 0
     prop_ad[1,2,yr] <- 0
     for(a in 2:(na-1)){

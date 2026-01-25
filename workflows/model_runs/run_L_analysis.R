@@ -1,20 +1,23 @@
 #Environment====================================================================
 require(tidyverse); source("functions//lambda_analysis_functions.R")
-
+tag <- "bst_lgst"
+lam_tib_name <- paste0("results//full_lambda_tibble_", tag, ".rds")
+met_dat_name <- paste0("data//tm_list_covariates_", tag, ".rds")
 #Shared Objects=================================================================
 all_params <- c(
-  "nfp", "ncp", "sh1", "sh2", "cg", "dd", "wt", "wm", "cm", "dm",
-  "ppb0", "ppcg", "ppwm", "ppyr", "ppdd",
-  "snb0", "sncg", "snwt", "snyr", "sndd",
-  "scb0", "sccg", "scwt", "scwm", "scdd", "scyr",
-  "sfb0", "sfcg", "sfwt", "sfwm", "sfdd", "sfyr"
+  "npfp", "nofp", "nyfp", "ncp", "sh1", "sh2", "cg", "dd", "wt", "wm",
+  "ppwm", "ppyr", "ppdd", "ppb0o", "ppb0y", "ppb0p", 
+  "snb0", "sncg", "sndd",
+  "scb0", "scwt", "scwm", "scyr",
+  "sfb0", "sfwt", "sfwm", "sfyr"
   )
-params_oi <- c("nfp", "ncp", "sh1", "sh2", "cg", "dd", "wt", "wm", "cm", "dm",
+params_oi <- c("npfp", "nofp", "nyfp", "ncp", 
+               "sh1", "sh2", 
+               "cg", "dd", "wt", "wm", 
                "ppyr", "snyr", "scyr", "sfyr")
-mdt <- readRDS("data//tm_list_covariates.rds") %>%
-  mutate(cm = lag(cg), dm = lag(dd)) %>%
+mdt <- readRDS(met_dat_name) %>%
   mutate(yrx = yr) %>% select(-yr)
-fdt <- readRDS("results//full_lambda_tibble.rds") %>% 
+fdt <- readRDS(lam_tib_name) %>% 
   as_tibble() %>% 
   left_join(mdt) %>%
   mutate(sh1 = 1-h1, sh2 = 1-h2) %>%
