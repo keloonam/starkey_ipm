@@ -2,7 +2,7 @@ pull_param_vec <- function(param, fdt, stu){
   fdt %>% 
     mutate(target_variable = .[[param]]) %>%
     group_by(stpn) %>% 
-    summarise(out = mean(target_variable)) %>%
+    summarise(out = mean(target_variable, na.rm = T)) %>%
     pull(out) %>%
     return()
 }

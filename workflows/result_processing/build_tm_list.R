@@ -1,5 +1,5 @@
 source("functions//calculate_lambda_functions.R")
-tag <- "bst_rcns"
+tag <- "bst_lgst"
 cg_cov_name <- case_when(
   tag == "bst_lgst" ~ "cg_logistic_growth",
   tag == "bst_mean" ~ "cg_mean_estimate",

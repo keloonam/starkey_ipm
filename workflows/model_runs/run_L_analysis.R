@@ -5,13 +5,15 @@ lam_tib_name <- paste0("results//full_lambda_tibble_", tag, ".rds")
 met_dat_name <- paste0("data//tm_list_covariates_", tag, ".rds")
 #Shared Objects=================================================================
 all_params <- c(
-  "npfp", "nofp", "nyfp", "ncp", "sh1", "sh2", "cg", "dd", "wt", "wm",
+  "prf", "prc", "pry", "prp", "pro", 
+  "sh1", "sh2", 
+  "cg", "dd", "wt", "wm",
   "ppwm", "ppyr", "ppdd", "ppb0o", "ppb0y", "ppb0p", 
-  "snb0", "sncg", "sndd",
-  "scb0", "scwt", "scwm", "scyr",
+  "snb0", "sncg", "sndd", "snyr",
+  "scb0", "scwt", "scwm", "scyr", "sccg",
   "sfb0", "sfwt", "sfwm", "sfyr"
   )
-params_oi <- c("npfp", "nofp", "nyfp", "ncp", 
+params_oi <- c("prf", "prc", "pry", "prp", "pro", 
                "sh1", "sh2", 
                "cg", "dd", "wt", "wm", 
                "ppyr", "snyr", "scyr", "sfyr")
@@ -21,21 +23,29 @@ fdt <- readRDS(lam_tib_name) %>%
   as_tibble() %>% 
   left_join(mdt) %>%
   mutate(sh1 = 1-h1, sh2 = 1-h2) %>%
-  mutate(nfp = nf/(nc+nf), ncp = nc/(nc+nf))
+  mutate(
+    pry = nyf / (nf + nc),
+    prp = npf / (nf + nc),
+    pro = nof / (nf + nc),
+    prf = nf  / (nf + nc),
+    prc = nc  / (nf + nc)
+  )
 
 Leq <- expression(
   # Numerator
   # Reproduction
   (0.5 *
-  (1 /(1 + exp(-(ppb0 + ppyr + ppcg*cm + ppdd*dm + ppwm*wm)))) * 
-  (1 /(1 + exp(-(snb0 + snyr + sncg*cg + sndd*dd + snwt*wt)))) * (
-  nfp * sh2 /(1 + exp(-(sfb0 + sfyr + sfcg*cg + sfdd*dd + sfwm*wm + sfwt*wt))) +
-  ncp * sh1 /(1 + exp(-(scb0 + scyr + sccg*cg + scdd*dd + scwm*wm + scwt*wt))))+
+  ((1 /(1 + exp(-(ppb0y + ppyr + ppdd*dd + ppwm*wm)))) * pry +
+   (1 /(1 + exp(-(ppb0p + ppyr + ppdd*dd + ppwm*wm)))) * prp +
+   (1 /(1 + exp(-(ppb0o + ppyr + ppdd*dd + ppwm*wm)))) * pro) *
+  (1 /(1 + exp(-(snb0 + snyr + sncg*cg + sndd*dd)))) * (
+  prf * sh2 /(1 + exp(-(sfb0 + sfyr + sfwm*wm + sfwt*wt))) +
+  prc * sh1 /(1 + exp(-(scb0 + scyr + sccg*cg + scwm*wm + scwt*wt))))+
   # Survival
-  nfp * sh2 /(1 + exp(-(sfb0 + sfyr + sfcg*cg + sfdd*dd + sfwm*wm + sfwt*wt))) +
-  ncp * sh1 /(1 + exp(-(scb0 + scyr + sccg*cg + scdd*dd + scwm*wm + scwt*wt))))/
+  prf * sh2 /(1 + exp(-(sfb0 + sfyr + sfwm*wm + sfwt*wt))) +
+  prc * sh1 /(1 + exp(-(scb0 + scyr + sccg*cg + scwm*wm + scwt*wt))))/
   # Denominator
-  (nfp + ncp)
+  (prf + prc)
 )
 
 #Total variability==============================================================
