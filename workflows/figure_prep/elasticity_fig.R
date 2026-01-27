@@ -1,51 +1,95 @@
 require(tidyverse)
-edt <- readRDS("results//lambda_elasticity.rds")
-sdt <- readRDS("results//lambda_sensitivity.rds")
-adt <- readRDS("results//annual_L_effects.rds")
+tag <- "bst_lgst"
+edt_name <- paste0("results//lambda_elasticity_", tag, ".rds")
+sdt_name <- paste0("results//lambda_sensitivity_", tag, ".rds")
+edt <- readRDS(edt_name)
+sdt <- readRDS(sdt_name)
+# adt <- readRDS("results//annual_L_effects.rds")
+total_variation_by_step <- edt$wvcv %>%
+  mutate(val = abs(value)) %>%
+  summarise(tot = sum(val), .by = stpn)
+bar_graph_data <- edt$wvcv %>%
+  pivot_wider(id_cols = stpn, names_from = param, values_from = value) %>%
+  left_join(total_variation_by_step) %>%
+  mutate(
+    age_structure = prc + pr2 + pry + pro + prp,
+    harvest = sh1 + sh2,
+    annual_variation = ppyr + snyr + scyr + sfyr
+  ) %>%
+  select(
+    stpn, tot, 
+    cg, dd, wm, wt, 
+    age_structure, harvest, annual_variation
+  ) %>%
+  pivot_longer(3:ncol(.), names_to = "param", values_to = "val") %>%
+  mutate(value = abs(val) / tot) %>%
+  mutate(prm = case_when(
+    param == "dd" ~ "d dd",
+    param == "wt" ~ "e wt",
+    param == "wm" ~ "f wm",
+    param == "cg" ~ "g cg",
+    param == "annual_variation" ~ "b demographic variation",
+    param == "harvest" ~ "a harvest",
+    param == "age_structure" ~ "c age distribution"
+  ))
+
 edt$wvcv %>%
+  pivot_wider(id_cols = stpn, names_from = param, values_from = value) %>%
+  left_join(total_variation_by_step) %>%
+  mutate(
+    age_structure = prc + pr2 + pry + pro + prp,
+    harvest = sh1 + sh2,
+    annual_variation = ppyr + snyr + scyr + sfyr
+  ) %>%
+  select(
+    stpn, tot, 
+    cg, dd, wm, wt, 
+    age_structure, harvest, annual_variation
+  ) %>%
+  pivot_longer(3:ncol(.), names_to = "param", values_to = "val") %>%
+  mutate(value = abs(val) / tot) %>%
   group_by(param) %>%
   summarise(
     lci = quantile(value, 0.025),
     mci = quantile(value, 0.5),
     uci = quantile(value, 0.975)
   ) %>%
-  ggplot(aes(x = param, y = mci)) +
-  geom_pointrange(aes(ymin = lci, ymax = uci), position = position_dodge(width = 0.5))
-
-sdt %>%
-  # filter(param %in% c("cg", "dd", "wt", "cm", "dm", "wm")) %>%
-  group_by(param) %>%
-  summarise(
-    lci = quantile(val, 0.025),
-    mci = quantile(val, 0.5),
-    uci = quantile(val, 0.975)
-  ) %>%
-  ggplot(aes(x = param, y = mci)) +
-  geom_pointrange(aes(ymin = lci, ymax = uci))
-
-ann_dt <- apply(adt, 2:3, quantile, probs = 0.5) %>%
-  as_tibble() %>%
-  mutate(
-    Puma = cg + cm, 
-    Elk = dd + dm,
-    Ratio = nfp + ncp,
-    Recruitment = ppyr + snyr,
-    Survival = scyr + sfyr,
-    noise = ppyr + snyr + scyr + sfyr,
-    Climate = wm + wt,
-    Harvest = sh1 + sh2) %>%
-  mutate(yr = 2:(nrow(.)+1)) %>%
-  pivot_longer(1:(ncol(.)-1), names_to = "param", values_to = "val")
-ann_dt %>%
-  filter(param %in% c(
-    "ppyr", "sfyr", "scyr", "snyr"
-    )) %>%
-  ggplot(aes(x = yr, y = val, fill = param)) +
-  geom_col()
-
-ann_dt %>%
-  filter(param %in% c(
-    "ppyr", "sfyr", "scyr", "snyr"
+  ungroup() %>%
+  # mutate(var_group = case_when(
+  #   param %in% c("cg", "dd", "wm", "wt") ~ "a covariate",
+  #   param == "age_structure" ~ "c age distribution",
+  #   param =="harvest" ~ "d harvest",
+  #   param == "annual_variation" ~ "b demographic variation"
+  # )) %>%
+  mutate(prm = case_when(
+    param == "dd" ~ "d dd",
+    param == "wt" ~ "e wt",
+    param == "wm" ~ "f wm",
+    param == "cg" ~ "g cg",
+    param == "annual_variation" ~ "b demographic variation",
+    param == "harvest" ~ "a harvest",
+    param == "age_structure" ~ "c age distribution"
   )) %>%
-  group_by(param) %>%
-  summarise(mn = mean(abs(val)))
+  ggplot(aes(x = prm, y = mci)) +
+  geom_pointrange(aes(ymin = lci, ymax = uci)) +
+  theme_classic() +
+  scale_x_discrete(
+    labels = c(
+      `d dd` = "Density",
+      `e wt` = bquote("SPEI"[t]),
+      `f wm` = bquote("SPEI"[t-1]),
+      `g cg` = "Pumas",
+      `b demographic variation` = "Random Effects",
+      `a harvest` = "Harvest",
+      `c age distribution` = "Age Structure"
+    ),
+    guide = guide_axis(n.dodge = 2)
+  ) +
+  xlab(NULL) + ylab("Contribution")
+ggsave(
+  filename = paste0("figures//lambda_cont_", tag, ".png"),
+  width = 12,
+  height = 8,
+  units = "cm",
+  dpi = 600
+)

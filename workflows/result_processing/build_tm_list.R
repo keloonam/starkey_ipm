@@ -1,5 +1,5 @@
 source("functions//calculate_lambda_functions.R")
-tag <- "bst_lgst"
+tag <- "bst_norm"
 cg_cov_name <- case_when(
   tag == "bst_lgst" ~ "cg_logistic_growth",
   tag == "bst_mean" ~ "cg_mean_estimate",
@@ -33,12 +33,12 @@ pm_vec <- expand.grid(stpn = stp_vec, yrx = yr_vec)
 if(tag == "bst_norm"){
   year_data <- rs %>% filter(!is.na(yr)) %>%
     mutate(stpn = mcmc_step, yrx = as.numeric(yr)) %>%
-    select(stpn, yrx, ppb0o, ppb0y, ppb0p, ppyr, sn, snyr, sc, scyr, sf, sfyr, nf,
+    select(stpn, yrx, ppyr, sn, snyr, sc, scyr, sf, sfyr, nf,
            nof, npf, nyf, nc, h1, h2, cges)
 }else{
   year_data <- rs %>% filter(!is.na(yr)) %>%
     mutate(stpn = mcmc_step, yrx = as.numeric(yr)) %>%
-    select(stpn, yrx, ppb0o, ppb0y, ppb0p, ppyr, sn, snyr, sc, scyr, sf, sfyr, nf,
+    select(stpn, yrx, ppyr, sn, snyr, sc, scyr, sf, sfyr, nf,
            nof, npf, nyf, nc, h1, h2)
 }
 beta_data <- rs %>% filter(is.na(yr)) %>%

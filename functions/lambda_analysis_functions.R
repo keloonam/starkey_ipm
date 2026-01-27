@@ -20,20 +20,33 @@ calculate_elasticity_with_covariances <- function(
   ){
   vcv <- fdt %>%
     filter(stpn == target_step) %>%
-    select(nfp, ncp, sh1, sh2, cg, dd, wt, wm, cm, dm, ppyr, snyr, scyr, sfyr) %>%
+    select(
+      pry, pro, prp, pr2, prc, 
+      sh1, sh2, 
+      cg, dd, wt, wm, 
+      ppyr, snyr, scyr, sfyr
+      ) %>%
     as.matrix() %>%
     var()
   sns <- sensitivities %>%
     filter(stpn == target_step) %>%
     pivot_wider(names_from = param, values_from = val) %>%
-    select(nfp, ncp, sh1, sh2, cg, dd, wt, wm, cm, dm, ppyr, snyr, scyr, sfyr) %>%
+    select(
+      pry, pro, prp, pr2, prc, 
+      sh1, sh2, 
+      cg, dd, wt, wm, 
+      ppyr, snyr, scyr, sfyr
+      ) %>%
     as.matrix() %>% as.vector()
   cnt <- vcv * outer(sns, sns)
   out <- rowSums(cnt) %>%
     as_tibble() %>%
     mutate(stpn = target_step) %>%
     mutate(param = c(
-      "nfp", "ncp", "sh1", "sh2", "cg", "dd", "wt", "wm", "cm", "dm", "ppyr", "snyr", 
+      "pry", "pro", "prp", "pr2", "prc", 
+      "sh1", "sh2", 
+      "cg", "dd", "wt", "wm", 
+      "ppyr", "snyr", 
       "scyr", "sfyr"
     ))
   return(out)
@@ -44,20 +57,33 @@ calculate_elasticity_without_covariances <- function(
 ){
   vcv <- fdt %>%
     filter(stpn == target_step) %>%
-    select(nfp, ncp, sh1, sh2, cg, dd, wt, wm, cm, dm, ppyr, snyr, scyr, sfyr) %>%
+    select(
+      pry, pro, prp, pr2, prc, 
+      sh1, sh2, 
+      cg, dd, wt, wm, 
+      ppyr, snyr, scyr, sfyr
+    ) %>%
     as.matrix() %>%
     var()
   sns <- sensitivities %>%
     filter(stpn == target_step) %>%
     pivot_wider(names_from = param, values_from = val) %>%
-    select(nfp, ncp, sh1, sh2, cg, dd, wt, wm, cm, dm, ppyr, snyr, scyr, sfyr) %>%
+    select(
+      pry, pro, prp, pr2, prc, 
+      sh1, sh2, 
+      cg, dd, wt, wm, 
+      ppyr, snyr, scyr, sfyr
+    ) %>%
     as.matrix() %>% as.vector()
   cnt <- diag(vcv) * diag(outer(sns, sns))
   out <- cnt %>%
     as_tibble() %>%
     mutate(stpn = target_step) %>%
     mutate(param = c(
-      "nfp", "ncp", "sh1", "sh2", "cg", "dd", "wt", "wm", "cm", "dm", "ppyr", "snyr", 
+      "pry", "pro", "prp", "pr2", "prc", 
+      "sh1", "sh2", 
+      "cg", "dd", "wt", "wm", 
+      "ppyr", "snyr", 
       "scyr", "sfyr"
     ))
   return(out)
