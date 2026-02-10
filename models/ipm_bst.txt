@@ -13,7 +13,8 @@ model{
   #   [1,,]: 0.5 yr -- calf
   #   [2,,]: 1.5 yr -- subadult
   #   [3,,]: 2.5 yr -- adult - young
-  #   [4:na,,]: 3.5+yr -- adult - mature
+  #   [4:(na-2),,]: 3.5+yr -- adult - prime
+  #   [na),,]: 13.5+yr -- adult - old
   # sex:
   #   [,1,]: female
   #   [,2,]: male
@@ -41,7 +42,7 @@ model{
     N[1,2,yr] <- N[1,1,yr]
     
     ##### Book-keeping #####
-    # proportion of adults in each age class
+    # approximate proportion of aults in each age class
     prop_ad[1,1,yr] <- 0
     prop_ad[1,2,yr] <- 0
     for(a in 2:(na-1)){
@@ -115,40 +116,13 @@ model{
     N_m[yr] <- N_m_tmp[na,yr]
     Ntot[yr] <- N_c[yr] + N_f[yr] + N_m[yr]
   } # yr
-  ##### First Year Abundance Assignments #####
-  N_c[1] <- N[1,1,1] + N[1,2,1]
-  N_f_tmp[1,1] <- 0
-  N_m_tmp[1,1] <- 0
-  for(ai in 2:na){
-    N_f_tmp[ai,1] <- N_f_tmp[ai-1,1] + N[ai,1,1]
-    N_m_tmp[ai,1] <- N_m_tmp[ai-1,1] + N[ai,2,1]
-  }
-  N_f[1] <- N_f_tmp[na,1]
-  N_fy[1] <- N[3,1,1]
-  N_fo[1] <- N[na,1,1]
-  N_fp[1] <- N_f[1] - N_fy[1] - N_fo[1] - N[2,1,1]
-  N_m[1] <- N_m_tmp[na,1]
-  Ntot[1] <- N_c[1] + N_f[1] + N_m[1]
   
   #Observation Models===========================================================
-  
   # Data are indexed by row (i), with one observation per row
   # The columns for the data follow [year, age, sex, mean, tau]
   # data[i,1] = year of ith row of data
   # data[i,4] = mean (estimate) of ith row of data
   # For example n_sight[3,4] is the mean sightability for the third observation
-  
-  ##### Abundance #####
-  # Sightability & C/R
-  for(i in 1:nn_ca){
-    n_sight_ca[i,4] ~ dnorm(N_c[n_sight_ca[i,1]], n_sight_ca[i,5])T(0,)
-  }
-  for(i in 1:nn_af){
-    n_sight_af[i,4] ~ dnorm(N_f[n_sight_af[i,1]], n_sight_af[i,5])T(0,)
-  }
-  for(i in 1:nn_am){
-    n_sight_am[i,4] ~ dnorm(N_m[n_sight_am[i,1]], n_sight_am[i,5])T(0,)
-  }
   
   sd_afcount ~ dnorm(0, 0.0001)T(0, 100)
   tau_afcount <- 1/sd_afcount^2
@@ -191,11 +165,9 @@ model{
   }
   
   #Priors and GLMs==============================================================
-  
   ##### Pregnancy #####
   # Covariate effects
   PB_wm ~ dlogis(0, 1) # weather in year t - 1
-  # PB_cg ~ dlogis(0, 1) # cougar index
   PB_dd ~ dlogis(0, 1) # female elk density in year t - 1
   
   # Random effect on year
@@ -211,7 +183,6 @@ model{
       logit(P[a,yr]) <- P_B0[a] +
         PB_wm * clim[yr-1] +
         PB_dd * n_adj[yr-1] +
-        # PB_cg * cdens[yr-1] +
         P_Byr[yr]
     }
   }
@@ -222,14 +193,12 @@ model{
   SN_sd ~ dunif(0, 5)
   SN_tau <- 1/SN_sd^2
   
-  # SNB_wt ~ dlogis(0, 1)
   SNB_cg ~ dlogis(0, 1)
   SNB_dd ~ dlogis(0, 1)
   
   for(yr in 2:n_year){
     SN_Byr[yr] ~ dnorm(0, SN_tau)
     logit(SN[yr]) <- SN_B0 +
-      # SNB_wt * clim[yr] +
       SNB_cg * cdens[yr] +
       SNB_dd * n_adj[yr] +
       SN_Byr[yr]
@@ -241,17 +210,13 @@ model{
   SC_tau <- 1/SC_sd^2
   
   SCB_wt ~ dlogis(0, 1)
-  SCB_wm ~ dlogis(0, 1)
   SCB_cg ~ dlogis(0, 1)
-  # SCB_dd ~ dlogis(0, 1)
   
   for(yr in 2:n_year){
     SC_Byr[yr] ~ dnorm(0, SC_tau)
     logit(SC[yr]) <- SC_B0 +
       SCB_wt * clim[yr] +
-      SCB_wm * clim[yr-1] +
       SCB_cg * cdens[yr] +
-      # SCB_dd * n_adj[yr] +
       SC_Byr[yr]
   }
   
@@ -260,18 +225,12 @@ model{
   SF_sd ~ dunif(0, 5)
   SF_tau <- 1/SF_sd^2
   
-  SFB_wt ~ dlogis(0, 1)
   SFB_wm ~ dlogis(0, 1)
-  # SFB_cg ~ dlogis(0, 1)
-  # SFB_dd ~ dlogis(0, 1)
   
   for(yr in 2:n_year){
     SF_Byr[yr] ~ dnorm(0, SF_tau)
     logit(SF[yr]) <- SF_B0 +
-      SFB_wt * clim[yr] +
       SFB_wm * clim[yr-1] +
-      # SFB_cg * cdens[yr] +
-      # SFB_dd * n_adj[yr] +
       SF_Byr[yr]
   }
   
@@ -280,18 +239,9 @@ model{
   SM_sd ~ dunif(0, 5)
   SM_tau <- 1/SM_sd^2
   
-  # SMB_wt ~ dlogis(0, 1)
-  # SMB_wm ~ dlogis(0, 1)
-  # SMB_cg ~ dlogis(0, 1)
-  # SMB_dd ~ dlogis(0, 1)
-  
   for(yr in 2:n_year){
     SM_Byr[yr] ~ dnorm(0, SM_tau)
     logit(SM[yr]) <- SM_B0 +
-    #  SMB_wt * clim[yr] +
-    #  SMB_wm * clim[yr-1] +
-    #  SMB_cg * cdens[yr] +
-    #  SMB_dd * n_adj[yr] +
       SM_Byr[yr]
   }
   
@@ -322,9 +272,27 @@ model{
   ##### Abundance -- starting #####
   # can adjust this later on to take opinions on initial population size
   # to make informative priors
-  for(x in 1:2){ # x
-    for(a in 1:na){ # a
-      N[a,x,1] ~ dpois(est_n1[a,x])T(min_n1[a,x],)
-    } # a
-  } # x
+  N_f[1] ~ dnorm(est_nf1, tau_afcount)T(min_nf1,)
+  N_m[1] ~ dnorm(est_nm1, tau_amcount)T(min_nm1,)
+  R[1] ~ dunif(0, 1)
+  Ncx_exp <- N_f[1] * R[1] * 0.5
+  Ncx_tau <- abs(1 / (Ncx_exp * (1 - R[1])+1))
+  N[1,1,1] ~ dnorm(Ncx_exp, Ncx_tau)
+  N[1,2,1] <- N[1,1,1]
+  
+  ##### First Year Abundance Assignments #####
+  N_c[1] <- N[1,1,1] + N[1,2,1]
+  for(x in 1:2){
+    age_decay_rate[x] ~ dunif(0.5, 1)
+    for(a in 1:(na-1)){
+      age_decay[a,x] <- age_decay_rate[x]^a
+      age_proportion[a,x] <- age_decay[a,x] / sum(age_decay[1:(na-1),x])
+      exp_N1[a,x] <- age_proportion[a,x] * (N_f[1]*(2-x) + N_m[1]*(x-1))
+      N[a+1,x,1] ~ dpois(exp_N1[a,x])
+    }
+  }
+  N_fy[1] <- N[3,1,1]
+  N_fo[1] <- N[na,1,1]
+  N_fp[1] <- N_f[1] - N_fy[1] - N_fo[1] - N[2,1,1]
+  Ntot[1] <- N_c[1] + N_f[1] + N_m[1]
 }

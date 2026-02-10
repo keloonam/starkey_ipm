@@ -1,17 +1,16 @@
 require(tidyverse); require(rjags)
-tag <- "bst_odfw"
-load_file <- paste0("results//ipm_rslt_05jan2026_", tag, ".rds")
-save_file <- paste0("results//ipm_rslt_summ_lambda_prep_", tag, ".rds")
+tag <- "best_rcns"
+folder <- "results//"
+load_file <- paste0(folder, "fbipm_rslt_06feb2026_", tag, ".rds")
+save_file <- paste0(folder, "ipm_rslt_summ_lambda_prep_", tag, ".rds")
 rslt <- readRDS(load_file) %>%
   map(as.matrix) %>%
   map(as_tibble) %>%
   bind_rows() %>%
   mutate(chain = c(
-    rep("a", nrow(.)/5),
-    rep("b", nrow(.)/5),
-    rep("c", nrow(.)/5),
-    rep("d", nrow(.)/5),
-    rep("e", nrow(.)/5)
+    rep("a", nrow(.)/3),
+    rep("b", nrow(.)/3),
+    rep("c", nrow(.)/3)
     )) %>%
   mutate(mcmc_step = 1:nrow(.)) %>%
   pivot_longer(cols = 1:(ncol(.)-2), names_to = "ipm_name") %>%
@@ -34,6 +33,7 @@ rslt <- readRDS(load_file) %>%
     grepl("SNB_cg", .$ipm_name) ~ "sncg",
     grepl("SNB_dd", .$ipm_name) ~ "sndd",
     grepl("SNB_wt", .$ipm_name) ~ "snwt",
+    grepl("SNB_wm", .$ipm_name) ~ "snwm",
     grepl("SN_B0", .$ipm_name) ~ "snb0",
     grepl("SN\\[", .$ipm_name) ~ "sn",
     grepl("P_Byr", .$ipm_name) ~ "ppyr",
@@ -56,8 +56,8 @@ rslt <- readRDS(load_file) %>%
   filter(param != "remove")
 params_without_years <- c(
   "ppb0", "snb0", "scb0", "sfb0", "ppwm", "ppdd", "ppwt", "ppcg", "ppb0",
-  "snwt", "sndd", "sncg", "scdd", "sccg", "scwm", "scwt", "sfcg", "sfdd", 
-  "sfwm", "sfwt")
+  "snwt", "snwm", "sndd", "sncg", "scdd", "sccg", "scwm", "scwt", "sfcg", 
+  "sfdd", "sfwm", "sfwt")
 pull_yr <- function(dtx, x){
   dtx %>%
     separate(ipm_name, into = c(NA, "yr"), x) %>%

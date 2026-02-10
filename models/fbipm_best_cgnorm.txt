@@ -124,44 +124,156 @@ model{
   # data[i,4] = mean (estimate) of ith row of data
   # For example n_sight[3,4] is the mean sightability for the third observation
   
-  sd_afcount ~ dnorm(0, 0.0001)T(0, 100)
+  sd_afcount ~ dunif(0, 100)
   tau_afcount <- 1/sd_afcount^2
   for(i in 1:nn_fc){
     af_count[i,4] ~ dnorm(N_f[af_count[i,1]], tau_afcount)T(0,)
   }
   
-  sd_amcount ~ dnorm(0, 0.0001)T(0, 100)
+  sd_amcount ~ dunif(0, 100)
   tau_amcount <- 1/sd_amcount^2
   for(i in 1:nn_mc){
     am_count[i,4] ~ dnorm(N_m[am_count[i,1]], tau_amcount)T(0,)
   }
   
-  ##### Natural Survival #####
-  # MSCR - Feedgrounds and harvest
-  for(i in 1:ns){
-    S_rs[i] <- logit(S[s_cjs[i,2], s_cjs[i,3], s_cjs[i,1]])
-    s_cjs[i,4] ~ dnorm(S_rs[i], s_cjs[i,5])
-  }
+  #==========================#
+  #========== MSCR ==========#
+  #==========================#
+  ######## Likelihood ########
+  for(t in 1:(nt-1)){
+    ma.af[t,(2*t-1):(2*nt-1)] ~ dmulti(p.af[t,(2*t-1):(2*nt-1)], r.af[t])
+    ma.am[t,(2*t-1):(2*nt-1)] ~ dmulti(p.am[t,(2*t-1):(2*nt-1)], r.am[t])
+    ma.jf[t,(2*t-1):(2*nt-1)] ~ dmulti(p.jf[t,(2*t-1):(2*nt-1)], r.jf[t])
+    ma.jm[t,(2*t-1):(2*nt-1)] ~ dmulti(p.jm[t,(2*t-1):(2*nt-1)], r.jm[t])
+  } # t
   
-  ##### Harvest Survival #####
-  # MSCR - Feedgrounds and harvest
-  for(i in 1:nh){
-    H_rs[i] <- logit(H[h_cjs[i,2], h_cjs[i,3], h_cjs[i,1]])
-    h_cjs[i,4] ~ dnorm(H_rs[i], h_cjs[i,5])
+  ######## Priors ########
+  for(t in 2:(nt)){
+    SF_adj[t] ~ dunif(0, 1)
+    SM_adj[t] ~ dunif(0, 1)
+    SC_adj[t] ~ dunif(0, 1)
+    
+    #===== Natural survival =====#
+    Snaf[t-1] <- SF[t] * sf_yri[t] + SF_adj[t] * (1 - sf_yri[t])
+    Snam[t-1] <- SM[t] * sm_yri[t] + SM_adj[t] * (1 - sm_yri[t])
+    Snca[t-1] <- SC[t] * sc_yri[t] + SC_adj[t] * (1 - sc_yri[t])
   }
+  for(t in 1:(nt-1)){
+    #===== Detection Probability =====#
+    Pf[t] ~ dunif(0, 1)
+    Pm[t] ~ dunif(0, 1)
+    Qf[t] <- 1 - Pf[t]
+    Qm[t] <- 1 - Pm[t]
+    
+    #===== Harvest Survival =====#
+    Shaf[t] <- 1 - H0[2,1,t+1]
+    Sham[t] <- 1 - H0[2,2,t+1]
+    Shjf[t] <- 1 - H0[1,1,t+1]
+    Shjm[t] <- 1 - H0[1,2,t+1]
+    
+    #===== Combined Survival =====#
+    Saf[t] <- Snaf[t] * Shaf[t]
+    Sam[t] <- Snam[t] * Sham[t]
+    Sjf[t] <- Snca[t] * Shjf[t]
+    Sjm[t] <- Snca[t] * Shjm[t]
+  } # t
   
-  ##### Recruitment #####
+  ######## Cell Observation Probabilities ########
+  for(t in 1:(nt-1)){
+    #===== Seen Alive Next Session =====#
+    #--- Adult ---#
+    p.af[t,t*2-1] <- Saf[t] * Pf[t]
+    p.am[t,t*2-1] <- Sam[t] * Pm[t]
+    #--- Calf ---#
+    p.jf[t,t*2-1] <- Sjf[t] * Pf[t]
+    p.jm[t,t*2-1] <- Sjm[t] * Pm[t]
+    
+    #===== Harvested Next Session =====#
+    #--- Adult ---#
+    p.af[t,t*2] <- Snaf[t] * (1 - Shaf[t])
+    p.am[t,t*2] <- Snam[t] * (1 - Sham[t])
+    #--- Calf ---#
+    p.jf[t,t*2] <- Snca[t] * (1 - Shjf[t])
+    p.jm[t,t*2] <- Snca[t] * (1 - Shjm[t])
+  } # t
+  
+  for(t in 1:(nt-2)){
+    for(u in (t+1):(nt-1)){
+      #===== Seen Alive In `x` Sessions =====#
+      #--- Adult ---#
+      p.af[t,u*2-1] <- prod(Saf[t:u]) * prod(Qf[t:(u-1)]) * Pf[u]
+      p.am[t,u*2-1] <- prod(Sam[t:u]) * prod(Qm[t:(u-1)]) * Pm[u]
+      #--- Calf ---#
+      p.jf[t,u*2-1] <- Sjf[t] * prod(Saf[(t+1):u]) * prod(Qf[t:(u-1)]) * Pf[u]
+      p.jm[t,u*2-1] <- Sjm[t] * prod(Sam[(t+1):u]) * prod(Qm[t:(u-1)]) * Pm[u]
+      
+      #===== Adult Harvested In `x` Sessions =====#
+      #--- Adult ---#
+      p.af[t,u*2] <- prod(Snaf[t:u]) * 
+        prod(Qf[t:(u-1)]) * 
+        prod(Shaf[t:(u-1)]) * 
+        (1 - Shaf[u])
+      p.am[t,u*2] <- prod(Snam[t:u]) * 
+        prod(Qm[t:(u-1)]) * 
+        prod(Sham[t:(u-1)]) * 
+        (1 - Sham[u])
+    } # u
+    #===== Calf Harvested In `x = 2` Sessions =====#
+    #--- Calf ---#
+    p.jf[t,(t+1)*2] <- Sjf[t] * Snaf[t+1] * Qf[t] * (1 - Shaf[t+1])
+    p.jm[t,(t+1)*2] <- Sjm[t] * Snam[t+1] * Qm[t] * (1 - Sham[t+1])
+    for(u in (t+2):(nt-1)){
+      #===== Calf Harvested In `x > 2` Sessions =====#
+      #--- Calf ---#
+      p.jf[t,u*2] <- Sjf[t] * 
+        prod(Snaf[(t+1):u]) * 
+        prod(Qf[t:(u-1)]) * 
+        prod(Shaf[(t+1):(u-1)]) * 
+        (1 - Shaf[u])
+      p.jm[t,u*2] <- Sjm[t] * 
+        prod(Snam[(t+1):u]) * 
+        prod(Qm[t:(u-1)]) * 
+        prod(Sham[(t+1):(u-1)]) * 
+        (1 - Sham[u])
+    } # u
+  } # t
+  
+  for(t in 2:(nt-1)){
+    for(u in 1:((t-1)*2)){
+    #===== Structural Zeroes =====#
+    #--- Adult ---#
+    p.af[t,u] <- 0
+    p.am[t,u] <- 0
+    #--- Calf ---#
+    p.jf[t,u] <- 0
+    p.jm[t,u] <- 0
+    } # u
+  } # t
+  
+  for(t in 1:(nt-1)){
+    #===== Not Observed Again =====#
+    #--- Adult ---#
+    p.af[t,nt*2-1] <- 1 - sum(p.af[t,1:(2*nt-2)])
+    p.am[t,nt*2-1] <- 1 - sum(p.am[t,1:(2*nt-2)])
+    #--- Calf ---#
+    p.jf[t,nt*2-1] <- 1 - sum(p.jf[t,1:(2*nt-2)])
+    p.jm[t,nt*2-1] <- 1 - sum(p.jm[t,1:(2*nt-2)])
+  } # t
+
+  #=================================#
+  #========== Recruitment ==========#
+  #=================================#
   # Ratio - Feedgrounds
   for(i in 1:nr){
-    R_rs[i] <- logit(R[r_ratio[i,1]])
-    r_ratio[i,4] ~ dnorm(R_rs[i], r_ratio[i,5])
+    rec_dt[i,2] ~ dbinom(R[rec_dt[i,1]], rec_dt[i,3])
   }
 
-  ##### Pregnancy #####
+  #===============================#
+  #========== Pregnancy ==========#
+  #===============================#
   # Ratio - Feedgrounds
   for(i in 1:np){
-    P_rs[i] <- logit(P[p_ratio[i,2], p_ratio[i,1]])
-    p_ratio[i,4] ~ dnorm(P_rs[i], p_ratio[i,5])
+    prg_dt[i,3] ~ dbinom(P[prg_dt[i,2],prg_dt[i,1]], prg_dt[i,4])
   }
   
   #Priors and GLMs==============================================================
@@ -173,7 +285,6 @@ model{
   ##### Pregnancy #####
   # Covariate effects
   PB_wm ~ dlogis(0, 1) # weather in year t - 1
-  PB_cg ~ dlogis(0, 1) # cougar index
   PB_dd ~ dlogis(0, 1) # female elk density in year t - 1
   
   # Random effect on year
@@ -189,7 +300,6 @@ model{
       logit(P[a,yr]) <- P_B0[a] +
         PB_wm * clim[yr-1] +
         PB_dd * n_adj[yr-1] +
-        PB_cg * cdrng[yr-1] +
         P_Byr[yr]
     }
   }
@@ -200,18 +310,16 @@ model{
   SN_sd ~ dunif(0, 5)
   SN_tau <- 1/SN_sd^2
   
-  SNB_wt ~ dlogis(0, 1)
-  SNB_wm ~ dlogis(0, 1)
   SNB_cg ~ dlogis(0, 1)
   SNB_dd ~ dlogis(0, 1)
+  SNB_wm ~ dlogis(0, 1)
   
   for(yr in 2:n_year){
     SN_Byr[yr] ~ dnorm(0, SN_tau)
     logit(SN[yr]) <- SN_B0 +
-      SNB_wt * clim[yr] +
-      SNB_wm * clim[yr-1] +
       SNB_cg * cdrng[yr] +
       SNB_dd * n_adj[yr] +
+      SNB_wm * clim[yr-1] +
       SN_Byr[yr]
   }
   
@@ -223,7 +331,6 @@ model{
   SCB_wt ~ dlogis(0, 1)
   SCB_wm ~ dlogis(0, 1)
   SCB_cg ~ dlogis(0, 1)
-  SCB_dd ~ dlogis(0, 1)
   
   for(yr in 2:n_year){
     SC_Byr[yr] ~ dnorm(0, SC_tau)
@@ -231,7 +338,6 @@ model{
       SCB_wt * clim[yr] +
       SCB_wm * clim[yr-1] +
       SCB_cg * cdrng[yr] +
-      SCB_dd * n_adj[yr] +
       SC_Byr[yr]
   }
   
@@ -240,17 +346,13 @@ model{
   SF_sd ~ dunif(0, 5)
   SF_tau <- 1/SF_sd^2
   
-  SFB_wt ~ dlogis(0, 1)
   SFB_wm ~ dlogis(0, 1)
-  SFB_cg ~ dlogis(0, 1)
   SFB_dd ~ dlogis(0, 1)
-  
+
   for(yr in 2:n_year){
     SF_Byr[yr] ~ dnorm(0, SF_tau)
     logit(SF[yr]) <- SF_B0 +
-      SFB_wt * clim[yr] +
       SFB_wm * clim[yr-1] +
-      SFB_cg * cdrng[yr] +
       SFB_dd * n_adj[yr] +
       SF_Byr[yr]
   }
@@ -259,19 +361,10 @@ model{
   SM_B0 ~ dlogis(0, 1)
   SM_sd ~ dunif(0, 5)
   SM_tau <- 1/SM_sd^2
-  
-  # SMB_wt ~ dlogis(0, 1)
-  # SMB_wm ~ dlogis(0, 1)
-  # SMB_cg ~ dlogis(0, 1)
-  # SMB_dd ~ dlogis(0, 1)
-  
+
   for(yr in 2:n_year){
     SM_Byr[yr] ~ dnorm(0, SM_tau)
     logit(SM[yr]) <- SM_B0 +
-    #  SMB_wt * clim[yr] +
-    #  SMB_wm * clim[yr-1] +
-    #  SMB_cg * cdens[yr] +
-    #  SMB_dd * n_adj[yr] +
       SM_Byr[yr]
   }
   

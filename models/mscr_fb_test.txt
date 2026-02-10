@@ -1,0 +1,172 @@
+model{
+  #==========================#
+  #========== MSCR ==========#
+  #==========================#
+  ######## Likelihood ########
+  for(t in 1:(nt-1)){
+    ma.af[t,(2*t-1):(2*nt-1)] ~ dmulti(p.af[t,(2*t-1):(2*nt-1)], r.af[t])
+    ma.am[t,(2*t-1):(2*nt-1)] ~ dmulti(p.am[t,(2*t-1):(2*nt-1)], r.am[t])
+    ma.jf[t,(2*t-1):(2*nt-1)] ~ dmulti(p.jf[t,(2*t-1):(2*nt-1)], r.jf[t])
+    ma.jm[t,(2*t-1):(2*nt-1)] ~ dmulti(p.jm[t,(2*t-1):(2*nt-1)], r.jm[t])
+  } # t
+  
+  ######## Priors ########
+  for(t in 2:(nt)){
+    SF_adj[t] ~ dunif(0, 1)
+    SM_adj[t] ~ dunif(0, 1)
+    SC_adj[t] ~ dunif(0, 1)
+    
+    #===== Natural survival =====#
+    Snaf[t-1] <- SF[t] * sf_yri[t] + SF_adj[t] * (1 - sf_yri[t])
+    Snam[t-1] <- SM[t] * sm_yri[t] + SM_adj[t] * (1 - sm_yri[t])
+    Snca[t-1] <- SC[t] * sc_yri[t] + SC_adj[t] * (1 - sc_yri[t])
+  }
+  for(t in 1:(nt-1)){
+    #===== Detection Probability =====#
+    Pf[t] ~ dunif(0, 1)
+    Pm[t] ~ dunif(0, 1)
+    Qf[t] <- 1 - Pf[t]
+    Qm[t] <- 1 - Pm[t]
+    
+    #===== Harvest Survival =====#
+    Shaf[t] <- H0[2,1,t+1]
+    Sham[t] <- H0[2,2,t+1]
+    Shjf[t] <- H0[1,1,t+1]
+    Shjm[t] <- H0[1,2,t+1]
+    
+    #===== Combined Survival =====#
+    Saf[t] <- Snaf[t] * Shaf[t]
+    Sam[t] <- Snam[t] * Sham[t]
+    Sjf[t] <- Snca[t] * Shjf[t]
+    Sjm[t] <- Snca[t] * Shjm[t]
+  } # t
+  
+  ######## Cell Observation Probabilities ########
+  for(t in 1:(nt-1)){
+    #===== Seen Alive Next Session =====#
+    #--- Adult ---#
+    p.af[t,t*2-1] <- Saf[t] * Pf[t]
+    p.am[t,t*2-1] <- Sam[t] * Pm[t]
+    #--- Calf ---#
+    p.jf[t,t*2-1] <- Sjf[t] * Pf[t]
+    p.jm[t,t*2-1] <- Sjm[t] * Pm[t]
+    
+    #===== Harvested Next Session =====#
+    #--- Adult ---#
+    p.af[t,t*2] <- Snaf[t] * (1 - Shaf[t])
+    p.am[t,t*2] <- Snam[t] * (1 - Sham[t])
+    #--- Calf ---#
+    p.jf[t,t*2] <- Snca[t] * (1 - Shjf[t])
+    p.jm[t,t*2] <- Snca[t] * (1 - Shjm[t])
+  } # t
+  
+  for(t in 1:(nt-2)){
+    for(u in (t+1):(nt-1)){
+      #===== Seen Alive In `x` Sessions =====#
+      #--- Adult ---#
+      p.af[t,u*2-1] <- prod(Saf[t:u]) * prod(Qf[t:(u-1)]) * Pf[u]
+      p.am[t,u*2-1] <- prod(Sam[t:u]) * prod(Qm[t:(u-1)]) * Pm[u]
+      #--- Calf ---#
+      p.jf[t,u*2-1] <- Sjf[t] * prod(Saf[(t+1):u]) * prod(Qf[t:(u-1)]) * Pf[u]
+      p.jm[t,u*2-1] <- Sjm[t] * prod(Sam[(t+1):u]) * prod(Qm[t:(u-1)]) * Pm[u]
+      
+      #===== Adult Harvested In `x` Sessions =====#
+      #--- Adult ---#
+      p.af[t,u*2] <- prod(Snaf[t:u]) * 
+        prod(Qf[t:(u-1)]) * 
+        prod(Shaf[t:(u-1)]) * 
+        (1 - Shaf[u])
+      p.am[t,u*2] <- prod(Snam[t:u]) * 
+        prod(Qm[t:(u-1)]) * 
+        prod(Sham[t:(u-1)]) * 
+        (1 - Sham[u])
+    } # u
+    #===== Calf Harvested In `x = 2` Sessions =====#
+    #--- Calf ---#
+    p.jf[t,(t+1)*2] <- Sjf[t] * Snaf[t+1] * Qf[t] * (1 - Shaf[t+1])
+    p.jm[t,(t+1)*2] <- Sjm[t] * Snam[t+1] * Qm[t] * (1 - Sham[t+1])
+    for(u in (t+2):(nt-1)){
+      #===== Calf Harvested In `x > 2` Sessions =====#
+      #--- Calf ---#
+      p.jf[t,u*2] <- Sjf[t] * 
+        prod(Snaf[(t+1):u]) * 
+        prod(Qf[t:(u-1)]) * 
+        prod(Shaf[(t+1):(u-1)]) * 
+        (1 - Shaf[u])
+      p.jm[t,u*2] <- Sjm[t] * 
+        prod(Snam[(t+1):u]) * 
+        prod(Qm[t:(u-1)]) * 
+        prod(Sham[(t+1):(u-1)]) * 
+        (1 - Sham[u])
+    } # u
+  } # t
+  
+  for(t in 2:(nt-1)){
+    for(u in 1:((t-1)*2)){
+    #===== Structural Zeroes =====#
+    #--- Adult ---#
+    p.af[t,u] <- 0
+    p.am[t,u] <- 0
+    #--- Calf ---#
+    p.jf[t,u] <- 0
+    p.jm[t,u] <- 0
+    } # u
+  } # t
+  
+  for(t in 1:(nt-1)){
+    #===== Not Observed Again =====#
+    #--- Adult ---#
+    p.af[t,nt*2-1] <- 1 - sum(p.af[t,1:(2*nt-2)])
+    p.am[t,nt*2-1] <- 1 - sum(p.am[t,1:(2*nt-2)])
+    #--- Calf ---#
+    p.jf[t,nt*2-1] <- 1 - sum(p.jf[t,1:(2*nt-2)])
+    p.jm[t,nt*2-1] <- 1 - sum(p.jm[t,1:(2*nt-2)])
+  } # t
+
+  ##### Calf Survival #####
+  SC_B0 ~ dlogis(0, 1)
+  SC_sd ~ dunif(0, 5)
+  SC_tau <- 1/SC_sd^2
+
+  for(yr in 2:n_year){
+    SC_Byr[yr] ~ dnorm(0, SC_tau)
+    logit(SC[yr]) <- SC_B0 +
+      SC_Byr[yr]
+  }
+  
+  ##### Female Survival #####
+  SF_B0 ~ dlogis(0, 1)
+  SF_sd ~ dunif(0, 5)
+  SF_tau <- 1/SF_sd^2
+
+  for(yr in 2:n_year){
+    SF_Byr[yr] ~ dnorm(0, SF_sd)
+    logit(SF[yr]) <- SF_B0 +
+      SF_Byr[yr]
+  }
+  
+  ##### Male Survival #####
+  SM_B0 ~ dlogis(0, 1)
+  SM_sd ~ dunif(0, 5)
+  SM_tau <- 1/SM_sd^2
+
+  for(yr in 2:n_year){
+    SM_Byr[yr] ~ dnorm(0, SM_tau)
+    logit(SM[yr]) <- SM_B0 +
+      SM_Byr[yr]
+  }
+  
+  ##### Harvest Probabilities #####
+  for(a in 1:2){  
+    for(x in 1:2){
+      H_B0[a,x] ~ dlogis(0, 1)
+      H_sd[a,x] ~ dunif(0, 5)
+      H_tau[a,x] <- 1/H_sd[a,x]^2
+      for(yr in 2:n_year){
+        H_Byr[a,x,yr] ~ dnorm(0, H_tau[a,x])
+        logit(H0[a,x,yr]) <- H_B0[a,x] + H_Byr[a,x,yr]
+        H[a,x,yr] <- H0[a,x,yr] * har_i[a,x,yr]
+      }
+    }
+  }
+}

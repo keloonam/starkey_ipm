@@ -165,17 +165,7 @@ model{
   }
   
   #Priors and GLMs==============================================================
-  ##### Random-Variable Covariate #####
-  for(yr in 1:n_year){
-    cdrng[yr] ~ dnorm(cd_mean[yr], cd_tau[yr])
-  }
-  
   ##### Pregnancy #####
-  # Covariate effects
-  PB_wm ~ dlogis(0, 1) # weather in year t - 1
-  PB_cg ~ dlogis(0, 1) # cougar index
-  PB_dd ~ dlogis(0, 1) # female elk density in year t - 1
-  
   # Random effect on year
   P_sd ~ dunif(0,5) # SD and precision for random effect by year
   P_tau <- 1/P_sd^2
@@ -187,9 +177,6 @@ model{
     P_B0[a] ~ dlogis(0, 1) # Intercept
     for(yr in 2:n_year){
       logit(P[a,yr]) <- P_B0[a] +
-        PB_wm * clim[yr-1] +
-        PB_dd * n_adj[yr-1] +
-        PB_cg * cdrng[yr-1] +
         P_Byr[yr]
     }
   }
@@ -200,18 +187,9 @@ model{
   SN_sd ~ dunif(0, 5)
   SN_tau <- 1/SN_sd^2
   
-  SNB_wt ~ dlogis(0, 1)
-  SNB_wm ~ dlogis(0, 1)
-  SNB_cg ~ dlogis(0, 1)
-  SNB_dd ~ dlogis(0, 1)
-  
   for(yr in 2:n_year){
     SN_Byr[yr] ~ dnorm(0, SN_tau)
     logit(SN[yr]) <- SN_B0 +
-      SNB_wt * clim[yr] +
-      SNB_wm * clim[yr-1] +
-      SNB_cg * cdrng[yr] +
-      SNB_dd * n_adj[yr] +
       SN_Byr[yr]
   }
   
@@ -219,19 +197,10 @@ model{
   SC_B0 ~ dlogis(0, 1)
   SC_sd ~ dunif(0, 5)
   SC_tau <- 1/SC_sd^2
-  
-  SCB_wt ~ dlogis(0, 1)
-  SCB_wm ~ dlogis(0, 1)
-  SCB_cg ~ dlogis(0, 1)
-  SCB_dd ~ dlogis(0, 1)
-  
+
   for(yr in 2:n_year){
     SC_Byr[yr] ~ dnorm(0, SC_tau)
     logit(SC[yr]) <- SC_B0 +
-      SCB_wt * clim[yr] +
-      SCB_wm * clim[yr-1] +
-      SCB_cg * cdrng[yr] +
-      SCB_dd * n_adj[yr] +
       SC_Byr[yr]
   }
   
@@ -239,19 +208,10 @@ model{
   SF_B0 ~ dlogis(0, 1)
   SF_sd ~ dunif(0, 5)
   SF_tau <- 1/SF_sd^2
-  
-  SFB_wt ~ dlogis(0, 1)
-  SFB_wm ~ dlogis(0, 1)
-  SFB_cg ~ dlogis(0, 1)
-  SFB_dd ~ dlogis(0, 1)
-  
+
   for(yr in 2:n_year){
     SF_Byr[yr] ~ dnorm(0, SF_tau)
     logit(SF[yr]) <- SF_B0 +
-      SFB_wt * clim[yr] +
-      SFB_wm * clim[yr-1] +
-      SFB_cg * cdrng[yr] +
-      SFB_dd * n_adj[yr] +
       SF_Byr[yr]
   }
   
@@ -259,19 +219,10 @@ model{
   SM_B0 ~ dlogis(0, 1)
   SM_sd ~ dunif(0, 5)
   SM_tau <- 1/SM_sd^2
-  
-  # SMB_wt ~ dlogis(0, 1)
-  # SMB_wm ~ dlogis(0, 1)
-  # SMB_cg ~ dlogis(0, 1)
-  # SMB_dd ~ dlogis(0, 1)
-  
+
   for(yr in 2:n_year){
     SM_Byr[yr] ~ dnorm(0, SM_tau)
     logit(SM[yr]) <- SM_B0 +
-    #  SMB_wt * clim[yr] +
-    #  SMB_wm * clim[yr-1] +
-    #  SMB_cg * cdens[yr] +
-    #  SMB_dd * n_adj[yr] +
       SM_Byr[yr]
   }
   

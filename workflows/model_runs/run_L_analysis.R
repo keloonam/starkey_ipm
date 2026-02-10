@@ -1,19 +1,21 @@
 #Environment====================================================================
 require(tidyverse); source("functions//lambda_analysis_functions.R")
-tag <- "bst_lgst"
+tag <- "best_rcns"
 lam_tib_name <- paste0("results//full_lambda_tibble_", tag, ".rds")
 met_dat_name <- paste0("data//tm_list_covariates_", tag, ".rds")
 sens_save_name <- paste0("results//lambda_sensitivity_", tag, ".rds")
 elas_save_name <- paste0("results//lambda_elasticity_", tag, ".rds")
+
+use_supported_only <- TRUE
 #Shared Objects=================================================================
 all_params <- c(
   "pr2", "prc", "pry", "prp", "pro", 
   "sh1", "sh2", 
   "cg", "dd", "wt", "wm",
   "ppwm", "ppyr", "ppdd", "ppb0o", "ppb0y", "ppb0p", 
-  "snb0", "sncg", "sndd", "snyr",
-  "scb0", "scwt", "scwm", "scyr", "sccg",
-  "sfb0", "sfwt", "sfwm", "sfyr"
+  "snb0", "snwm", "sncg", "sndd", "snyr",
+  "scb0", "scwt", "scwm", "scyr", "sccg", 
+  "sfb0", "sfwm", "sfyr", "sfdd"
   )
 params_oi <- c("pr2", "prc", "pry", "prp", "pro", 
                "sh1", "sh2", 
@@ -44,11 +46,14 @@ Leq <- expression(
   ((1 /(1 + exp(-(ppb0y + ppyr + ppdd*dd + ppwm*wm)))) * pry +
    (1 /(1 + exp(-(ppb0p + ppyr + ppdd*dd + ppwm*wm)))) * prp +
    (1 /(1 + exp(-(ppb0o + ppyr + ppdd*dd + ppwm*wm)))) * pro) *
-  (1 /(1 + exp(-(snb0 + snyr + sncg*cg + sndd*dd)))) * (
-  (pr2+pry+prp+pro) * sh2 /(1 + exp(-(sfb0 + sfyr + sfwm*wm + sfwt*wt))) +
-  prc * sh1 /(1 + exp(-(scb0 + scyr + sccg*cg + scwm*wm + scwt*wt))))+
+  (1 /(1 + exp(-(snb0 + snyr + sncg*cg + sndd*dd + snwm*wm)))) * 
+  ((pr2+pry+prp+pro) * sh2 / 
+     (1 + exp(-(sfb0 + sfyr + sfwm*wm + sfdd*dd))) +
+  prc * sh1 / 
+    (1 + exp(-(scb0 + scyr + sccg*cg + scwm*wm + scwt*wt)))) +
   # Survival
-  (pr2+pry+prp+pro) * sh2 /(1 + exp(-(sfb0 + sfyr + sfwm*wm + sfwt*wt))) +
+  (pr2+pry+prp+pro) * sh2 / 
+    (1 + exp(-(sfb0 + sfyr + sfwm*wm + sfdd*dd))) +
   prc * sh1 /(1 + exp(-(scb0 + scyr + sccg*cg + scwm*wm + scwt*wt))))/
   # Denominator
   ((pr2+pry+prp+pro) + prc)
@@ -57,7 +62,6 @@ Leq <- expression(
 #Total variability==============================================================
 mu <- map(.x = all_params, .f = pull_param_vec, fdt)
 names(mu) <- all_params
-
 
 sensitivities <- map(
   .x = params_oi, 

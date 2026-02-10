@@ -1,5 +1,6 @@
 require(tidyverse)
-tag <- "bst_lgst"
+save_file_name <-  "figures//elasticity_comparison_best.png"
+tag <- "best_lgst"
 edt_name <- paste0("results//lambda_elasticity_", tag, ".rds")
 sdt_name <- paste0("results//lambda_sensitivity_", tag, ".rds")
 edt <- readRDS(edt_name)
@@ -40,7 +41,7 @@ lgst_dt <- edt$wvcv %>%
   )) %>%
   mutate(tag = tag)
 
-tag <- "bst_mean"
+tag <- "best_mean"
 edt_name <- paste0("results//lambda_elasticity_", tag, ".rds")
 sdt_name <- paste0("results//lambda_sensitivity_", tag, ".rds")
 edt <- readRDS(edt_name)
@@ -81,7 +82,7 @@ mean_dt <- edt$wvcv %>%
   )) %>%
   mutate(tag = tag)
 
-tag <- "bst_norm"
+tag <- "best_norm"
 edt_name <- paste0("results//lambda_elasticity_", tag, ".rds")
 sdt_name <- paste0("results//lambda_sensitivity_", tag, ".rds")
 edt <- readRDS(edt_name)
@@ -122,7 +123,7 @@ norm_dt <- edt$wvcv %>%
   )) %>%
   mutate(tag = tag)
 
-tag <- "bst_odfw"
+tag <- "best_odfw"
 edt_name <- paste0("results//lambda_elasticity_", tag, ".rds")
 sdt_name <- paste0("results//lambda_sensitivity_", tag, ".rds")
 edt <- readRDS(edt_name)
@@ -163,7 +164,7 @@ odfw_dt <- edt$wvcv %>%
   )) %>%
   mutate(tag = tag)
 
-tag <- "bst_rcns"
+tag <- "best_rcns"
 edt_name <- paste0("results//lambda_elasticity_", tag, ".rds")
 sdt_name <- paste0("results//lambda_sensitivity_", tag, ".rds")
 edt <- readRDS(edt_name)
@@ -208,8 +209,8 @@ rcns_dt <- edt$wvcv %>%
 
 
 bind_rows(lgst_dt, mean_dt, norm_dt, odfw_dt, rcns_dt) %>%
-  ggplot(aes(x = prm, y = mci, color = tag)) +
-  geom_pointrange(aes(ymin = lci, ymax = uci), position = position_dodge(width = .4)) +
+  ggplot(aes(x = prm, y = mci, color = tag, shape = tag)) +
+  geom_pointrange(aes(ymin = lci, ymax = uci), position = position_dodge(width = .4), size = 0.5) +
   theme_classic() +
   scale_x_discrete(
     labels = c(
@@ -225,16 +226,24 @@ bind_rows(lgst_dt, mean_dt, norm_dt, odfw_dt, rcns_dt) %>%
   ) +
   scale_color_discrete(
     labels = c(
-      bst_lgst = "Logistic Growth",
-      bst_mean = "Index Mean",
-      bst_norm = "Normal Draw",
-      bst_odfw = "ODFW Estimate",
-      bst_rcns = "Reconstruction"
+      best_lgst = "Logistic Growth",
+      best_mean = "Index Mean",
+      best_norm = "Normal Draw",
+      best_odfw = "ODFW Estimate",
+      best_rcns = "Reconstruction"
   )) +
+  scale_shape_discrete(
+    labels = c(
+      best_lgst = "Logistic Growth",
+      best_mean = "Index Mean",
+      best_norm = "Normal Draw",
+      best_odfw = "ODFW Estimate",
+      best_rcns = "Reconstruction"
+    )) +
   xlab(NULL) + ylab("Contribution") +
-  labs(color = "Puma Covariate")
+  labs(color = "Puma Covariate", shape = "Puma Covariate")
 ggsave(
-  filename = paste0("figures//lambda_cont_puma_comparison.png"),
+  filename = paste0(save_file_name),
   width = 18,
   height = 10,
   units = "cm",

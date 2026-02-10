@@ -3,9 +3,11 @@
 # August 2024
 
 #Environment====================================================================
+yr_range <- 1988:2022
+capture_handling_data <- "data//capture_handling_data.rds"
 
 source("functions//cjs_data_prep_functions.R")
-dtlist <- readRDS(capture_handling_data)
+dtlist <- readRDS("data//capture_handling_data.rds")
 
 ids_to_remove <- find_removals(
   data_list = dtlist, 
@@ -56,14 +58,11 @@ ma.af <- matrix(
   nrow = ncol(yt) - 1, 
   ncol = ncol(yt) * 2 - 1)
 dimnames(ma.af) <- list(
-  as.character(1988:2022), 
-  c(paste0(sort(rep(as.character(1989:2023), 2)), c("a","h")), "unseen")
+  as.character(1988:2021), 
+  c(paste0(sort(rep(as.character(1989:2022), 2)), c("a","h")), "unseen")
   )
 ma.am <- ma.jf <- ma.jm <- ma.af
 for(i in 1:nrow(yt)){
-  # Start here Kenneth
-  # You need to write custom m-arrays for each age/sex class
-  # The marray function from the ipm book might be useful
   sn <- which(yt[i,] != 0)
   suppressWarnings(hr <- min(which(yh[i,] != 0)))
   hr[hr==Inf] <- 0
@@ -86,7 +85,7 @@ for(i in 1:nrow(yt)){
   }
 }
 r.af <- rep(0, nrow(ma.af))
-names(r.af) <- as.character(1988:2022)
+names(r.af) <- as.character(1988:2021)
 r.am <- r.jf <- r.jm <- r.af
 for(t in 1:nrow(ma.af)){
   r.af[t] <- sum(ya[,t] * (1-male) * (1-yc[,t]))
@@ -98,6 +97,12 @@ ma.af[,ncol(ma.af)] <- r.af - rowSums(ma.af[,-ncol(ma.af)])
 ma.am[,ncol(ma.am)] <- r.am - rowSums(ma.am[,-ncol(ma.am)])
 ma.jf[,ncol(ma.jf)] <- r.jf - rowSums(ma.jf[,-ncol(ma.jf)])
 ma.jm[,ncol(ma.jm)] <- r.jm - rowSums(ma.jm[,-ncol(ma.jm)])
+
+cnt_f <- cnt_m <- rep(0, nrow(ma.af))
+for(t in 2:(nrow(ma.af)+1)){
+  cnt_f[t-1] <- sum(ya[,t] * (1-male) * (1-yc[,t]))
+  cnt_m[t-1] <- sum(ya[,t] *    male  * (1-yc[,t]))
+}
 
 nt <- nrow(ma.af) + 1
 full_cjs_data <- list(
@@ -112,7 +117,9 @@ full_cjs_data <- list(
     r.af = r.af,
     r.am = r.am,
     r.jf = r.jf,
-    r.jm = r.jm
+    r.jm = r.jm,
+    cnt_f = cnt_f,
+    cnt_m = cnt_m
   ),
   initial_values = list(
     Pf = rep(0.5, nt-1),

@@ -12,14 +12,15 @@ mscr_rslt <- readRDS("results//mscr_rslt_summ.rds")
 recr_rslt <- readRDS("results//recr_rslt_summ.rds")
 preg_rslt <- readRDS("results//preg_rslt_summ.rds")
 ch_dt <- readRDS("data//capture_handling_data.rds")
+mscr_data <- readRDS("data//cjs_data.rds")
 mngmnt_dt <- read_csv("data//management_changes.csv") %>%
   filter(year %in% ipm_years) %>%
   mutate(yr = year - 1987)
 
 # Years to filter from each mscr parameter:
-fyr_snaf <- c(2017, 2020, 2021, 2023)
-fyr_snam <- c(1989, 2020, 2021)
-fyr_snca <- c()
+fyr_snaf <- c(1991, 1999, 2001, 2017, 2020, 2021, 2022, 2023)
+fyr_snam <- c(1989, 2020, 2021, 2022, 2023)
+fyr_snca <- c(1990, 2015, 2020, 2021, 2022, 2023)
 
 #Harvest========================================================================
 n_har <- build_age_at_harvest_data(ch_dt, ipm_years, n_age)
@@ -97,7 +98,6 @@ h_cjs <- mscr_rslt %>%
 
 #Recruitment====================================================================
 r_ratio <- recr_rslt %>%
-  filter(yr != 1988) %>%
   filter(yr != 2004) %>%
   mutate(age = NA) %>%
   mutate(sex = NA) %>%
@@ -180,6 +180,24 @@ pumas <- pumas %>%
   ) %>%
   select(yr, recon, orest, grwth, mnest, sdest, high, low)
 pumas$orest[1:6] <- min(pumas$orest, na.rm = T)
+#Counts=========================================================================
+af_count <- am_count <- matrix(NA, nrow = 33, ncol = 5)
+af_count[,1] <- am_count[,1] <- as.numeric(as.factor(1989:2021)) + 1
+Pf_rs <- mscr_rslt %>% 
+  filter(yr < 2022) %>% 
+  filter(param == "Pf") %>% 
+  pull(mn) %>% 
+  expit()
+nf_dt <- mscr_data$data$r.af[-1]
+af_count[,4] <- nf_dt / Pf_rs
+
+Pm_rs <- mscr_rslt %>% 
+  filter(yr < 2022) %>% 
+  filter(param == "Pm") %>% 
+  pull(mn) %>% 
+  expit()
+nm_dt <- mscr_data$data$r.am[-1]
+am_count[,4] <- nm_dt / Pm_rs
 #Clean-up=======================================================================
 fdt <- list(
   s_cjs = s_cjs,
@@ -191,22 +209,22 @@ fdt <- list(
   nr = nrow(r_ratio),
   np = nrow(p_ratio),
   na = n_age,
-  n_sight_ca = odt$n_sight_ca,
-  n_sight_af = odt$n_sight_af,
-  n_sight_am = odt$n_sight_am,
-  nn_ca = nrow(odt$n_sight_ca),
-  nn_af = nrow(odt$n_sight_af),
-  nn_am = nrow(odt$n_sight_am),
+  # n_sight_ca = odt$n_sight_ca,
+  # n_sight_af = odt$n_sight_af,
+  # n_sight_am = odt$n_sight_am,
+  # nn_ca = nrow(odt$n_sight_ca),
+  # nn_af = nrow(odt$n_sight_af),
+  # nn_am = nrow(odt$n_sight_am),
   n_a_mov = n_a_mov,
   n_c_mov = n_c_mov,
   n_year = length(1988:2023),
   n_har = n_har,
   min_ad = min_ad,
   min_ca = min_ca,
-  af_count = odt$n_f_p_count,
-  am_count = odt$n_m_p_count,
-  nn_fc = nrow(odt$n_f_p_count),
-  nn_mc = nrow(odt$n_m_p_count),
+  af_count = af_count,
+  am_count = am_count,
+  nn_fc = nrow(af_count),
+  nn_mc = nrow(am_count),
   cg_reconstruction = pumas$recon,
   cg_odfw_estimate = pumas$orest,
   cg_logistic_growth = pumas$grwth,
@@ -222,9 +240,13 @@ fdt <- list(
   spei12 = scl(covariates$spei_12m[-1]),
   ndvi = scl(covariates$ndvi[-1]),
   nelk = c(odt$elk_density, -2.16, -2.16),
-  min_n1 = min_n1,
-  est_n1 = est_n1,
+  min_nf1 = min_ad[1,1],
+  min_nm1 = min_ad[2,1],
+  min_nc1 = min_ca[1],
+  est_nf1 = af_count[1,4],
+  est_nm1 = am_count[1,4],
+  est_nc1 = min_ca[1] + 1,
   harvest_indicator = harvest_indicator
 )
-saveRDS(fdt, "data//ipm_data_30dec2025.rds")
+saveRDS(fdt, "data//ipm_data_03feb2026.rds")
 rm(list = ls())

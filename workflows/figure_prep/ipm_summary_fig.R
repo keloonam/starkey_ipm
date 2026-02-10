@@ -1,5 +1,5 @@
 require(rjags); require(tidyverse)
-rs_raw <- readRDS("results//ipm_rslt_05jan2026_bst_lgst.rds") %>%
+rs_raw <- readRDS("results//ipm_rslt_03feb2026_all_lgst.rds") %>%
   map(as.matrix) %>% map(as_tibble) %>% bind_rows()
 
 locolor <- "#00a"
@@ -25,7 +25,7 @@ ntplot <- ntdt %>%
   theme(axis.text.x = element_blank()) +
   xlim(c(1988, 2023))
 
-lamplot <- readRDS("results//full_lambda_tibble_bst_lgst.rds") %>%
+lamplot <- readRDS("results//full_lambda_tibble_all_lgst.rds") %>%
   select(yrx, Lo) %>%
   group_by(yrx) %>%
   summarise(

@@ -3,6 +3,11 @@
 # August 2024
 
 #Environment====================================================================
+require(dplyr); require(tidyr); require(purrr); require(readr)
+require(lubridate); require(nimble)
+source("functions//handling_data_prep_functions.R")
+start_year <- 1987 # Keep these expansive - they are for data prep only
+end_year <- 2024 # Only shorten if you want to exclude years we know things from
 # Define Pastures
 mains_pastures <- c("BALLY", "DOUGP", "HFMOO", "MAINS")
 neeas_pastures <- c("NEEAS")
@@ -15,7 +20,7 @@ handl_pastures <- c("BARNP", "BCALY", "BEARP", "BULLP", "CUHNA", "FEEDG",
                     "UPPER", "WINGP")
 
 #Prep_main_data_tibble==========================================================
-rd <- read_csv(ah_fp, guess_max = 100000) %>%
+rd <- read_csv("data//animal_handling.csv", guess_max = 100000) %>%
   filter(Species == "E") %>% # filter to elk
   filter(Sex == "F" | Sex == "M") %>% # exclude entries without known sex
   mutate(event_dt = mdy(EventDate)) %>% 

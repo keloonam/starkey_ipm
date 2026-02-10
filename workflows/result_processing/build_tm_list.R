@@ -1,14 +1,15 @@
 source("functions//calculate_lambda_functions.R")
-tag <- "bst_norm"
+tag <- "best_rcns"
+folder <- "results//"
 cg_cov_name <- case_when(
-  tag == "bst_lgst" ~ "cg_logistic_growth",
-  tag == "bst_mean" ~ "cg_mean_estimate",
-  tag == "bst_odfw" ~ "cg_odfw_estimate",
-  tag == "bst_rcns" ~ "cg_reconstruction"
+  tag %in% c("best_lgst", "all_lgst") ~ "cg_logistic_growth",
+  tag %in% c("best_mean", "all_mean") ~ "cg_mean_estimate",
+  tag %in% c("best_odfw", "all_odfw") ~ "cg_odfw_estimate",
+  tag %in% c("best_rcns", "all_rcns") ~ "cg_reconstruction"
 )
-load_file_name <- paste0("results//ipm_rslt_summ_lambda_prep_", tag, ".rds")
-save_file_name <- paste0("results//full_lambda_tibble_", tag, ".rds")
-tmls_file_name <- paste0("results//transition_matrix_list_", tag, ".rds")
+load_file_name <- paste0(folder, "ipm_rslt_summ_lambda_prep_", tag, ".rds")
+save_file_name <- paste0(folder, "full_lambda_tibble_", tag, ".rds")
+tmls_file_name <- paste0(folder, "transition_matrix_list_", tag, ".rds")
 covs_file_name <- paste0("data//tm_list_covariates_", tag, ".rds")
 mtdt_file_name <- paste0("data//tm_list_metadata_", tag, ".rds")
 
@@ -17,7 +18,7 @@ rs <- readRDS(load_file_name) %>%
     id_cols = c(mcmc_step, chain, yr), 
     values_from = value, 
     names_from = param)
-ipm_dt <- readRDS("data//ipm_data_30dec2025.rds")
+ipm_dt <- readRDS("data//ipm_data_03feb2026.rds")
 cv <- tibble(
   cg = ipm_dt[[cg_cov_name]],
   dd = ipm_dt$nelk,
@@ -30,7 +31,7 @@ saveRDS(cv, covs_file_name)
 stp_vec <- rs %>% pull(mcmc_step) %>% unique()
 yr_vec <- 2:36
 pm_vec <- expand.grid(stpn = stp_vec, yrx = yr_vec)
-if(tag == "bst_norm"){
+if(tag == "best_norm"){
   year_data <- rs %>% filter(!is.na(yr)) %>%
     mutate(stpn = mcmc_step, yrx = as.numeric(yr)) %>%
     select(stpn, yrx, ppyr, sn, snyr, sc, scyr, sf, sfyr, nf,
@@ -46,9 +47,9 @@ beta_data <- rs %>% filter(is.na(yr)) %>%
   select(
     stpn, 
                 ppdd, ppwm,       ppb0y, ppb0p, ppb0o,
-    snb0, sncg, sndd,       
+    snb0, sncg, sndd, snwm,       
     scb0, sccg,       scwm, scwt,
-    sfb0,             sfwm, sfwt)
+    sfb0,       sfdd, sfwm)
 full_mtdt <- pm_vec %>%
   as_tibble() %>%
   left_join(year_data) %>%

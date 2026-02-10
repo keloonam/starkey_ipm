@@ -23,3 +23,11 @@ build_age_at_harvest_data <- function(chdt, use_years, n_age){
   n_har[1,,] <- 0
   return(n_har)
 }
+logit <- function(x){
+  out <- log(x/(1-x))
+  return(out)
+}
+expit <- function(x){
+  out <- 1/(1+exp(-x))
+  return(out)
+}

@@ -5,37 +5,36 @@
 #Variables======================================================================
 # JAGS control parameters
 n_i <- 100000
-n_a <- 50000
+n_a <- 10000
 n_b <- 50000
 n_c <- 3
 n_t <- 50
-run_date <- "04feb2026_"
+run_date <- "06feb2026_"
+
 ### Set cougar covariate ### (un-comment one line)
-cgvar <- "cgnorm"; cgname <- "norm"
 # cgvar <- "cg_logistic_growth"; cgname <- "lgst"
+# cgvar <- "cg_mean_estimate"; cgname <- "mean"
+cgvar <- "cgnorm"; cgname <- "norm"
 # cgvar <- "cg_odfw_estimate"; cgname <- "odfw"
 # cgvar <- "cg_reconstruction"; cgname <- "rcns"
-# cgvar <- "cg_mean_estimate"; cgname <- "mean"
 
 ### Specify which demographic rate covariate set to use ###
-# cov_set <- "all"; cvname <- "all"
-# cov_set <- "original_set"; cvname <- "org"
-# cov_set <- "bst"; cvname <- "bst"
-# cov_set <- "test"; cvname <- "test"
-cov_set <- "null"; cvname <- "null"
+# cov_set <- "full"; cvname <- "full"
+cov_set <- "best"; cvname <- "best"
+# cov_set <- "null"; cvname <- "null"
 
-save_file <- paste0("results//ipm_rslt_", run_date, cvname, "_", cgname, ".rds")
+save_file <- paste0("results//fbipm_rslt_", run_date, cvname, "_", cgname, ".rds")
 if(cvname == "null"){
-  save_file <- paste0("results//ipm_rslt_", run_date, cvname, ".rds")
+  save_file <- paste0("results//fbipm_rslt_", run_date, cvname, ".rds")
 }
 # Specify the model
-if(cgvar %in% c("cgnorm", "cgunif")){
-  model_file <- paste0("models//ipm_", cov_set, "_", cgvar, ".txt")
+if(cgvar == "cgnorm"){
+  model_file <- paste0("models//fbipm_", cov_set, "_", cgvar, ".txt")
 }else{
-  model_file <- paste0("models//ipm_", cov_set, ".txt")
+  model_file <- paste0("models//fbipm_", cov_set, ".txt")
 }
 if(cvname == "null"){
-  model_file <- "models//ipm_null.txt"
+  model_file <- "models//fbipm_null.txt"
 }
 
 # Loop dimension parameters
@@ -48,33 +47,62 @@ params = c(
   "SC", "SC_B0", "SC_sd", "SCB_wt", "SCB_wm", "SCB_cg", "SCB_dd", "SC_Byr",
   "SF", "SF_B0", "SF_sd", "SFB_wt", "SFB_wm", "SFB_cg", "SFB_dd", "SF_Byr",
   "SM", "SM_B0", "SM_sd",                                         "SM_Byr",
-  "H", "H_B0", "H_sd"
+  "H", "H_B0", "H_sd", "H_Byr", "Pf", "Pm"
 )
-
 #Environment====================================================================
 
 require(tidyverse); require(rjags); require(mcmcplots); require(furrr)
 ipm_data <- readRDS("data//ipm_data_03feb2026.rds")
-
+prg_dt <- read.csv("data//pregnancy_rates.csv") %>%
+  as_tibble() %>%
+  mutate(preg = round(pregnancy_rate * n_observations)) %>%
+  group_by(yr, age_class) %>%
+  summarise(no = sum(n_observations), np = sum(preg)) %>%
+  mutate(yr = yr - 1986) %>%
+  mutate(age = case_when(
+    age_class == "young" ~ 1,
+    age_class == "prime" ~ 2,
+    age_class == "old" ~ 3
+  )) %>%
+  select(yr, age, np, no) %>%
+  as.matrix()
+rec_dt_raw <- readRDS("data//recruitment_data.rds")
+rec_dt <- tibble(
+  yr = rec_dt_raw$constants$years - 1987,
+  nca = rec_dt_raw$data$n_calf,
+  naf = rec_dt_raw$data$n_cow
+) %>% as.matrix()
+cjs_dt_raw <- readRDS("data//cjs_data.rds")
+sfyrdt <- readRDS("data//sfyr_informative_prior_information.rds")
+scyrdt <- readRDS("data//scyr_informative_prior_information.rds")
 #Data_prep======================================================================
+keep_sf_yr <- ipm_data$s_cjs %>%
+  as_tibble() %>% filter(age == 3 & sex == 1) %>% pull(year)
+keep_sc_yr <- ipm_data$s_cjs %>%
+  as_tibble() %>% filter(age == 2 & sex == 1) %>% pull(year)
+keep_sm_yr <- ipm_data$s_cjs %>%
+  as_tibble() %>% filter(age == 3 & sex == 2) %>% pull(year)
+
 jags_data <- list(
-  s_cjs      = ipm_data$s_cjs,
-  h_cjs      = ipm_data$h_cjs,
-  r_ratio    = ipm_data$r_ratio,
-  p_ratio    = ipm_data$p_ratio,
-  # n_sight_ca = ipm_data$n_sight_ca,
-  # n_sight_am = ipm_data$n_sight_am,
-  # n_sight_af = ipm_data$n_sight_af,
+  r.af       = cjs_dt_raw$data$r.af,
+  r.am       = cjs_dt_raw$data$r.am,
+  r.jf       = cjs_dt_raw$data$r.jf,
+  r.jm       = cjs_dt_raw$data$r.jm,
+  ma.af      = cjs_dt_raw$data$ma.af,
+  ma.am      = cjs_dt_raw$data$ma.am,
+  ma.jf      = cjs_dt_raw$data$ma.jf,
+  ma.jm      = cjs_dt_raw$data$ma.jm,
+  sf_yri     = as.numeric(1:ipm_data$n_year %in% keep_sf_yr),
+  sm_yri     = as.numeric(1:ipm_data$n_year %in% keep_sm_yr),
+  sc_yri     = as.numeric(1:ipm_data$n_year %in% keep_sc_yr),
+  nt         = length(cjs_dt_raw$data$r.af) + 1,
+  rec_dt     = rec_dt,
+  nr         = nrow(rec_dt),
+  prg_dt     = prg_dt,
+  np         = nrow(prg_dt),
   n_a_mov    = ipm_data$n_a_mov,
   n_c_mov    = ipm_data$n_c_mov,
   n_year     = ipm_data$n_year,
-  # nn_ca      = ipm_data$nn_ca,
-  # nn_af      = ipm_data$nn_af,
-  # nn_am      = ipm_data$nn_am,
-  ns         = nrow(ipm_data$s_cjs),
-  nr         = nrow(ipm_data$r_ratio),
-  nh         = ipm_data$nh,
-  np         = ipm_data$np,
   na         = ipm_data$na,
   n_har      = ipm_data$n_har,
   n_har_hack = ipm_data$n_har,
@@ -84,20 +112,16 @@ jags_data <- list(
   nn_fc      = ipm_data$nn_fc,
   am_count   = ipm_data$am_count,
   nn_mc      = ipm_data$nn_mc,
-  # cdens      = ipm_data$cg_logistic_growth,
-  cd_mean    = ipm_data$cg_mean_estimate,
-  cd_tau     = 1/ipm_data$cg_sd_estiamte^2,
-  # cd_min     = ipm_data$cg_min_estimate,
-  # cd_max     = ipm_data$cg_max_estimate,
-  n_adj      = ipm_data$nelk,
   har_i      = ipm_data$harvest_indicator,
-  clim       = ipm_data$spei12,
   min_nf1    = ipm_data$min_nf1,
   est_nf1    = ipm_data$est_nf1,
   min_nm1    = ipm_data$min_nm1,
-  est_nm1    = ipm_data$est_nm1
+  est_nm1    = ipm_data$est_nm1,
+  cd_mean    = ipm_data$cg_mean_estimate,
+  cd_tau     = 1/ipm_data$cg_sd_estiamte^2,
+  clim       = ipm_data$spei12,
+  n_adj      = ipm_data$nelk
 )
-
 if(cgname %in% c("lgst", "odfw", "rcns", "mean")){
   jags_data$cdens <- ipm_data[[cgvar]]
 }
@@ -115,29 +139,19 @@ inits <- function(chain){
   
   # Starting abundance
   N <- array(data = NA, dim = c(ipm_data$na,2,ipm_data$n_year))
-  N[,,1] <- 100
-  H_Byr <- array(-1, dim = c(2,2,ipm_data$n_year))
+  N[,,1] <- 250
+  H_Byr <- array(-2, dim = c(2,2,ipm_data$n_year))
   H_Byr[,,1] <- NA
   
-  P_B0 <- ppb0
-  P_sd <- gsd
-  P_Byr <- rep(ppb0, nyr)
+  P_Byr <- rep(0, nyr)
   P_Byr[1] <- NA
-  SN_B0 <- snb0
-  SN_sd <- gsd
-  SN_Byr <- rep(snb0, nyr)
+  SN_Byr <- rep(0, nyr)
   SN_Byr[1] <- NA
-  SC_B0 <- scb0
-  SC_sd <- gsd
-  SC_Byr <- rep(scb0, nyr)
+  SC_Byr <- rep(0, nyr)
   SC_Byr[1] <- NA
-  SF_B0 <- sfb0
-  SF_sd <- gsd
-  SF_Byr <- rep(sfb0, nyr)
+  SF_Byr <- rep(0, nyr)
   SF_Byr[1] <- NA
-  SM_B0 <- smb0
-  SM_sd <- gsd
-  SM_Byr <- rep(smb0, nyr)
+  SM_Byr <- rep(0, nyr)
   SM_Byr[1] <- NA
   
   name_options <- c(
@@ -150,20 +164,20 @@ inits <- function(chain){
   out <- list(
     N = N,
     H_Byr = H_Byr,
-    P_B0 = rep(P_B0, 3),
-    P_sd = P_sd,
+    P_B0 = c(1.26, 1.79, 0.55),
+    P_sd = 0.54,
     P_Byr = P_Byr,
-    SN_B0 = SN_B0,
-    SN_sd = SN_sd,
+    SN_B0 = 0.2462668,
+    SN_sd = 0.7573277,
     SN_Byr = SN_Byr,
-    SC_B0 = SC_B0,
-    SC_sd = SC_sd,
+    SC_B0 = 0.8352736,
+    SC_sd = 0.6027709,
     SC_Byr = SC_Byr,
-    SF_B0 = SF_B0,
-    SF_sd = SF_sd,
+    SF_B0 = 2.588588,
+    SF_sd = 0.637042,
     SF_Byr = SF_Byr,
-    SM_B0 = SM_B0,
-    SM_sd = SM_sd,
+    SM_B0 = 0.7176843,
+    SM_sd = 0.2750366,
     SM_Byr = SM_Byr,
     .RNG.name = name_options[chain%%length(name_options)+1],
     .RNG.seed = chain

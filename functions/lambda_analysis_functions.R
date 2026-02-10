@@ -1,4 +1,4 @@
-pull_param_vec <- function(param, fdt, stu){
+pull_param_vec <- function(param, fdt){
   fdt %>% 
     mutate(target_variable = .[[param]]) %>%
     group_by(stpn) %>% 

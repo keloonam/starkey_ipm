@@ -1,8 +1,9 @@
 source("functions//calculate_lambda_functions.R")
-tags <- paste0("bst_", c("lgst", "mean", "norm", "odfw", "rcns"))
+tags <- paste0("best_", c("lgst", "mean", "norm", "odfw", "rcns"))
+folder <- "results//"
 for(tag in tags){
-  save_file_name <- paste0("results//full_lambda_tibble_", tag, ".rds")
-  tmls_file_name <- paste0("results//transition_matrix_list_", tag, ".rds")
+  save_file_name <- paste0(folder, "full_lambda_tibble_", tag, ".rds")
+  tmls_file_name <- paste0(folder, "transition_matrix_list_", tag, ".rds")
   mtdt_file_name <- paste0("data//tm_list_metadata_", tag, ".rds")
   
   tmna_list <- readRDS(tmls_file_name)

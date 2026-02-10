@@ -1,7 +1,12 @@
 code <- nimbleCode({
   # Priors
+  b0 ~ dlogis(0, 1)
+  bt ~ dlogis(0, 1)
+  bm ~ dlogis(0, 1)
+  sdr ~ dunif(0, 5)
   for(t in 1:n_years){
-    R[t] ~ dunif(0,1)
+    er[t] ~ dnorm(0, sd = sdr)
+    logit(R[t]) <- b0 + bt*xt[t] + bm*xm[t] + er[t]
   } # t
   
   # Model
