@@ -3,7 +3,7 @@
 # January 2026
 
 #Variables======================================================================
-tag <- "full_rcns"
+tag <- "full_mean"
 folder <- "results//"
 run_id <- "fbipm_rslt_06feb2026_"
 
