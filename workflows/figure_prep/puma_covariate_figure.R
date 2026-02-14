@@ -2,7 +2,7 @@ require(tidyverse); require(rjags)
 cvdt <- readRDS("data//unscaled_covariates.rds") %>%
   select(yr, pd_reconstruction, pd_odfw_est, pd_logistic, pd_full_mean, pd_mortalities)
 mortdt <- read_csv("data//deprecated//cougars//starkey_unit_mort_data.csv")
-norm_rslt <- readRDS("results//ipm_rslt_05jan2026_bst_norm.rds") %>%
+norm_rslt <- readRDS("results//fbipm_rslt_06feb2026_best_norm.rds") %>%
   map(as.matrix) %>% map(as_tibble) %>% bind_rows() %>% 
   select(grep("cdrng", names(.)))
 names(norm_rslt) <- as.character(1988:2023)
@@ -85,7 +85,7 @@ cgnorm <- lngdt %>%
 cgnormadd <- cgnorm %>%
   mutate(prm = "norm", parameter = "Random Normal") %>%
   select(yr, prm, val, parameter)
-puma %>%
+puma_plot <- puma %>%
   bind_rows(cgnormadd) %>%
   filter(prm %in% c("rcns", "odfw", "lgst", "mnes", "norm")) %>%
   ggplot(aes(x = yr, y = val, color = parameter, linetype = parameter)) +
