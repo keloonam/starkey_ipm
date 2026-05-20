@@ -22,9 +22,9 @@ lgst_dt <- edt$wvcv %>%
   mutate(value = abs(val) / tot) %>%
   group_by(param) %>%
   summarise(
-    lci = quantile(value, 0.025),
+    lci = quantile(value, 0.05),
     mci = quantile(value, 0.5),
-    uci = quantile(value, 0.975)
+    uci = quantile(value, 0.95)
   ) %>%
   ungroup() %>%
   mutate(prm = case_when(
@@ -68,9 +68,9 @@ mean_dt <- edt$wvcv %>%
   mutate(value = abs(val) / tot) %>%
   group_by(param) %>%
   summarise(
-    lci = quantile(value, 0.025),
+    lci = quantile(value, 0.05),
     mci = quantile(value, 0.5),
-    uci = quantile(value, 0.975)
+    uci = quantile(value, 0.95)
   ) %>%
   ungroup() %>%
   mutate(prm = case_when(
@@ -114,9 +114,9 @@ norm_dt <- edt$wvcv %>%
   mutate(value = abs(val) / tot) %>%
   group_by(param) %>%
   summarise(
-    lci = quantile(value, 0.025),
+    lci = quantile(value, 0.05),
     mci = quantile(value, 0.5),
-    uci = quantile(value, 0.975)
+    uci = quantile(value, 0.95)
   ) %>%
   ungroup() %>%
   mutate(prm = case_when(
@@ -160,9 +160,9 @@ odfw_dt <- edt$wvcv %>%
   mutate(value = abs(val) / tot) %>%
   group_by(param) %>%
   summarise(
-    lci = quantile(value, 0.025),
+    lci = quantile(value, 0.05),
     mci = quantile(value, 0.5),
-    uci = quantile(value, 0.975)
+    uci = quantile(value, 0.95)
   ) %>%
   ungroup() %>%
   mutate(prm = case_when(
@@ -206,9 +206,9 @@ rcns_dt <- edt$wvcv %>%
   mutate(value = abs(val) / tot) %>%
   group_by(param) %>%
   summarise(
-    lci = quantile(value, 0.025),
+    lci = quantile(value, 0.05),
     mci = quantile(value, 0.5),
-    uci = quantile(value, 0.975)
+    uci = quantile(value, 0.95)
   ) %>%
   ungroup() %>%
   mutate(prm = case_when(
@@ -235,7 +235,7 @@ rcns_dt <- edt$wvcv %>%
 
 bind_rows(lgst_dt, mean_dt, norm_dt, odfw_dt, rcns_dt) %>%
   ggplot(aes(x = prm, y = mci, color = tag, shape = tag)) +
-  geom_pointrange(aes(ymin = lci, ymax = uci), position = position_dodge(width = .4), size = 0.5) +
+  geom_pointrange(aes(ymin = lci, ymax = uci), position = position_dodge(width = .5), size = 0.5) +
   theme_classic() +
   scale_x_discrete(
     labels = c(
@@ -244,8 +244,8 @@ bind_rows(lgst_dt, mean_dt, norm_dt, odfw_dt, rcns_dt) %>%
       `n wm` = bquote("SPEI"[t-1]),
       `o cg` = "Pumas",
       `a pregnancy` = "Pregnancy",
-      `b neonate survival` = "S (neonate)",
-      `c calf survival` = "S (calf)",
+      `b neonate survival` = "S (pre-wean)",
+      `c calf survival` = "S (post-wean)",
       `d adult survival` = "S (adult)",
       `e calf harvest` = "H (calf)",
       `f adult harvest` = "H (adult)",
@@ -260,16 +260,23 @@ bind_rows(lgst_dt, mean_dt, norm_dt, odfw_dt, rcns_dt) %>%
   scale_color_discrete(
     labels = c(
       best_lgst = "Logistic Growth",
-      best_mean = "Index Mean",
-      best_norm = "Normal Draw",
+      best_mean = "Mean Index",
+      best_norm = "Random Normal",
       best_odfw = "ODFW Estimate",
       best_rcns = "Reconstruction"
-  )) +
+    ),
+    palette = c(
+      "#0072B2", 
+      "#D55E00",
+      "#E69F00",
+      "#009E73",
+      "#800080"
+    )) +
   scale_shape_discrete(
     labels = c(
       best_lgst = "Logistic Growth",
-      best_mean = "Index Mean",
-      best_norm = "Normal Draw",
+      best_mean = "Mean Index",
+      best_norm = "Random Normal",
       best_odfw = "ODFW Estimate",
       best_rcns = "Reconstruction"
     )) +

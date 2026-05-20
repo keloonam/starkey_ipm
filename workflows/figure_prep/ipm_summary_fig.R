@@ -11,9 +11,9 @@ ntplot <- ntdt %>%
   pivot_longer(1:ncol(.), names_to = "yr", values_to = "val") %>%
   group_by(yr) %>%
   summarise(
-    lci = quantile(val, 0.025),
+    lci = quantile(val, 0.05),
     mci = quantile(val, 0.5),
-    uci = quantile(val, 0.975)
+    uci = quantile(val, 0.95)
   ) %>%
   ungroup() %>%
   ggplot(aes(x = as.numeric(yr), y = mci)) +
@@ -29,9 +29,9 @@ lamplot <- readRDS("results//full_lambda_tibble_best_mean.rds") %>%
   select(yrx, Lo) %>%
   group_by(yrx) %>%
   summarise(
-    lci = quantile(Lo, 0.025),
+    lci = quantile(Lo, 0.05),
     mci = quantile(Lo, 0.5),
-    uci = quantile(Lo, 0.975)
+    uci = quantile(Lo, 0.95)
   ) %>% 
   ungroup() %>%
   mutate(yr = as.numeric(yrx) + 1987) %>%

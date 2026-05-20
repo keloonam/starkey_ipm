@@ -3,12 +3,12 @@
 # January 2026
 
 #Variables======================================================================
-tag <- "full_mean"
+tag <- "full_rcns"
 folder <- "results//"
 run_id <- "fbipm_rslt_06feb2026_"
 
 rslt_file <- paste0(folder, run_id, tag, ".rds")
-save_file <- paste0("figures//marginal_plots_", tag, ".png")
+save_file <- paste0("figures//marginal_plots_wean_", tag, ".png")
 
 # ppptdt %>% pull(lci) %>% min(); ppptdt %>% pull(uci) %>% max()
 # snptdt %>% pull(lci) %>% min(); snptdt %>% pull(uci) %>% max()
@@ -128,9 +128,9 @@ for(i in 1:length(x)){
   ywm <- expit(ppdt$ppb0y + x[i] * ppdt$ppwm) * mn_age_dist$pryf +
          expit(ppdt$ppb0p + x[i] * ppdt$ppwm) * mn_age_dist$prpf +
          expit(ppdt$ppb0o + x[i] * ppdt$ppwm) * mn_age_dist$prof 
-  ppcgln[i,2:4] <- quantile(ycg, c(0.025, 0.5, 0.975))
-  ppddln[i,2:4] <- quantile(ydd, c(0.025, 0.5, 0.975))
-  ppwmln[i,2:4] <- quantile(ywm, c(0.025, 0.5, 0.975))
+  ppcgln[i,2:4] <- quantile(ycg, c(0.05, 0.5, 0.95))
+  ppddln[i,2:4] <- quantile(ydd, c(0.05, 0.5, 0.95))
+  ppwmln[i,2:4] <- quantile(ywm, c(0.05, 0.5, 0.95))
 }
 pplndt <- rbind(ppcgln, ppddln, ppwmln) %>%
   as_tibble() %>%
@@ -142,9 +142,9 @@ ppptdt <- rsraw %>%
   pivot_longer(1:ncol(.)) %>%
   mutate(yr = rep(1989:2023, nrow(rsraw))) %>%
   summarise(
-    lci = quantile(value, 0.025),
+    lci = quantile(value, 0.05),
     mci = quantile(value, 0.5),
-    uci = quantile(value, 0.975),
+    uci = quantile(value, 0.95),
     .by = yr
   ) %>%
   left_join(cvdt)
@@ -220,10 +220,10 @@ for(i in 1:length(x)){
   ydd <- expit(sndt$snb0 + x[i] * sndt$sndd)
   ywt <- expit(sndt$snb0 + x[i] * sndt$snwt)
   ywm <- expit(sndt$snb0 + x[i] * sndt$snwm)
-  sncgln[i,2:4] <- quantile(ycg, c(0.025, 0.5, 0.975))
-  snddln[i,2:4] <- quantile(ydd, c(0.025, 0.5, 0.975))
-  snwtln[i,2:4] <- quantile(ywt, c(0.025, 0.5, 0.975))
-  snwmln[i,2:4] <- quantile(ywm, c(0.025, 0.5, 0.975))
+  sncgln[i,2:4] <- quantile(ycg, c(0.05, 0.5, 0.95))
+  snddln[i,2:4] <- quantile(ydd, c(0.05, 0.5, 0.95))
+  snwtln[i,2:4] <- quantile(ywt, c(0.05, 0.5, 0.95))
+  snwmln[i,2:4] <- quantile(ywm, c(0.05, 0.5, 0.95))
 }
 snlndt <- rbind(sncgln, snddln, snwtln, snwmln) %>%
   as_tibble() %>%
@@ -236,9 +236,9 @@ snptdt <- rsraw %>%
   pivot_longer(1:ncol(.)) %>%
   mutate(yr = rep(1989:2023, nrow(rsraw))) %>%
   summarise(
-    lci = quantile(value, 0.025),
+    lci = quantile(value, 0.05),
     mci = quantile(value, 0.5),
-    uci = quantile(value, 0.975),
+    uci = quantile(value, 0.95),
     .by = yr
   ) %>%
   left_join(cvdt)
@@ -321,10 +321,10 @@ for(i in 1:length(x)){
   ydd <- expit(scdt$scb0 + x[i] * scdt$scdd)
   ywt <- expit(scdt$scb0 + x[i] * scdt$scwt)
   ywm <- expit(scdt$scb0 + x[i] * scdt$scwm)
-  sccgln[i,2:4] <- quantile(ycg, c(0.025, 0.5, 0.975))
-  scddln[i,2:4] <- quantile(ydd, c(0.025, 0.5, 0.975))
-  scwtln[i,2:4] <- quantile(ywt, c(0.025, 0.5, 0.975))
-  scwmln[i,2:4] <- quantile(ywm, c(0.025, 0.5, 0.975))
+  sccgln[i,2:4] <- quantile(ycg, c(0.05, 0.5, 0.95))
+  scddln[i,2:4] <- quantile(ydd, c(0.05, 0.5, 0.95))
+  scwtln[i,2:4] <- quantile(ywt, c(0.05, 0.5, 0.95))
+  scwmln[i,2:4] <- quantile(ywm, c(0.05, 0.5, 0.95))
 }
 sclndt <- rbind(sccgln, scddln, scwtln, scwmln) %>%
   as_tibble() %>%
@@ -337,9 +337,9 @@ scptdt <- rsraw %>%
   pivot_longer(1:ncol(.)) %>%
   mutate(yr = rep(1989:2023, nrow(rsraw))) %>%
   summarise(
-    lci = quantile(value, 0.025),
+    lci = quantile(value, 0.05),
     mci = quantile(value, 0.5),
-    uci = quantile(value, 0.975),
+    uci = quantile(value, 0.95),
     .by = yr
   ) %>%
   left_join(cvdt)
@@ -422,10 +422,10 @@ for(i in 1:length(x)){
   ydd <- expit(sfdt$sfb0 + x[i] * sfdt$sfdd)
   ywt <- expit(sfdt$sfb0 + x[i] * sfdt$sfwt)
   ywm <- expit(sfdt$sfb0 + x[i] * sfdt$sfwm)
-  sfcgln[i,2:4] <- quantile(ycg, c(0.025, 0.5, 0.975))
-  sfddln[i,2:4] <- quantile(ydd, c(0.025, 0.5, 0.975))
-  sfwtln[i,2:4] <- quantile(ywt, c(0.025, 0.5, 0.975))
-  sfwmln[i,2:4] <- quantile(ywm, c(0.025, 0.5, 0.975))
+  sfcgln[i,2:4] <- quantile(ycg, c(0.05, 0.5, 0.95))
+  sfddln[i,2:4] <- quantile(ydd, c(0.05, 0.5, 0.95))
+  sfwtln[i,2:4] <- quantile(ywt, c(0.05, 0.5, 0.95))
+  sfwmln[i,2:4] <- quantile(ywm, c(0.05, 0.5, 0.95))
 }
 sflndt <- rbind(sfcgln, sfddln, sfwtln, sfwmln) %>%
   as_tibble() %>%
@@ -438,9 +438,9 @@ sfptdt <- rsraw %>%
   pivot_longer(1:ncol(.)) %>%
   mutate(yr = rep(1989:2023, nrow(rsraw))) %>%
   summarise(
-    lci = quantile(value, 0.025),
+    lci = quantile(value, 0.05),
     mci = quantile(value, 0.5),
-    uci = quantile(value, 0.975),
+    uci = quantile(value, 0.95),
     .by = yr
   ) %>%
   left_join(cvdt)
@@ -563,7 +563,7 @@ snyaplot <- snlndt %>%
   theme_classic() +
   xlim(c(0,0)) + xlab(element_blank()) + theme(axis.text.x = element_blank()) +
   theme(axis.line.x = element_blank(), axis.ticks = element_blank()) +
-  ylim(snlim) + ylab("Neonate Survival") +
+  ylim(snlim) + ylab("Pre-weaning Survival") +
   theme(axis.line.y = element_blank()) +
   theme(plot.margin = unit(yapm, "cm"))
 scyaplot <- sclndt %>%
@@ -571,7 +571,7 @@ scyaplot <- sclndt %>%
   theme_classic() +
   xlim(c(0,0)) + xlab(element_blank()) + theme(axis.text.x = element_blank()) +
   theme(axis.line.x = element_blank(), axis.ticks = element_blank()) +
-  ylim(sclim) + ylab("Calf Survival") +
+  ylim(sclim) + ylab("Post-weaning Survival") +
   theme(axis.line.y = element_blank()) +
   theme(plot.margin = unit(yapm, "cm"))
 sfyaplot <- sflndt %>%

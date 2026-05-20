@@ -57,9 +57,9 @@ build_plot_data <- function(dtx, str_pattern, ipm_dt = fdt, drop_year = 1){
   dtx %>% pull_vr(str_pattern) %>%
     mutate(yr = as.numeric(yr)) %>%
     summarise(
-      lci = quantile(val, 0.025),
+      lci = quantile(val, 0.05),
       mci = quantile(val, 0.5),
-      uci = quantile(val, 0.975),
+      uci = quantile(val, 0.95),
       .by = yr
     ) %>%
     mutate(dd = ipm_dt$nelk[-drop_year]) %>%
@@ -136,7 +136,7 @@ snyp <- sndt %>% ggplot(aes(x = cg, y = mci, ymin = lci, ymax = uci)) +
     axis.text.x = element_blank(), 
     axis.line = element_blank(), 
     axis.ticks = element_blank()
-  ) + ylab("Neonate Survival") +
+  ) + ylab("Pre-weaning Survival") +
   theme(plot.margin = unit(yapm, "cm"))
 scyp <- scdt %>% ggplot(aes(x = cg, y = mci, ymin = lci, ymax = uci)) +
   theme_classic() +
@@ -145,7 +145,7 @@ scyp <- scdt %>% ggplot(aes(x = cg, y = mci, ymin = lci, ymax = uci)) +
     axis.text.x = element_blank(), 
     axis.line = element_blank(), 
     axis.ticks = element_blank()
-  ) + ylab("Calf Survival") +
+  ) + ylab("Post-weaning Survival") +
   theme(plot.margin = unit(yapm, "cm"))
 sfyp <- sfdt %>% ggplot(aes(x = cg, y = mci, ymin = lci, ymax = uci)) +
   theme_classic() +
