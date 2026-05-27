@@ -1,6 +1,6 @@
 require(tidyverse)
-save_file_name <-  "figures//elasticity_comparison_best.png"
-tag <- "best_lgst"
+save_file_name <-  "figures//elasticity_comparison_indv.png"
+tag <- "indv_lgst"
 edt_name <- paste0("results//lambda_elasticity_", tag, ".rds")
 sdt_name <- paste0("results//lambda_sensitivity_", tag, ".rds")
 edt <- readRDS(edt_name)
@@ -41,7 +41,7 @@ lgst_dt <- edt$wvcv %>%
   )) %>%
   mutate(tag = tag)
 
-tag <- "best_mean"
+tag <- "indv_mean"
 edt_name <- paste0("results//lambda_elasticity_", tag, ".rds")
 sdt_name <- paste0("results//lambda_sensitivity_", tag, ".rds")
 edt <- readRDS(edt_name)
@@ -82,7 +82,7 @@ mean_dt <- edt$wvcv %>%
   )) %>%
   mutate(tag = tag)
 
-tag <- "best_norm"
+tag <- "indv_norm"
 edt_name <- paste0("results//lambda_elasticity_", tag, ".rds")
 sdt_name <- paste0("results//lambda_sensitivity_", tag, ".rds")
 edt <- readRDS(edt_name)
@@ -123,7 +123,7 @@ norm_dt <- edt$wvcv %>%
   )) %>%
   mutate(tag = tag)
 
-tag <- "best_odfw"
+tag <- "indv_odfw"
 edt_name <- paste0("results//lambda_elasticity_", tag, ".rds")
 sdt_name <- paste0("results//lambda_sensitivity_", tag, ".rds")
 edt <- readRDS(edt_name)
@@ -164,7 +164,7 @@ odfw_dt <- edt$wvcv %>%
   )) %>%
   mutate(tag = tag)
 
-tag <- "best_rcns"
+tag <- "indv_rcns"
 edt_name <- paste0("results//lambda_elasticity_", tag, ".rds")
 sdt_name <- paste0("results//lambda_sensitivity_", tag, ".rds")
 edt <- readRDS(edt_name)
@@ -226,11 +226,11 @@ bind_rows(lgst_dt, mean_dt, norm_dt, odfw_dt, rcns_dt) %>%
   ) +
   scale_color_discrete(
     labels = c(
-      best_lgst = "Logistic Growth",
-      best_mean = "Mean Index",
-      best_norm = "Random Normal",
-      best_odfw = "ODFW Estimate",
-      best_rcns = "Reconstruction"
+      indv_lgst = "Logistic Growth",
+      indv_mean = "Mean Index",
+      indv_norm = "Random Normal",
+      indv_odfw = "ODFW Estimate",
+      indv_rcns = "Reconstruction"
   ),
     palette = c(
       "#0072B2", 
@@ -241,11 +241,11 @@ bind_rows(lgst_dt, mean_dt, norm_dt, odfw_dt, rcns_dt) %>%
     )) +
   scale_shape_discrete(
     labels = c(
-      best_lgst = "Logistic Growth",
-      best_mean = "Mean Index",
-      best_norm = "Random Normal",
-      best_odfw = "ODFW Estimate",
-      best_rcns = "Reconstruction"
+      indv_lgst = "Logistic Growth",
+      indv_mean = "Mean Index",
+      indv_norm = "Random Normal",
+      indv_odfw = "ODFW Estimate",
+      indv_rcns = "Reconstruction"
     )) +
   xlab(NULL) + ylab("Contribution") +
   labs(color = "Puma Covariate", shape = "Puma Covariate")

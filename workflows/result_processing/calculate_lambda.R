@@ -1,5 +1,5 @@
 source("functions//calculate_lambda_functions.R")
-tags <- paste0("best_", c("lgst", "mean", "norm", "odfw", "rcns"))
+tags <- paste0("full_", c("lgst", "mean", "norm", "odfw", "rcns"))
 folder <- "results//"
 for(tag in tags){
   save_file_name <- paste0(folder, "full_lambda_tibble_", tag, ".rds")

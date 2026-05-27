@@ -9,19 +9,20 @@ n_a <- 10000
 n_b <- 50000
 n_c <- 3
 n_t <- 50
-run_date <- "06feb2026_"
+run_date <- "20may2026_"
 
 ### Set cougar covariate ### (un-comment one line)
 # cgvar <- "cg_logistic_growth"; cgname <- "lgst"
 # cgvar <- "cg_mean_estimate"; cgname <- "mean"
-cgvar <- "cgnorm"; cgname <- "norm"
+# cgvar <- "cgnorm"; cgname <- "norm"
 # cgvar <- "cg_odfw_estimate"; cgname <- "odfw"
-# cgvar <- "cg_reconstruction"; cgname <- "rcns"
+cgvar <- "cg_reconstruction"; cgname <- "rcns"
 
 ### Specify which demographic rate covariate set to use ###
 # cov_set <- "full"; cvname <- "full"
-cov_set <- "best"; cvname <- "best"
+# cov_set <- "best"; cvname <- "best"
 # cov_set <- "null"; cvname <- "null"
+cov_set <- "indv"; cvname <- "indv"
 
 save_file <- paste0("results//fbipm_rslt_", run_date, cvname, "_", cgname, ".rds")
 if(cvname == "null"){
@@ -35,6 +36,9 @@ if(cgvar == "cgnorm"){
 }
 if(cvname == "null"){
   model_file <- "models//fbipm_null.txt"
+}
+if(cvname == "indv"){
+  model_file <- paste0("models//cgvar_best//", cgname, "_indv.txt")
 }
 
 # Loop dimension parameters

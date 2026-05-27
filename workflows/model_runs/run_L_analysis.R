@@ -1,6 +1,6 @@
 #Environment====================================================================
 require(tidyverse); source("functions//lambda_analysis_functions.R")
-tag <- "best_rcns"
+tag <- "full_rcns"
 lam_tib_name <- paste0("results//full_lambda_tibble_", tag, ".rds")
 met_dat_name <- paste0("data//tm_list_covariates_", tag, ".rds")
 sens_save_name <- paste0("results//lambda_sensitivity_", tag, ".rds")
@@ -12,10 +12,10 @@ all_params <- c(
   "pr2", "prc", "pry", "prp", "pro", 
   "sh1", "sh2", 
   "cg", "dd", "wt", "wm",
-  "ppwm", "ppyr", "ppdd", "ppb0o", "ppb0y", "ppb0p", 
-  "snb0", "snwm", "sncg", "sndd", "snyr",
-  "scb0", "scwt", "scwm", "scyr", "sccg", 
-  "sfb0", "sfwm", "sfyr", "sfdd"
+  "ppwm", "ppyr", "ppdd", "ppcg", "ppb0o", "ppb0y", "ppb0p", 
+  "snb0", "snwm", "sncg", "sndd", "snyr", "snwt",
+  "scb0", "scwt", "scwm", "scyr", "sccg", "scdd",
+  "sfb0", "sfwm", "sfyr", "sfdd", "sfcg", "sfwt"
   )
 params_oi <- c("pr2", "prc", "pry", "prp", "pro", 
                "sh1", "sh2", 
@@ -43,18 +43,18 @@ Leq <- expression(
   # Numerator
   # Reproduction
   (0.5 *
-  ((1 /(1 + exp(-(ppb0y + ppyr + ppdd*dd + ppwm*wm)))) * pry +
-   (1 /(1 + exp(-(ppb0p + ppyr + ppdd*dd + ppwm*wm)))) * prp +
-   (1 /(1 + exp(-(ppb0o + ppyr + ppdd*dd + ppwm*wm)))) * pro) *
-  (1 /(1 + exp(-(snb0 + snyr + sncg*cg + sndd*dd + snwm*wm)))) * 
+  ((1 /(1 + exp(-(ppb0y + ppyr + ppdd*dd + ppwm*wm + ppcg*cg)))) * pry +
+   (1 /(1 + exp(-(ppb0p + ppyr + ppdd*dd + ppwm*wm + ppcg*cg)))) * prp +
+   (1 /(1 + exp(-(ppb0o + ppyr + ppdd*dd + ppwm*wm + ppcg*cg)))) * pro) *
+  (1 /(1 + exp(-(snb0 + snyr + sncg*cg + sndd*dd + snwm*wm + snwt*wt)))) * 
   ((pr2+pry+prp+pro) * sh2 / 
-     (1 + exp(-(sfb0 + sfyr + sfwm*wm + sfdd*dd))) +
+     (1 + exp(-(sfb0 + sfyr + sfwm*wm + sfdd*dd + sfcg*cg + sfwt*wt))) +
   prc * sh1 / 
-    (1 + exp(-(scb0 + scyr + sccg*cg + scwm*wm + scwt*wt)))) +
+    (1 + exp(-(scb0 + scyr + sccg*cg + scwm*wm + scwt*wt + scdd*dd)))) +
   # Survival
   (pr2+pry+prp+pro) * sh2 / 
-    (1 + exp(-(sfb0 + sfyr + sfwm*wm + sfdd*dd))) +
-  prc * sh1 /(1 + exp(-(scb0 + scyr + sccg*cg + scwm*wm + scwt*wt))))/
+    (1 + exp(-(sfb0 + sfyr + sfwm*wm + sfdd*dd + sfcg*cg + sfwt*wt))) +
+  prc * sh1 /(1 + exp(-(scb0 + scyr + sccg*cg + scwm*wm + scwt*wt + scdd*dd))))/
   # Denominator
   ((pr2+pry+prp+pro) + prc)
 )

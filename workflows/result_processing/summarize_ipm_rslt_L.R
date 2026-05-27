@@ -1,5 +1,5 @@
 require(tidyverse); require(rjags)
-tag <- "best_rcns"
+tag <- "full_rcns"
 folder <- "results//"
 load_file <- paste0(folder, "fbipm_rslt_06feb2026_", tag, ".rds")
 save_file <- paste0(folder, "ipm_rslt_summ_lambda_prep_", tag, ".rds")

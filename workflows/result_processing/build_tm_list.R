@@ -1,11 +1,14 @@
 source("functions//calculate_lambda_functions.R")
-tag <- "best_rcns"
+keep_all_betas <- TRUE
+
+tag <- "full_rcns"
 folder <- "results//"
+
 cg_cov_name <- case_when(
-  tag %in% c("best_lgst", "all_lgst") ~ "cg_logistic_growth",
-  tag %in% c("best_mean", "all_mean") ~ "cg_mean_estimate",
-  tag %in% c("best_odfw", "all_odfw") ~ "cg_odfw_estimate",
-  tag %in% c("best_rcns", "all_rcns") ~ "cg_reconstruction"
+  tag %in% c("best_lgst", "full_lgst", "indv_lgst") ~ "cg_logistic_growth",
+  tag %in% c("best_mean", "full_mean", "indv_mean") ~ "cg_mean_estimate",
+  tag %in% c("best_odfw", "full_odfw", "indv_odfw") ~ "cg_odfw_estimate",
+  tag %in% c("best_rcns", "full_rcns", "indv_rcns") ~ "cg_reconstruction"
 )
 load_file_name <- paste0(folder, "ipm_rslt_summ_lambda_prep_", tag, ".rds")
 save_file_name <- paste0(folder, "full_lambda_tibble_", tag, ".rds")
@@ -31,7 +34,7 @@ saveRDS(cv, covs_file_name)
 stp_vec <- rs %>% pull(mcmc_step) %>% unique()
 yr_vec <- 2:36
 pm_vec <- expand.grid(stpn = stp_vec, yrx = yr_vec)
-if(tag == "best_norm"){
+if(tag %in% c("best_norm", "indv_norm", "full_norm")){
   year_data <- rs %>% filter(!is.na(yr)) %>%
     mutate(stpn = mcmc_step, yrx = as.numeric(yr)) %>%
     select(stpn, yrx, ppyr, sn, snyr, sc, scyr, sf, sfyr, nf,
@@ -42,14 +45,30 @@ if(tag == "best_norm"){
     select(stpn, yrx, ppyr, sn, snyr, sc, scyr, sf, sfyr, nf,
            nof, npf, nyf, nc, h1, h2)
 }
+betas_to_drop <- rs %>% 
+  filter(is.na(yr)) %>% 
+  select(
+    ppdd, ppwm,       ppcg,
+    sndd, snwm, snwt, sncg,
+    scdd, scwm, scwt, sccg,
+    sfdd, sfwm, sfwt, sfcg
+  ) %>%
+  pivot_longer(1:ncol(.), names_to = "beta", values_to = "x") %>%
+  summarise(cv = sd(x)/abs(mean(x)), .by = beta) %>%
+  filter(cv > 1) %>%
+  pull(beta)
+if(!keep_all_betas){
+  rs[betas_to_drop][is.na(rs$yr),] <- 0
+}
+
 beta_data <- rs %>% filter(is.na(yr)) %>%
   mutate(stpn = mcmc_step) %>%
   select(
     stpn, 
-                ppdd, ppwm,       ppb0y, ppb0p, ppb0o,
-    snb0, sncg, sndd, snwm,       
-    scb0, sccg,       scwm, scwt,
-    sfb0,       sfdd, sfwm)
+          ppcg, ppdd, ppwm,       ppb0y, ppb0p, ppb0o,
+    snb0, sncg, sndd, snwm, snwt,      
+    scb0, sccg, scdd, scwm, scwt,
+    sfb0, sfcg, sfdd, sfwm, sfwt)
 full_mtdt <- pm_vec %>%
   as_tibble() %>%
   left_join(year_data) %>%
